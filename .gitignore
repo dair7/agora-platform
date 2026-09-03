@@ -21,3 +21,6 @@ npm-debug.log*
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Contexto para asistentes de IA
+CLAUDE.md
