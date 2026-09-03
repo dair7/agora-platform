@@ -1,3 +1,7 @@
+packages:
+  - 'agora-backend'
+  - 'agora-frontend'
+
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'
