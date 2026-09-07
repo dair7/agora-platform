@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Ágora — esquema de datos.
+// Código interno en inglés; el contrato público (rutas y eventos) va en español.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,4 +8,339 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+// Eje 1: alcance en el sistema. El coordinador ve todos los proyectos sin ser
+// miembro de ninguno, por eso no cabe en project_members.
+enum SystemRole {
+  COORDINATOR
+  RESEARCHER
+}
+
+// Eje 2: rol dentro de un proyecto concreto.
+enum ProjectRole {
+  PRINCIPAL_INVESTIGATOR
+  CO_INVESTIGATOR
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum PhaseStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ConversationType {
+  PROJECT
+  PRIVATE
+}
+
+enum NotificationType {
+  PROJECT_INVITATION
+  TASK_ASSIGNED
+  TASK_UPDATED
+  PROGRESS_CREATED
+  DOCUMENT_UPLOADED
+  SCHEDULE_UPDATED
+  CHAT_MESSAGE
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y sesiones
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  fullName     String     @map("full_name") @db.VarChar(150)
+  systemRole   SystemRole @default(RESEARCHER) @map("system_role")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdProjects   Project[]                 @relation("ProjectCreator")
+  memberships       ProjectMember[]
+  createdTasks      Task[]                    @relation("TaskCreator")
+  assignedTasks     Task[]                    @relation("TaskAssignee")
+  progressEntries   Progress[]
+  uploadedDocuments Document[]
+  conversations     ConversationParticipant[]
+  messages          Message[]
+  notifications     Notification[]
+  refreshTokens     RefreshToken[]
+
+  @@map("users")
+}
+
+// El token se guarda hasheado, igual que una contraseña.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Proyectos
+// ---------------------------------------------------------------------------
+
+model Project {
+  id          String        @id @default(uuid()) @db.Uuid
+  title       String        @db.VarChar(200)
+  description String?       @db.Text
+  objectives  String?       @db.Text
+  status      ProjectStatus @default(PLANNING)
+  startDate   DateTime?     @map("start_date") @db.Date
+  endDate     DateTime?     @map("end_date") @db.Date
+  budget      Decimal?      @db.Decimal(14, 2)
+  createdById String        @map("created_by_id") @db.Uuid
+  closedAt    DateTime?     @map("closed_at") @db.Timestamptz(6)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdBy    User            @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members      ProjectMember[]
+  phases       Phase[]
+  progress     Progress[]
+  documents    Document[]
+  conversation Conversation?
+
+  @@index([createdById])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String      @id @default(uuid()) @db.Uuid
+  projectId String      @map("project_id") @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  role      ProjectRole
+  joinedAt  DateTime    @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+// ---------------------------------------------------------------------------
+// Cronograma
+// ---------------------------------------------------------------------------
+
+model Phase {
+  id          String      @id @default(uuid()) @db.Uuid
+  projectId   String      @map("project_id") @db.Uuid
+  name        String      @db.VarChar(150)
+  description String?     @db.Text
+  position    Int
+  status      PhaseStatus @default(PENDING)
+  startDate   DateTime?   @map("start_date") @db.Date
+  endDate     DateTime?   @map("end_date") @db.Date
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@unique([projectId, position])
+  @@map("phases")
+}
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  phaseId     String       @map("phase_id") @db.Uuid
+  title       String       @db.VarChar(200)
+  description String?      @db.Text
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  assigneeId  String?      @map("assignee_id") @db.Uuid
+  createdById String       @map("created_by_id") @db.Uuid
+  startDate   DateTime?    @map("start_date") @db.Date
+  dueDate     DateTime?    @map("due_date") @db.Date
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  phase     Phase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  assignee  User?      @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy User       @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  progress  Progress[]
+  documents Document[]
+
+  // Aristas del grafo de precedencias, en los dos sentidos.
+  dependencies TaskDependency[] @relation("DependentTask")
+  dependents   TaskDependency[] @relation("PrerequisiteTask")
+
+  @@index([phaseId])
+  @@index([assigneeId])
+  @@map("tasks")
+}
+
+// Se define desde ya aunque la lógica de ruta crítica llegue después: cambiar
+// el esquema en octubre implicaría rehacer trabajo ya calificado.
+model TaskDependency {
+  id              String   @id @default(uuid()) @db.Uuid
+  taskId          String   @map("task_id") @db.Uuid
+  dependsOnTaskId String   @map("depends_on_task_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  task          Task @relation("DependentTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask Task @relation("PrerequisiteTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@index([dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+// ---------------------------------------------------------------------------
+// Avances y documentos
+// ---------------------------------------------------------------------------
+
+// El avance pertenece siempre al proyecto (RF-19: historial de avances del
+// proyecto). Asociarlo a una tarea es opcional.
+model Progress {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @map("project_id") @db.Uuid
+  taskId      String?  @map("task_id") @db.Uuid
+  authorId    String   @map("author_id") @db.Uuid
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task    Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, createdAt])
+  @@index([taskId])
+  @@index([authorId])
+  @@map("progress")
+}
+
+// Solo metadata: el archivo vive en un almacén independiente, no en la base.
+model Document {
+  id                String   @id @default(uuid()) @db.Uuid
+  projectId         String   @map("project_id") @db.Uuid
+  taskId            String?  @map("task_id") @db.Uuid
+  uploadedById      String   @map("uploaded_by_id") @db.Uuid
+  name              String   @db.VarChar(255)
+  storagePath       String   @map("storage_path") @db.VarChar(500)
+  mimeType          String   @map("mime_type") @db.VarChar(150)
+  sizeBytes         Int      @map("size_bytes")
+  version           Int      @default(1)
+  previousVersionId String?  @unique @map("previous_version_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task            Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  uploadedBy      User      @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  previousVersion Document? @relation("DocumentVersion", fields: [previousVersionId], references: [id], onDelete: SetNull)
+  nextVersion     Document? @relation("DocumentVersion")
+
+  @@index([projectId])
+  @@index([taskId])
+  @@map("documents")
+}
+
+// ---------------------------------------------------------------------------
+// Mensajería y notificaciones
+// ---------------------------------------------------------------------------
+
+// Una sola entidad con campo `type`: el chat de proyecto lleva projectId; el
+// privado lo deja nulo y tiene exactamente dos participantes.
+model Conversation {
+  id        String           @id @default(uuid()) @db.Uuid
+  type      ConversationType
+  projectId String?          @unique @map("project_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project      Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  joinedAt       DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  lastReadAt     DateTime? @map("last_read_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  content        String    @db.Text
+  editedAt       DateTime? @map("edited_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model Notification {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String           @map("user_id") @db.Uuid
+  type       NotificationType
+  title      String           @db.VarChar(200)
+  body       String?          @db.Text
+  resourceId String?          @map("resource_id") @db.Uuid
+  isRead     Boolean          @default(false) @map("is_read")
+  readAt     DateTime?        @map("read_at") @db.Timestamptz(6)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }
