@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
+import v1Routes from './routes/v1.js';
 
 const app = express();
 
@@ -12,6 +13,8 @@ app.use(express.json());
 app.get('/salud', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
+
+app.use('/api/v1', v1Routes);
 
 // Van al final, después de todas las rutas.
 app.use(notFoundHandler);
