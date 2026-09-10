@@ -61,6 +61,17 @@ const normalize = (error: unknown): NormalizedError => {
     if (error.code === 'P2025') {
       return { status: 404, code: 'NOT_FOUND', message: 'El recurso no existe' };
     }
+    // P2023: dato inconsistente con la columna, en la práctica un uuid
+    // malformado. Es culpa de quien llama, no del servidor, así que no puede
+    // salir como 500. Las rutas validan sus parámetros y esto no debería
+    // dispararse; es la red de seguridad para la que se olvide.
+    if (error.code === 'P2023') {
+      return {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Los datos enviados no son válidos',
+      };
+    }
   }
 
   // Cualquier otra cosa es un fallo nuestro: mensaje genérico, sin detalles.

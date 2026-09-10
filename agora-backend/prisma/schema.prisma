@@ -98,7 +98,9 @@ model User {
   @@map("users")
 }
 
-// El token se guarda hasheado, igual que una contraseña.
+// El token se guarda hasheado con SHA-256, no con bcrypt: token_hash es UNIQUE y
+// el refresco busca la fila por el hash, así que tiene que ser determinista.
+// bcrypt sala cada hash y obligaría a recorrer todos los tokens del usuario.
 model RefreshToken {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
