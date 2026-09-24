@@ -2,6 +2,7 @@ import { ProjectRole, ProjectStatus, SystemRole } from '@prisma/client';
 import type { Project } from '@prisma/client';
 import { AppError } from '../../middlewares/error-handler.js';
 import type { ProjectAccess } from '../../middlewares/project-access.js';
+import { joinProjectRoom, leaveProjectRoom } from '../../sockets/emitter.js';
 import * as repository from './projects.repository.js';
 import type {
   AddMemberInput,
@@ -70,11 +71,17 @@ export const createProject = async (
 
   const { principalInvestigatorId, ...data } = input;
 
-  return repository.createProject({
+  const project = await repository.createProject({
     ...data,
     createdById: creatorId,
     principalInvestigatorId,
   });
+
+  // El investigador principal puede estar conectado mientras la coordinadora
+  // crea el proyecto: entra a la sala ya, no en su próxima conexión.
+  joinProjectRoom(principalInvestigatorId, project.id);
+
+  return project;
 };
 
 /**
@@ -142,6 +149,7 @@ export const addMember = async (access: ProjectAccess, input: AddMemberInput) =>
   }
 
   await repository.addMember(access.project.id, user.id);
+  joinProjectRoom(user.id, access.project.id);
 
   return repository.findMembers(access.project.id);
 };
@@ -160,4 +168,5 @@ export const removeMember = async (access: ProjectAccess, userId: string): Promi
   }
 
   await repository.removeMember(access.project.id, userId);
+  leaveProjectRoom(userId, access.project.id);
 };

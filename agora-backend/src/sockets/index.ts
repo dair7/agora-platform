@@ -9,6 +9,7 @@ import type {
   SocketData,
 } from './events.js';
 import { handleConnection } from './connection.js';
+import { registerSocketServer } from './emitter.js';
 import { handshake } from './handshake.js';
 
 /**
@@ -22,6 +23,8 @@ export const initSocketServer = (httpServer: HttpServer): AppServer => {
     httpServer,
     { cors: { origin: env.CORS_ORIGIN } },
   );
+
+  registerSocketServer(io);
 
   io.use(handshake);
 
