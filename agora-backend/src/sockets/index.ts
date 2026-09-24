@@ -8,6 +8,7 @@ import type {
   ServerToClientEvents,
   SocketData,
 } from './events.js';
+import { handleConnection } from './connection.js';
 import { handshake } from './handshake.js';
 
 /**
@@ -23,6 +24,15 @@ export const initSocketServer = (httpServer: HttpServer): AppServer => {
   );
 
   io.use(handshake);
+
+  io.on('connection', (socket) => {
+    handleConnection(socket).catch((error: unknown) => {
+      // Un socket sin sus salas no recibiría nada y el cliente no se enteraría.
+      // Mejor cortarlo: socket.io-client reintenta solo.
+      console.error(error);
+      socket.disconnect(true);
+    });
+  });
 
   return io;
 };
