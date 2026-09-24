@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ágora · Demo de conectividad</title>
+    <style>
+      :root {
+        --bg: #f4f5f7;
+        --surface: #ffffff;
+        --surface-2: #eef0f3;
+        --border: #d9dde3;
+        --text: #1d2330;
+        --muted: #5f6878;
+        --accent: #1f5fbf;
+        --accent-soft: #e3edfb;
+        --ok: #1d7a46;
+        --ok-soft: #e1f3e8;
+        --warn: #a35a00;
+        --warn-soft: #fdf0dc;
+        --danger: #b3261e;
+        --danger-soft: #fbe4e2;
+        --info: #5b4bb7;
+        --info-soft: #ece9fb;
+        --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14171c;
+          --surface: #1c2027;
+          --surface-2: #252a33;
+          --border: #343a45;
+          --text: #e6e9ef;
+          --muted: #9aa3b2;
+          --accent: #7aa7ee;
+          --accent-soft: #1f2e47;
+          --ok: #6fcf97;
+          --ok-soft: #173424;
+          --warn: #f0b35a;
+          --warn-soft: #3a2c16;
+          --danger: #f28b82;
+          --danger-soft: #3d1f1d;
+          --info: #b3a7f5;
+          --info-soft: #2a2545;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font: 15px/1.45 system-ui, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      button, input, select { font: inherit; color: inherit; }
+      button {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 6px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      input, select {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 6px;
+        padding: 6px 8px;
+      }
+      label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+      h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      header h1 { font-size: 17px; margin: 0; }
+      header .identity { margin-left: auto; color: var(--muted); font-size: 14px; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        background: var(--surface-2);
+        color: var(--muted);
+      }
+      .pill::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .pill.ok { background: var(--ok-soft); color: var(--ok); }
+      .pill.error { background: var(--danger-soft); color: var(--danger); }
+      .pill.pending { background: var(--warn-soft); color: var(--warn); }
+
+      .layout {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr) minmax(360px, 34%);
+      }
+      .panel { min-height: 0; overflow: auto; padding: 16px; }
+      aside.panel { background: var(--surface); border-right: 1px solid var(--border); }
+      .log-panel { background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; }
+      section + section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+      .row { display: flex; gap: 8px; margin-top: 10px; }
+      .row > * { flex: 1; }
+      .stack { display: grid; gap: 6px; }
+      .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+      /* Chat */
+      .chat { display: flex; flex-direction: column; padding: 0; }
+      .chat-head { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
+      .chat-head strong { display: block; }
+      .chat-head span { font-size: 13px; color: var(--muted); }
+      .messages { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+      .placeholder { margin: auto; color: var(--muted); text-align: center; max-width: 420px; }
+      .placeholder code { font-family: var(--mono); color: var(--danger); }
+      .msg { max-width: 75%; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+      .msg.mine { align-self: flex-end; background: var(--accent-soft); border-color: transparent; }
+      .msg .meta { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+      .msg .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+      .system { align-self: center; font-size: 13px; color: var(--muted); }
+      .composer { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+      .composer input { flex: 1; }
+
+      /* Registro de eventos */
+      .log-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+      .log-head h2 { margin: 0; flex: 1; }
+      .log-head label { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; }
+      .log-head input { width: auto; }
+      .log { list-style: none; margin: 0; padding: 8px; overflow: auto; flex: 1; display: grid; gap: 6px; align-content: start; }
+      .log.errors-only .entry:not(.error) { display: none; }
+      .entry { border: 1px solid var(--border); border-left: 4px solid var(--muted); border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+      .entry.ok { border-left-color: var(--ok); }
+      .entry.event { border-left-color: var(--info); }
+      .entry.error { border-left-color: var(--danger); background: var(--danger-soft); }
+      .entry.note { border-left-color: var(--muted); }
+      .entry-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .entry-head time { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+      .tag { font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
+      .tag.status-ok { background: var(--ok-soft); color: var(--ok); }
+      .tag.status-4xx { background: var(--warn-soft); color: var(--warn); }
+      .tag.status-5xx { background: var(--danger); color: #fff; }
+      .code { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--danger); }
+      .entry-title { font-family: var(--mono); margin-top: 4px; overflow-wrap: anywhere; }
+      .entry-msg { margin-top: 4px; }
+      .entry-details { margin: 4px 0 0; padding-left: 18px; }
+      .entry-details code { font-family: var(--mono); font-weight: 600; }
+      .entry-hint { margin-top: 4px; color: var(--muted); font-style: italic; }
+
+      @media (max-width: 1000px) {
+        body { height: auto; }
+        .layout { grid-template-columns: 1fr; }
+        aside.panel, .log-panel { border: 0; border-bottom: 1px solid var(--border); }
+        .messages { min-height: 320px; }
+        .log { max-height: 480px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Ágora · demo de conectividad</h1>
+      <span id="socket-status" class="pill">Socket desconectado</span>
+      <span id="identity" class="identity">Sin sesión</span>
+    </header>
+
+    <div class="layout">
+      <aside class="panel">
+        <section id="login-section">
+          <h2>Sesión</h2>
+          <form id="login-form">
+            <label for="account">Cuenta del seed</label>
+            <select id="account"></select>
+            <label for="email">Correo</label>
+            <input id="email" type="email" autocomplete="off" required />
+            <label for="password">Contraseña</label>
+            <input id="password" type="text" autocomplete="off" required />
+            <div class="row"><button class="primary" type="submit">Iniciar sesión</button></div>
+          </form>
+        </section>
+
+        <section id="session-section" hidden>
+          <h2>Sesión</h2>
+          <div id="session-user"></div>
+          <div class="row"><button id="logout" type="button">Cerrar sesión</button></div>
+        </section>
+
+        <section>
+          <h2>Proyecto</h2>
+          <select id="project" disabled>
+            <option value="">Inicia sesión para ver tus proyectos</option>
+          </select>
+          <p class="note">Solo aparecen los proyectos visibles para esta cuenta.</p>
+        </section>
+
+        <section>
+          <h2>Pruebas de error</h2>
+          <div class="stack">
+            <button id="probe-no-token" type="button">Handshake sin token</button>
+            <button id="probe-bad-token" type="button" disabled>Handshake con token alterado</button>
+            <button id="probe-empty" type="button" disabled>Enviar mensaje vacío</button>
+            <button id="probe-foreign" type="button" disabled>Leer chat de proyecto ajeno</button>
+          </div>
+          <p class="note">
+            También salen del uso normal: la coordinación abriendo un chat
+            (<code>FORBIDDEN</code>), un envío en el proyecto cerrado (<code>CONFLICT</code>) y
+            una contraseña equivocada (<code>INVALID_CREDENTIALS</code>).
+          </p>
+        </section>
+      </aside>
+
+      <main class="chat">
+        <div class="chat-head">
+          <strong id="chat-title">Chat del proyecto</strong>
+          <span id="chat-subtitle">Elige un proyecto para abrir su canal.</span>
+        </div>
+        <div id="messages" class="messages">
+          <p class="placeholder">Inicia sesión y elige un proyecto.</p>
+        </div>
+        <form id="composer" class="composer">
+          <input id="content" maxlength="2000" placeholder="Escribe un mensaje" autocomplete="off" disabled />
+          <button class="primary" type="submit" id="send" disabled>Enviar</button>
+        </form>
+      </main>
+
+      <div class="log-panel">
+        <div class="log-head">
+          <h2>Registro de eventos</h2>
+          <label><input id="errors-only" type="checkbox" /> Solo errores</label>
+          <button id="clear-log" type="button">Limpiar</button>
+        </div>
+        <ul id="log" class="log"></ul>
+      </div>
+    </div>
+
+    <!-- El bundle del cliente lo sirve el propio servidor de Socket.io. -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const API = '/api/v1';
+
+      // Cuentas de `prisma/seed.ts`. La demo depende de esos datos.
+      const SEED_ACCOUNTS = [
+        { label: 'Laura Mendoza · IP en P1', email: 'laura.mendoza@example.com', password: 'Investigador123*' },
+        { label: 'Andrés Pardo · Co en P1', email: 'andres.pardo@example.com', password: 'Coinvestigador123*' },
+        { label: 'Sofía Navarro · Co en P1 y P3', email: 'sofia.navarro@example.com', password: 'Coinvestigador123*' },
+        { label: 'Carlos Beltrán · IP en P2 y P3', email: 'carlos.beltran@example.com', password: 'Investigador123*' },
+        { label: 'Daniel Osorio · Co en P2', email: 'daniel.osorio@example.com', password: 'Coinvestigador123*' },
+        { label: 'Coordinación', email: 'coordinacion@example.com', password: 'Coordinador123*' },
+      ];
+
+      // Ids fijos de los proyectos del seed, para la prueba de proyecto ajeno.
+      const SEED_PROJECT_IDS = [
+        'b1000000-0000-4000-8000-000000000001',
+        'b1000000-0000-4000-8000-000000000002',
+        'b1000000-0000-4000-8000-000000000003',
+      ];
+
+      // Qué significa cada código de `ERROR_CODES`, para narrar el registro.
+      const CODE_HINTS = {
+        VALIDATION_ERROR: 'Falló el esquema de Zod; los detalles dicen qué campo.',
+        UNAUTHENTICATED: 'No llegó ningún token.',
+        INVALID_CREDENTIALS: 'Correo o contraseña incorrectos. No distingue cuál de los dos.',
+        TOKEN_EXPIRED: 'Access token vencido: el cliente debe refrescarlo.',
+        INVALID_TOKEN: 'Firma o payload inválidos: el cliente cierra sesión.',
+        ACCOUNT_DISABLED: 'La cuenta está desactivada.',
+        FORBIDDEN: 'Autenticado y el recurso existe, pero sin permiso. La coordinación ve el proyecto y no participa en su chat.',
+        NOT_FOUND: 'Para quien no es miembro, el proyecto no existe: 404 y no 403, para no confirmar que el id es real.',
+        CONFLICT: 'Choca con el estado actual. En el chat: el proyecto está cerrado y queda de solo lectura.',
+        INTERNAL_ERROR: 'Fallo del servidor. Mensaje genérico; la traza queda en la consola del servidor.',
+      };
+
+      const STATUS_LABELS = { PLANNING: 'planeación', IN_PROGRESS: 'en curso', COMPLETED: 'cerrado' };
+      const ROLE_LABELS = { PRINCIPAL_INVESTIGATOR: 'investigador principal', CO_INVESTIGATOR: 'coinvestigador' };
+
+      const $ = (id) => document.getElementById(id);
+
+      // El access token vive solo en memoria, como en el frontend real.
+      const state = {
+        token: null,
+        refreshToken: null,
+        user: null,
+        socket: null,
+        projects: new Map(), // id -> { title, status, role }
+        names: new Map(), // userId -> fullName
+        projectId: null,
+        renderedIds: new Set(),
+        nextCursor: null,
+      };
+
+      /* ------------------------------------------------------------------ */
+      /* Utilidades de DOM                                                   */
+      /* ------------------------------------------------------------------ */
+
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+      // En el registro, los uuid de proyecto se reemplazan por su título.
+      function shortPath(path) {
+        return path.replace(UUID, (id) => {
+          const project = state.projects.get(id);
+          if (project) return `‹${truncate(project.title, 28)}›`;
+          return `${id.slice(0, 4)}…${id.slice(-4)}`;
+        });
+      }
+
+      function truncate(text, max) {
+        return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+      }
+
+      function clock(date = new Date()) {
+        return date.toLocaleTimeString('es-CO', { hour12: false });
+      }
+
+      function nameOf(userId) {
+        return state.names.get(userId) ?? `usuario ${userId.slice(0, 4)}…${userId.slice(-4)}`;
+      }
+
+      function projectName(projectId) {
+        const project = state.projects.get(projectId);
+        return project ? truncate(project.title, 40) : `proyecto ${projectId.slice(-4)}`;
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* Registro de eventos                                                 */
+      /* ------------------------------------------------------------------ */
+
+      /**
+       * kind: ok | event | error | note. channel: REST | SOCKET | CLIENTE.
+       * Un error muestra el status HTTP, el `code` del envelope en grande, el
+       * mensaje, los `details` campo por campo y qué significa el código.
+       */
+      function log({ kind, channel, title, status, code, message, details, hint }) {
+        const entry = el('li', `entry ${kind}`);
+        const head = el('div', 'entry-head');
+        head.append(el('span', 'tag', channel));
+        if (status !== undefined) {
+          const statusClass = status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-ok';
+          head.append(el('span', `tag ${statusClass}`, String(status)));
+        }
+        if (code) head.append(el('span', 'code', code));
+        head.append(el('time', '', clock()));
+        entry.append(head);
+
+        if (title) entry.append(el('div', 'entry-title', title));
+        if (message) entry.append(el('div', 'entry-msg', message));
+
+        if (Array.isArray(details) && details.length) {
+          const list = el('ul', 'entry-details');
+          for (const detail of details) {
+            const item = el('li');
+            item.append(el('code', '', detail.field ?? '(cuerpo)'), document.createTextNode(`: ${detail.message}`));
+            list.append(item);
+          }
+          entry.append(list);
+        } else if (details !== undefined && !Array.isArray(details)) {
+          entry.append(el('div', 'entry-msg', JSON.stringify(details)));
+        }
+
+        const explanation = hint ?? (code ? CODE_HINTS[code] : undefined);
+        if (explanation) entry.append(el('div', 'entry-hint', explanation));
+
+        // Lo más reciente arriba: durante la demo no hay que desplazarse.
+        $('log').prepend(entry);
+      }
+
+      $('errors-only').addEventListener('change', (event) => {
+        $('log').classList.toggle('errors-only', event.target.checked);
+      });
+      $('clear-log').addEventListener('click', () => $('log').replaceChildren());
+
+      /* ------------------------------------------------------------------ */
+      /* REST                                                                */
+      /* ------------------------------------------------------------------ */
+
+      class ApiError extends Error {
+        constructor(status, code, message) {
+          super(message);
+          this.status = status;
+          this.code = code;
+        }
+      }
+
+      /** `quiet` omite del registro las respuestas correctas de consultas auxiliares. */
+      async function api(method, path, { body, quiet = false } = {}) {
+        const label = `${method} ${shortPath(path)}`;
+        const headers = {};
+        if (body !== undefined) headers['Content-Type'] = 'application/json';
+        if (state.token) headers.Authorization = `Bearer ${state.token}`;
+
+        let response;
+        try {
+          response = await fetch(API + path, {
+            method,
+            headers,
+            body: body === undefined ? undefined : JSON.stringify(body),
+          });
+        } catch (error) {
+          log({ kind: 'error', channel: 'REST', title: label, message: 'Sin respuesta del servidor.', hint: '¿Está levantado el backend?' });
+          throw new ApiError(0, undefined, 'Sin respuesta del servidor');
+        }
+
+        const data = response.status === 204 ? null : await response.json().catch(() => null);
+
+        if (!response.ok) {
+          const error = data?.error ?? {};
+          log({
+            kind: 'error',
+            channel: 'REST',
+            title: label,
+            status: response.status,
+            code: error.code,
+            message: error.message ?? 'Respuesta sin envelope de error',
+            details: error.details,
+          });
+          throw new ApiError(response.status, error.code, error.message);
+        }
+
+        if (!quiet) log({ kind: 'ok', channel: 'REST', title: label, status: response.status });
+        return data;
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* Socket.io                                                           */
+      /* ------------------------------------------------------------------ */
+
+      function setSocketStatus(kind, text) {
+        const pill = $('socket-status');
+        pill.className = `pill ${kind}`;
+        pill.textContent = text;
+      }
+
+      function logConnectError(error, title, socket) {
+        const code = error.data?.code;
+        log({
+          kind: 'error',
+          channel: 'SOCKET',
+          title,
+          code,
+          message: error.message,
+          hint: code
+            ? `${CODE_HINTS[code] ?? ''} El servidor rechazó el handshake: el cliente no reintenta.`
+            : socket.active
+              ? 'Error de transporte: socket.io-client reintenta solo.'
+              : undefined,
+        });
+      }
+
+      function connectSocket() {
+        setSocketStatus('pending', 'Socket conectando…');
+        const socket = io({ auth: { token: state.token } });
+        state.socket = socket;
+
+        socket.on('connect', () => {
+          setSocketStatus('ok', `Socket conectado · ${socket.id}`);
+          log({
+            kind: 'event',
+            channel: 'SOCKET',
+            title: 'connect',
+            message: `Handshake aceptado. Socket ${socket.id}.`,
+            hint: 'El servidor une el socket a las salas de sus proyectos; el cliente no elige salas.',
+          });
+        });
+
+        socket.on('connect_error', (error) => {
+          setSocketStatus('error', error.data?.code ? `Socket rechazado · ${error.data.code}` : 'Socket sin conexión');
+          logConnectError(error, 'connect_error', socket);
+        });
+
+        socket.on('disconnect', (reason) => {
+          setSocketStatus(socket.active ? 'pending' : '', socket.active ? 'Socket reconectando…' : 'Socket desconectado');
+          log({
+            kind: reason === 'io client disconnect' ? 'note' : 'error',
+            channel: 'SOCKET',
+            title: 'disconnect',
+            message: `Motivo: ${reason}`,
+            hint: socket.active ? 'socket.io-client intentará reconectarse.' : undefined,
+          });
+        });
+
+        socket.on('chat:mensaje', onChatMessage);
+        socket.on('usuario:conectado', (payload) => onPresence(payload, true));
+        socket.on('usuario:desconectado', (payload) => onPresence(payload, false));
+      }
+
+      function onChatMessage(message) {
+        const current = message.projectId === state.projectId;
+        const duplicate = current && state.renderedIds.has(message.id);
+
+        log({
+          kind: 'event',
+          channel: 'SOCKET',
+          title: 'chat:mensaje',
+          message: `${message.sender.fullName} en ${projectName(message.projectId)}: «${truncate(message.content, 80)}»`,
+          hint: duplicate
+            ? 'Descartado por id: esta pestaña ya lo pintó con la respuesta REST.'
+            : current
+              ? undefined
+              : 'Es de otro proyecto de esta cuenta: el socket está en todas sus salas.',
+        });
+
+        if (current && !duplicate) renderMessage(message);
+      }
+
+      function onPresence({ userId, projectId }, online) {
+        const text = `${nameOf(userId)} ${online ? 'se conectó' : 'se desconectó'}`;
+        log({
+          kind: 'event',
+          channel: 'SOCKET',
+          title: online ? 'usuario:conectado' : 'usuario:desconectado',
+          message: `${text} · ${projectName(projectId)}`,
+        });
+        if (projectId === state.projectId) addSystemLine(text);
+      }
+
+      /** Sockets de un solo uso para mostrar el rechazo del handshake. */
+      function probeHandshake(token, title) {
+        const probe = io({ forceNew: true, reconnection: false, auth: token === undefined ? {} : { token } });
+        probe.on('connect_error', (error) => {
+          logConnectError(error, `connect_error · ${title}`, probe);
+          probe.close();
+        });
+        probe.on('connect', () => {
+          log({ kind: 'note', channel: 'SOCKET', title: `connect · ${title}`, message: 'El handshake se aceptó; no debía.' });
+          probe.close();
+        });
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* Chat                                                                */
+      /* ------------------------------------------------------------------ */
+
+      function showPlaceholder(text, code) {
+        const placeholder = el('p', 'placeholder', text);
+        if (code) placeholder.append(document.createElement('br'), el('code', '', code));
+        $('messages').replaceChildren(placeholder);
+      }
+
+      function messageNode(message) {
+        const mine = message.sender.id === state.user?.id;
+        const node = el('div', mine ? 'msg mine' : 'msg');
+        const when = clock(new Date(message.createdAt));
+        node.append(el('div', 'meta', `${message.sender.fullName} · ${when}`), el('div', 'body', message.content));
+        return node;
+      }
+
+      function clearPlaceholder() {
+        const list = $('messages');
+        if (list.querySelector('.placeholder')) list.replaceChildren();
+      }
+
+      function renderMessage(message) {
+        if (state.renderedIds.has(message.id)) return;
+        state.renderedIds.add(message.id);
+        state.names.set(message.sender.id, message.sender.fullName);
+        clearPlaceholder();
+        const list = $('messages');
+        list.append(messageNode(message));
+        list.scrollTop = list.scrollHeight;
+      }
+
+      function addSystemLine(text) {
+        clearPlaceholder();
+        const list = $('messages');
+        list.append(el('div', 'system', `${clock()} · ${text}`));
+        list.scrollTop = list.scrollHeight;
+      }
+
+      function renderOlderButton() {
+        $('messages').querySelector('.older')?.remove();
+        if (!state.nextCursor) return;
+        const wrapper = el('div', 'system older');
+        const button = el('button', '', 'Cargar mensajes anteriores');
+        button.type = 'button';
+        button.addEventListener('click', loadOlder);
+        wrapper.append(button);
+        $('messages').prepend(wrapper);
+      }
+
+      function setComposerEnabled(enabled) {
+        $('content').disabled = !enabled;
+        $('send').disabled = !enabled;
+        $('probe-empty').disabled = !enabled;
+      }
+
+      async function openProject(projectId) {
+        state.projectId = projectId || null;
+        state.renderedIds.clear();
+        state.nextCursor = null;
+        setComposerEnabled(false);
+
+        if (!projectId) {
+          $('chat-title').textContent = 'Chat del proyecto';
+          $('chat-subtitle').textContent = 'Elige un proyecto para abrir su canal.';
+          showPlaceholder('Elige un proyecto.');
+          return;
+        }
+
+        const project = state.projects.get(projectId);
+        $('chat-title').textContent = project.title;
+        $('chat-subtitle').textContent =
+          project.status === 'COMPLETED'
+            ? 'Proyecto cerrado: el historial se lee, pero un envío debería responder 409 CONFLICT.'
+            : `Canal público del proyecto · estado: ${STATUS_LABELS[project.status] ?? project.status}`;
+        showPlaceholder('Cargando historial…');
+
+        try {
+          const page = await api('GET', `/proyectos/${projectId}/mensajes?limite=20`);
+          if (state.projectId !== projectId) return;
+          $('messages').replaceChildren();
+          if (!page.messages.length) showPlaceholder('Todavía no hay mensajes. Escribe el primero.');
+          for (const message of page.messages) renderMessage(message);
+          state.nextCursor = page.nextCursor;
+          renderOlderButton();
+          setComposerEnabled(true);
+          $('content').focus();
+        } catch (error) {
+          if (state.projectId !== projectId) return;
+          showPlaceholder(error.message ?? 'No se pudo abrir el chat.', error.code);
+        }
+      }
+
+      async function loadOlder() {
+        const projectId = state.projectId;
+        const page = await api(
+          'GET',
+          `/proyectos/${projectId}/mensajes?limite=20&antes=${encodeURIComponent(state.nextCursor)}`,
+        ).catch(() => null);
+        if (!page || state.projectId !== projectId) return;
+
+        const list = $('messages');
+        const anchor = list.querySelector('.older')?.nextSibling ?? list.firstChild;
+        for (const message of page.messages) {
+          if (state.renderedIds.has(message.id)) continue;
+          state.renderedIds.add(message.id);
+          list.insertBefore(messageNode(message), anchor);
+        }
+        state.nextCursor = page.nextCursor;
+        renderOlderButton();
+      }
+
+      async function sendMessage(content) {
+        const projectId = state.projectId;
+        const data = await api('POST', `/proyectos/${projectId}/mensajes`, { body: { content } });
+        // Si el evento llegó antes que la respuesta, ya está pintado y esto no hace nada.
+        if (state.projectId === projectId) renderMessage(data.message);
+      }
+
+      $('composer').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const input = $('content');
+        if (!input.value.trim()) return;
+        try {
+          await sendMessage(input.value);
+          input.value = '';
+        } catch {
+          // Ya quedó en el registro.
+        }
+        input.focus();
+      });
+
+      $('project').addEventListener('change', (event) => openProject(event.target.value));
+
+      /* ------------------------------------------------------------------ */
+      /* Sesión                                                              */
+      /* ------------------------------------------------------------------ */
+
+      for (const [index, account] of SEED_ACCOUNTS.entries()) {
+        const option = el('option', '', account.label);
+        option.value = String(index);
+        $('account').append(option);
+      }
+      function fillAccount() {
+        const account = SEED_ACCOUNTS[Number($('account').value)];
+        $('email').value = account.email;
+        $('password').value = account.password;
+      }
+      $('account').addEventListener('change', fillAccount);
+      fillAccount();
+
+      async function loadProjects() {
+        const page = await api('GET', '/proyectos');
+        state.projects.clear();
+        for (const project of page.items) {
+          state.projects.set(project.id, { title: project.title, status: project.status, role: null });
+        }
+
+        // Miembros de cada proyecto: dan los nombres para la presencia y el rol de la cuenta.
+        await Promise.all(
+          page.items.map(async (project) => {
+            const data = await api('GET', `/proyectos/${project.id}/miembros`, { quiet: true }).catch(() => null);
+            for (const member of data?.members ?? []) {
+              state.names.set(member.user.id, member.user.fullName);
+              if (member.user.id === state.user.id) state.projects.get(project.id).role = member.role;
+            }
+          }),
+        );
+
+        const select = $('project');
+        select.replaceChildren(el('option', '', 'Elige un proyecto'));
+        select.firstChild.value = '';
+        for (const [id, project] of state.projects) {
+          const role = project.role ? ROLE_LABELS[project.role] : 'sin membresía';
+          const option = el('option', '', `${truncate(project.title, 38)} · ${STATUS_LABELS[project.status] ?? project.status} · ${role}`);
+          option.value = id;
+          select.append(option);
+        }
+        select.disabled = false;
+      }
+
+      $('login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          const session = await api('POST', '/auth/iniciar-sesion', {
+            body: { email: $('email').value.trim(), password: $('password').value },
+          });
+          state.token = session.accessToken;
+          state.refreshToken = session.refreshToken;
+          state.user = session.user;
+          state.names.set(session.user.id, session.user.fullName);
+        } catch {
+          return;
+        }
+
+        const role = state.user.systemRole === 'COORDINATOR' ? 'coordinación' : 'investigador';
+        $('identity').textContent = `${state.user.fullName} · ${role}`;
+        $('session-user').textContent = `${state.user.fullName} (${state.user.email})`;
+        $('login-section').hidden = true;
+        $('session-section').hidden = false;
+        $('probe-bad-token').disabled = false;
+        $('probe-foreign').disabled = false;
+        document.title = `${state.user.fullName} · Ágora demo`;
+
+        connectSocket();
+        await loadProjects().catch(() => {});
+      });
+
+      $('logout').addEventListener('click', async () => {
+        await api('POST', '/auth/cerrar-sesion', { body: { refreshToken: state.refreshToken } }).catch(() => {});
+        state.socket?.disconnect();
+        state.socket = null;
+        state.token = null;
+        state.refreshToken = null;
+        state.user = null;
+        state.projects.clear();
+
+        $('identity').textContent = 'Sin sesión';
+        $('login-section').hidden = false;
+        $('session-section').hidden = true;
+        $('probe-bad-token').disabled = true;
+        $('probe-foreign').disabled = true;
+        const select = $('project');
+        select.replaceChildren(el('option', '', 'Inicia sesión para ver tus proyectos'));
+        select.disabled = true;
+        document.title = 'Ágora · Demo de conectividad';
+        await openProject('');
+        showPlaceholder('Inicia sesión y elige un proyecto.');
+      });
+
+      /* ------------------------------------------------------------------ */
+      /* Pruebas de error                                                    */
+      /* ------------------------------------------------------------------ */
+
+      $('probe-no-token').addEventListener('click', () => probeHandshake(undefined, 'sin token'));
+
+      // Se altera la firma, no el payload: el token sigue bien formado.
+      $('probe-bad-token').addEventListener('click', () => {
+        const tampered = `${state.token.slice(0, -4)}${state.token.slice(-4) === 'AAAA' ? 'BBBB' : 'AAAA'}`;
+        probeHandshake(tampered, 'token alterado');
+      });
+
+      $('probe-empty').addEventListener('click', () => sendMessage('   ').catch(() => {}));
+
+      $('probe-foreign').addEventListener('click', async () => {
+        const foreign = SEED_PROJECT_IDS.find((id) => !state.projects.has(id));
+        if (!foreign) {
+          log({ kind: 'note', channel: 'CLIENTE', title: 'Proyecto ajeno', message: 'Esta cuenta ve todos los proyectos del seed. Prueba con otra.' });
+          return;
+        }
+        await api('GET', `/proyectos/${foreign}/mensajes?limite=1`).catch(() => {});
+      });
+
+      log({ kind: 'note', channel: 'CLIENTE', title: 'Demo cargada', message: 'Abre otra pestaña con otra cuenta del mismo proyecto para ver el intercambio.' });
+    </script>
+  </body>
+</html>
