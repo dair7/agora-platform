@@ -8,13 +8,13 @@
 // ---------------------------------------------------------------------------
 // Credenciales de prueba (todas las cuentas quedan activas)
 // ---------------------------------------------------------------------------
-// | Correo                             | Contraseña         | Rol            |
-// | coordinacion@unicartagena.edu.co   | Coordinador123*    | Coordinador    |
-// | laura.mendoza@unicartagena.edu.co  | Investigador123*   | IP en P1       |
-// | carlos.beltran@unicartagena.edu.co | Investigador123*   | IP en P2 y P3  |
-// | andres.pardo@unicartagena.edu.co   | Coinvestigador123* | Co en P1       |
-// | sofia.navarro@unicartagena.edu.co  | Coinvestigador123* | Co en P1 y P3  |
-// | daniel.osorio@unicartagena.edu.co  | Coinvestigador123* | Co en P2       |
+// | Correo                     | Contraseña         | Rol            |
+// | coordinacion@example.com   | Coordinador123*    | Coordinador    |
+// | laura.mendoza@example.com  | Investigador123*   | IP en P1       |
+// | carlos.beltran@example.com | Investigador123*   | IP en P2 y P3  |
+// | andres.pardo@example.com   | Coinvestigador123* | Co en P1       |
+// | sofia.navarro@example.com  | Coinvestigador123* | Co en P1 y P3  |
+// | daniel.osorio@example.com  | Coinvestigador123* | Co en P2       |
 //
 // El rol de coordinador vive en `users.system_role`; los de investigador
 // principal y coinvestigador viven en `project_members.role`.
@@ -134,42 +134,42 @@ async function seedUsers() {
   const users = [
     {
       id: ids.users.coordinator,
-      email: 'coordinacion@unicartagena.edu.co',
+      email: 'coordinacion@example.com',
       fullName: 'Marta Restrepo Villalba',
       systemRole: SystemRole.COORDINATOR,
       passwordHash: coordinatorHash,
     },
     {
       id: ids.users.laura,
-      email: 'laura.mendoza@unicartagena.edu.co',
+      email: 'laura.mendoza@example.com',
       fullName: 'Laura Mendoza Arrieta',
       systemRole: SystemRole.RESEARCHER,
       passwordHash: principalHash,
     },
     {
       id: ids.users.carlos,
-      email: 'carlos.beltran@unicartagena.edu.co',
+      email: 'carlos.beltran@example.com',
       fullName: 'Carlos Beltrán Padilla',
       systemRole: SystemRole.RESEARCHER,
       passwordHash: principalHash,
     },
     {
       id: ids.users.andres,
-      email: 'andres.pardo@unicartagena.edu.co',
+      email: 'andres.pardo@example.com',
       fullName: 'Andrés Pardo Quintero',
       systemRole: SystemRole.RESEARCHER,
       passwordHash: coInvestigatorHash,
     },
     {
       id: ids.users.sofia,
-      email: 'sofia.navarro@unicartagena.edu.co',
+      email: 'sofia.navarro@example.com',
       fullName: 'Sofía Navarro Cabarcas',
       systemRole: SystemRole.RESEARCHER,
       passwordHash: coInvestigatorHash,
     },
     {
       id: ids.users.daniel,
-      email: 'daniel.osorio@unicartagena.edu.co',
+      email: 'daniel.osorio@example.com',
       fullName: 'Daniel Osorio Herrera',
       systemRole: SystemRole.RESEARCHER,
       passwordHash: coInvestigatorHash,
@@ -897,22 +897,12 @@ async function main() {
   console.log(`  notificaciones: ${notifications}`);
   console.log('');
   console.log('Credenciales de prueba:');
-  console.log(`  coordinacion@unicartagena.edu.co    ${PASSWORDS.coordinator}     (coordinadora)`);
-  console.log(
-    `  laura.mendoza@unicartagena.edu.co   ${PASSWORDS.principal}    (investigadora principal)`,
-  );
-  console.log(
-    `  carlos.beltran@unicartagena.edu.co  ${PASSWORDS.principal}    (investigador principal)`,
-  );
-  console.log(
-    `  andres.pardo@unicartagena.edu.co    ${PASSWORDS.coInvestigator}  (coinvestigador)`,
-  );
-  console.log(
-    `  sofia.navarro@unicartagena.edu.co   ${PASSWORDS.coInvestigator}  (coinvestigadora)`,
-  );
-  console.log(
-    `  daniel.osorio@unicartagena.edu.co   ${PASSWORDS.coInvestigator}  (coinvestigador)`,
-  );
+  console.log(`  coordinacion@example.com    ${PASSWORDS.coordinator}     (coordinadora)`);
+  console.log(`  laura.mendoza@example.com   ${PASSWORDS.principal}    (investigadora principal)`);
+  console.log(`  carlos.beltran@example.com  ${PASSWORDS.principal}    (investigador principal)`);
+  console.log(`  andres.pardo@example.com    ${PASSWORDS.coInvestigator}  (coinvestigador)`);
+  console.log(`  sofia.navarro@example.com   ${PASSWORDS.coInvestigator}  (coinvestigadora)`);
+  console.log(`  daniel.osorio@example.com   ${PASSWORDS.coInvestigator}  (coinvestigador)`);
 }
 
 main()
