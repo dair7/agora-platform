@@ -160,6 +160,20 @@ export const findMembers = (projectId: string) =>
 export const findMember = (projectId: string, userId: string): Promise<ProjectMember | null> =>
   prisma.projectMember.findUnique({ where: { projectId_userId: { projectId, userId } } });
 
+/**
+ * Proyectos donde la persona es miembro: de aquí salen las salas a las que se
+ * une su socket. El coordinador no tiene filas en project_members, así que no
+ * entra a ninguna sala de proyecto, y es intencional: no participa del chat.
+ */
+export const findMemberProjectIds = async (userId: string): Promise<string[]> => {
+  const memberships = await prisma.projectMember.findMany({
+    where: { userId },
+    select: { projectId: true },
+  });
+
+  return memberships.map((membership) => membership.projectId);
+};
+
 // Pertenece al módulo de usuarios, que todavía no existe. Cuando llegue, esta
 // función se va con él y aquí queda la importación.
 export const findUserByEmail = (email: string): Promise<User | null> =>

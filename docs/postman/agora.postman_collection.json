@@ -460,6 +460,9 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [],
             "body": {
@@ -1232,7 +1235,102 @@
           "response": []
         },
         {
-          "name": "21. Cerrar proyecto",
+          "name": "21. Enviar mensaje",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"content\": \"  Acta de arranque: el muestreo empieza el lunes.  \" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{projectId}}/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{projectId}}",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. Historial de mensajes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 con el mensaje recién enviado', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.messages).to.have.lengthOf(1);\r\n  pm.expect(body.messages[0].id).to.eql(pm.environment.get('messageId'));\r\n});\r\n\r\npm.test('sin más historial, nextCursor es null', () => {\r\n  pm.expect(body.nextCursor).to.be.null;\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{projectId}}/mensajes?limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{projectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. Cerrar proyecto",
           "event": [
             {
               "listen": "test",
@@ -1272,7 +1370,7 @@
           "response": []
         },
         {
-          "name": "22. 409 editar proyecto cerrado",
+          "name": "24. 409 editar proyecto cerrado",
           "event": [
             {
               "listen": "test",
@@ -1320,7 +1418,7 @@
           "response": []
         },
         {
-          "name": "23. 409 cerrar dos veces",
+          "name": "25. 409 cerrar dos veces",
           "event": [
             {
               "listen": "test",

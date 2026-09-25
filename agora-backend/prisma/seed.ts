@@ -103,6 +103,8 @@ const ids = {
   conversations: {
     cienaga: '0a000000-0000-4000-8000-000000000001',
     lauraAndres: '0a000000-0000-4000-8000-000000000002',
+    movilidad: '0a000000-0000-4000-8000-000000000003',
+    desercion: '0a000000-0000-4000-8000-000000000004',
   },
   messages: {
     proyecto1: '0b000000-0000-4000-8000-000000000001',
@@ -693,16 +695,21 @@ async function seedDocuments() {
 // ---------------------------------------------------------------------------
 
 async function seedConversations() {
-  // Chat de proyecto: type PROJECT con projectId.
-  await prisma.conversation.upsert({
-    where: { id: ids.conversations.cienaga },
-    create: {
-      id: ids.conversations.cienaga,
-      type: ConversationType.PROJECT,
-      projectId: ids.projects.cienaga,
-    },
-    update: { type: ConversationType.PROJECT, projectId: ids.projects.cienaga },
-  });
+  // Chat de proyecto: type PROJECT con projectId. Todo proyecto tiene el suyo,
+  // igual que los que se crean por la API, aunque solo el de P1 tenga mensajes.
+  const projectConversations = [
+    { id: ids.conversations.cienaga, projectId: ids.projects.cienaga },
+    { id: ids.conversations.movilidad, projectId: ids.projects.movilidad },
+    { id: ids.conversations.desercion, projectId: ids.projects.desercion },
+  ];
+
+  for (const { id, projectId } of projectConversations) {
+    await prisma.conversation.upsert({
+      where: { id },
+      create: { id, type: ConversationType.PROJECT, projectId },
+      update: { type: ConversationType.PROJECT, projectId },
+    });
+  }
 
   // Chat privado: projectId nulo y exactamente dos participantes.
   await prisma.conversation.upsert({
@@ -731,6 +738,11 @@ async function seedConversations() {
       userId: ids.users.sofia,
       lastReadAt: null,
     },
+    // Los participantes de cada chat de proyecto son exactamente sus miembros.
+    { conversationId: ids.conversations.movilidad, userId: ids.users.carlos, lastReadAt: null },
+    { conversationId: ids.conversations.movilidad, userId: ids.users.daniel, lastReadAt: null },
+    { conversationId: ids.conversations.desercion, userId: ids.users.carlos, lastReadAt: null },
+    { conversationId: ids.conversations.desercion, userId: ids.users.sofia, lastReadAt: null },
     {
       conversationId: ids.conversations.lauraAndres,
       userId: ids.users.laura,
@@ -820,7 +832,11 @@ async function seedConversations() {
     });
   }
 
-  return { conversations: 2, participants: participants.length, messages: messages.length };
+  return {
+    conversations: projectConversations.length + 1,
+    participants: participants.length,
+    messages: messages.length,
+  };
 }
 
 // ---------------------------------------------------------------------------
