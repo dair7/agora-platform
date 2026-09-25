@@ -293,7 +293,7 @@ Clients must branch on `code`, never on `message`. The `message` field is human-
 | `CONFLICT` | 409 | Uniqueness clash or invalid state (for example, a closed project) |
 | `INTERNAL_ERROR` | 500 | Unexpected server error. Returns a generic message. |
 
-A Postman collection with the authentication and project requests, including error cases, is available at [`docs/postman/agora.postman_collection.json`](docs/postman/agora.postman_collection.json).
+A Postman collection with the authentication, project and chat requests, including error cases, is available at [`docs/postman/agora.postman_collection.json`](docs/postman/agora.postman_collection.json).
 
 ## Real-time events (Socket.io)
 
