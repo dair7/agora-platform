@@ -28,10 +28,3 @@ export interface LoginInput {
   email: string;
   password: string;
 }
-
-/** El rol no viaja: el backend crea siempre `RESEARCHER`. */
-export interface RegisterInput {
-  email: string;
-  password: string;
-  fullName: string;
-}

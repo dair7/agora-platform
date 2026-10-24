@@ -1,6 +1,13 @@
-<main class="p-espacio-6">
-  <h1 class="titulo-pagina">Tu sesión terminó</h1>
-  <p class="secundario text-tinta-media mt-espacio-2">
-    Cascarón. El mensaje completo llega en la parte 7.
-  </p>
+<!-- Aquí llega quien tenía sesión y la perdió: la renovación fue rechazada o el
+     backend no reconoce el token. Explica qué pasó y ofrece la única salida. -->
+<main class="flex min-h-screen items-center justify-center px-espacio-4 py-espacio-8">
+  <div class="w-full max-w-ancho-formulario">
+    <h1 class="titulo-pagina">Tu sesión terminó</h1>
+    <p class="cuerpo text-tinta-media mt-espacio-2">
+      Por seguridad, tu sesión se cerró. Vuelve a iniciar sesión para seguir trabajando.
+    </p>
+    <button appButton type="button" class="w-full mt-espacio-6" (click)="signInAgain()">
+      Volver a iniciar sesión
+    </button>
+  </div>
 </main>

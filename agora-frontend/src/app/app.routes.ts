@@ -12,14 +12,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
-    path: 'registro',
-    title: 'Crear cuenta · Ágora',
-    canMatch: [guestGuard],
-    loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
-  },
-  {
     path: 'sesion-expirada',
     title: 'Sesión terminada · Ágora',
+    // Con sesión no hay nada que haya expirado.
+    canMatch: [guestGuard],
     loadComponent: () =>
       import('./features/auth/session-expired/session-expired').then((m) => m.SessionExpired),
   },

@@ -3,18 +3,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { apiErrorCode } from '../api/api-error';
-import type {
-  AuthSession,
-  AuthTokens,
-  LoginInput,
-  PublicUser,
-  RegisterInput,
-} from './session.types';
+import type { AuthSession, AuthTokens, LoginInput, PublicUser } from './session.types';
 
 /**
- * Marca las peticiones de la propia sesión (iniciar, registrar, refrescar,
- * cerrar). El interceptor no las toca: si el `401` de `/refrescar` se pusiera a
- * esperar una renovación, se estaría esperando a sí mismo.
+ * Marca las peticiones de la propia sesión (iniciar, refrescar, cerrar). El
+ * interceptor no las toca: si el `401` de `/refrescar` se pusiera a esperar una
+ * renovación, se estaría esperando a sí mismo.
  */
 export const SESSION_REQUEST = new HttpContextToken<boolean>(() => false);
 
@@ -83,15 +77,6 @@ export class SessionService {
     this.#user.set(session.user);
 
     return session.user;
-  }
-
-  /** Crea la cuenta y no inicia sesión: `/registro` no devuelve tokens a propósito. */
-  async register(input: RegisterInput): Promise<PublicUser> {
-    const { user } = await firstValueFrom(
-      this.#http.post<{ user: PublicUser }>(`${this.#url}/registro`, input, sessionRequest()),
-    );
-
-    return user;
   }
 
   /**

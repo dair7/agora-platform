@@ -54,10 +54,14 @@ describe('guards de sesión y rol', () => {
       expect(await visit('/no-existe')).toBe('/entrar');
     });
 
-    it('deja entrar, registrarse y ver la sesión expirada', async () => {
+    it('deja entrar y ver la sesión expirada', async () => {
       expect(await visit('/entrar')).toBe('/entrar');
-      expect(await visit('/registro')).toBe('/registro');
       expect(await visit('/sesion-expirada')).toBe('/sesion-expirada');
+    });
+
+    // No hay registro público: /registro es una dirección más que no existe.
+    it('no tiene a dónde registrarse', async () => {
+      expect(await visit('/registro')).toBe('/entrar');
     });
   });
 
@@ -72,9 +76,12 @@ describe('guards de sesión y rol', () => {
       expect(await visit('/reportes')).toBe('/inicio');
     });
 
-    it('no vuelve a iniciar sesión ni a registrarse', async () => {
+    it('no vuelve a iniciar sesión', async () => {
       expect(await visit('/entrar')).toBe('/inicio');
-      expect(await visit('/registro')).toBe('/inicio');
+    });
+
+    it('no ve la sesión expirada: con sesión no ha expirado nada', async () => {
+      expect(await visit('/sesion-expirada')).toBe('/inicio');
     });
   });
 
