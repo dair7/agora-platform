@@ -1,0 +1,62 @@
+/* Puente entre tokens.css y Tailwind. Aquí no hay valores: solo referencias.
+   Los valores viven en tokens.css, que se genera desde el sistema de diseño.
+   Si falta un token, se agrega primero al sistema y después se mapea aquí. */
+
+@theme {
+  /* Fuera la escala por defecto de Tailwind: solo existe lo que se declara abajo. */
+  --color-*: initial;
+  --spacing: initial;
+  --spacing-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  /* Familias, tamaños y pesos los ponen las clases de texto de tokens.css
+     (.cuerpo, .titulo-pagina…). Sin utilidades paralelas: una sola forma. */
+  --font-*: initial;
+  --font-weight-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+}
+
+/* `inline`: la utilidad lleva var(--veril) directamente, sin variable intermedia. */
+@theme inline {
+  /* Color */
+  --color-superficie-00: var(--superficie-00);
+  --color-superficie-10: var(--superficie-10);
+  --color-superficie-20: var(--superficie-20);
+  --color-borde: var(--borde);
+  --color-borde-fuerte: var(--borde-fuerte);
+  --color-tinta: var(--tinta);
+  --color-tinta-media: var(--tinta-media);
+  --color-tinta-tenue: var(--tinta-tenue);
+  --color-veril: var(--veril);
+  --color-veril-hundido: var(--veril-hundido);
+  --color-veril-tenue: var(--veril-tenue);
+  --color-estado-planeacion: var(--estado-planeacion);
+  --color-estado-ejecucion: var(--estado-ejecucion);
+  --color-estado-cierre: var(--estado-cierre);
+  --color-baliza: var(--baliza);
+  --color-arrecife: var(--arrecife);
+  --color-sonda-viva: var(--sonda-viva);
+
+  /* Sombra */
+  --shadow-sombra-flotante: var(--sombra-flotante);
+
+  /* Espaciado */
+  --spacing-espacio-1: var(--espacio-1);
+  --spacing-espacio-2: var(--espacio-2);
+  --spacing-espacio-3: var(--espacio-3);
+  --spacing-espacio-4: var(--espacio-4);
+  --spacing-espacio-5: var(--espacio-5);
+  --spacing-espacio-6: var(--espacio-6);
+  --spacing-espacio-8: var(--espacio-8);
+
+  /* Radios */
+  --radius-radio-sm: var(--radio-sm);
+  --radius-radio-md: var(--radio-md);
+  --radius-radio-pildora: var(--radio-pildora);
+}

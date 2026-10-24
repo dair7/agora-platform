@@ -1,0 +1,120 @@
+/* Ágora — tokens del sistema de diseño
+   Generado desde el sistema de diseño. No editar a mano:
+   si cambia un valor, cambia primero en el sistema y se regenera.
+
+   Las fuentes NO se cargan desde aquí: van con <link> en
+   src/index.html. Un @import solo es válido antes de cualquier otra
+   regla, y al encadenar este archivo después de Tailwind quedaba en
+   mitad del CSS final, donde el navegador lo ignora sin avisar. */
+
+:root {
+  /* Color */
+  --superficie-00: #ffffff;               /* Tarjetas, paneles y el fondo del chat */
+  --superficie-10: #edf2f3;               /* Fondo de la página */
+  --superficie-20: #dce7e9;               /* Relleno discreto: esqueletos de carga, filas alternas, fondo de etiquetas neutras */
+  --borde: #c3d3d6;                       /* Hairline por defecto entre secciones, filas y tarjetas */
+  --borde-fuerte: #9ab0b5;                /* Borde de controles interactivos en reposo: campos, casillas, selectores */
+  --tinta: #0b2b3c;                       /* Texto principal y títulos */
+  --tinta-media: #41616f;                 /* Texto secundario, descripciones y metadatos */
+  --tinta-tenue: #4e6b76;                 /* Marcadores de posición y etiquetas de apoyo */
+  --veril: #2e6b80;                       /* Acción primaria: botones, enlaces y el anillo de foco */
+  --veril-hundido: #22566a;               /* Estado presionado y sobrevuelo de la acción primaria */
+  --veril-tenue: #d7e6ea;                 /* Fondo de selección: fila activa, pestaña abierta, burbuja del mensaje propio */
+  --estado-planeacion: #9ab8c4;           /* Proyecto en planeación */
+  --estado-ejecucion: var(--veril);       /* Proyecto en ejecución */
+  --estado-cierre: var(--tinta);          /* Proyecto finalizado */
+  --baliza: #e0a100;                      /* Atención: tareas atrasadas, socket reconectando, avisos no bloqueantes */
+  --arrecife: #b3402f;                    /* Error y acción destructiva */
+  --sonda-viva: #1f7a5c;                  /* Presencia en línea y confirmaciones */
+
+  /* Sombra */
+  --sombra-flotante: 0 4px 16px rgba(11, 43, 60, 0.16);
+
+  /* Espaciado */
+  --espacio-1: 4px;                       /* Separación entre una etiqueta y su valor */
+  --espacio-2: 8px;                       /* Relleno interno de píldoras y separación entre iconos y texto */
+  --espacio-3: 12px;                      /* Relleno vertical de controles: botón, campo, fila de lista */
+  --espacio-4: 16px;                      /* Relleno de tarjetas y separación entre elementos hermanos */
+  --espacio-5: 24px;                      /* Separación entre bloques dentro de una sección */
+  --espacio-6: 32px;                      /* Separación entre secciones */
+  --espacio-8: 48px;                      /* Margen superior de una pantalla y respiro alrededor de estados vacíos */
+
+  /* Radios */
+  --radio-sm: 3px;                        /* Campos, casillas y píldoras de estado */
+  --radio-md: 6px;                        /* Botones, tarjetas y paneles */
+  --radio-pildora: 999px;                 /* Solo avatares y el punto de presencia */
+
+  /* Familias */
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+}
+
+/* Estilos de texto. Se aplican como clase: <h1 class="titulo-pagina"> */
+
+/* Títulos */
+.titulo-pagina {
+  font-family: var(--font-cond);
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 600;
+}
+.titulo-seccion {
+  font-family: var(--font-cond);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.titulo-tarjeta {
+  font-family: var(--font-cond);
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 600;
+}
+
+/* Texto */
+.cuerpo {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 400;
+}
+.cuerpo-fuerte {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 600;
+}
+.secundario {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 400;
+}
+.etiqueta {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.dato {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Base */
+body {
+  margin: 0;
+  background: var(--superficie-10);
+  color: var(--tinta);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 23px;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid var(--veril);
+  outline-offset: 2px;
+}

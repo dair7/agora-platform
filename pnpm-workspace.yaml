@@ -7,3 +7,11 @@ onlyBuiltDependencies:
   - '@prisma/engines'
   - esbuild
   - prisma
+
+# Dependencias nativas de @angular/build. Sus scripts solo compilan desde fuente
+# cuando falta un binario precompilado, y los de win32-x64 ya vienen instalados
+# como dependencias opcionales. Compilar exigiría las herramientas de Visual Studio.
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - lmdb
+  - msgpackr-extract
