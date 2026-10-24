@@ -36,9 +36,9 @@ Communication runs over two channels, and they follow one rule: **every change g
 
 | Component | Version | Notes |
 | --- | --- | --- |
-| Node.js | 20.20.2 LTS | |
+| Node.js | 24.22.1 LTS | Patched for the 21 October 2026 security release; Node 20 is out of support. Also required by Angular 22 |
 | pnpm | 10.28.2 | Workspace at the repository root |
-| TypeScript | 6.0.3 | Pinned: TypeScript 7 has no stable programmatic API yet |
+| TypeScript | 6.0.3 | Pinned: TypeScript 7 has no stable programmatic API yet. Angular 22 requires the 6.0 branch |
 | Express | 5.2.1 | Async errors reach the error handler without wrappers |
 | Socket.io | 4.8.3 | Also serves its own browser client bundle |
 | Prisma / @prisma/client | 6.19.3 | Pinned; both versions must match |
@@ -46,6 +46,8 @@ Communication runs over two channels, and they follow one rule: **every change g
 | jsonwebtoken | 9.0.3 | Access tokens |
 | bcryptjs | 3.0.3 | Password hashing, pure JS |
 | Zod | 4 | Request and environment validation |
+| Angular | 22.2.4 | Web client: standalone components, zoneless, no SSR |
+| Tailwind CSS | 4.3.3 | Utilities generated only from the design system's tokens |
 
 ## Repository layout
 
@@ -61,6 +63,14 @@ agora-platform/
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── app.ts           # Express application
 │       └── server.ts        # HTTP server + Socket.io
+├── agora-frontend/
+│   ├── public/              # static files served as-is
+│   └── src/
+│       ├── app/             # root component, routes and application config
+│       ├── styles/          # tokens.css (generated from the design system), theme.css (Tailwind bridge)
+│       ├── index.html       # host page; loads the IBM Plex fonts
+│       ├── main.ts          # bootstraps the application
+│       └── styles.css       # stylesheet entry: Tailwind, tokens, theme
 ├── docs/
 │   ├── demo/                # HTML connectivity demo client
 │   └── postman/             # Postman collection
@@ -70,7 +80,7 @@ agora-platform/
 
 ## Requirements
 
-- **Node.js 20.20.2**
+- **Node.js 24.22.1 LTS.** Node's 21 October 2026 security release fixed ten CVEs, four of them high severity, including remote code execution in the Brotli decoder. The patched lines are 26.12.1, 24.22.1 and 22.23.4; Node 20 is out of support and did not get the fixes. Angular 22 also requires Node `^22.22.3 || ^24.15.0 || >=26`, so Node 20 cannot run the client.
 - **pnpm 10.28.2.** With Corepack: `corepack enable`. Corepack picks up the version pinned in `packageManager`.
 - **Docker** with Docker Compose v2 (Docker Desktop on Windows and macOS)
 - Git
