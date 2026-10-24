@@ -12,6 +12,7 @@
   --inset-shadow-*: initial;
   --drop-shadow-*: initial;
   --text-shadow-*: initial;
+  --container-*: initial;
 
   /* Familias, tamaños y pesos los ponen las clases de texto de tokens.css
      (.cuerpo, .titulo-pagina…). Sin utilidades paralelas: una sola forma. */
@@ -42,6 +43,7 @@
   --color-baliza: var(--baliza);
   --color-arrecife: var(--arrecife);
   --color-sonda-viva: var(--sonda-viva);
+  --color-tinta-inversa: var(--tinta-inversa);
 
   /* Sombra */
   --shadow-sombra-flotante: var(--sombra-flotante);
@@ -59,4 +61,10 @@
   --radius-radio-sm: var(--radio-sm);
   --radius-radio-md: var(--radio-md);
   --radius-radio-pildora: var(--radio-pildora);
+
+  /* Ancho */
+  --container-ancho-formulario: var(--ancho-formulario);
+
+  /* Opacidad */
+  --opacity-opacidad-deshabilitado: var(--opacidad-deshabilitado);
 }

@@ -26,6 +26,7 @@
   --baliza: #e0a100;                      /* Atención: tareas atrasadas, socket reconectando, avisos no bloqueantes */
   --arrecife: #b3402f;                    /* Error y acción destructiva */
   --sonda-viva: #1f7a5c;                  /* Presencia en línea y confirmaciones */
+  --tinta-inversa: #ffffff;               /* Texto y iconos sobre un fondo de color: botón primario, botón destructivo, píldoras de estado en ejecución y finalizado */
 
   /* Sombra */
   --sombra-flotante: 0 4px 16px rgba(11, 43, 60, 0.16);
@@ -43,6 +44,12 @@
   --radio-sm: 3px;                        /* Campos, casillas y píldoras de estado */
   --radio-md: 6px;                        /* Botones, tarjetas y paneles */
   --radio-pildora: 999px;                 /* Solo avatares y el punto de presencia */
+
+  /* Ancho */
+  --ancho-formulario: 360px;              /* Ancho máximo de un formulario de una columna: inicio de sesión, registro, crear proyecto */
+
+  /* Opacidad */
+  --opacidad-deshabilitado: 0.45;         /* Único atenuado del sistema: botón deshabilitado, campo bloqueado, compositor del chat en un proyecto cerrado */
 
   /* Familias */
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;

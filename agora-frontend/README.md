@@ -70,5 +70,5 @@ No tool enforces these rules. They are conventions, and code review is what keep
 
 - **No Tailwind palette.** `bg-red-500`, `text-slate-700` or `bg-white` generate no CSS here, because `theme.css` clears them, but they must not appear in templates either.
 - **No arbitrary values.** Neither `bg-[#hex]` nor `p-[13px]`. Tailwind always compiles them and cannot forbid them. If a value is missing, it is added to the design system first.
-- **No `rounded-full` or `rounded-none`.** They are fixed Tailwind utilities that do not come from the theme, so clearing the theme cannot remove them. Avatars and the presence dot use `rounded-radio-pildora`.
+- **No `rounded-full`, `rounded-none` or `opacity-45`.** They exist even with the theme cleared and do not come from the tokens: the first two are fixed Tailwind utilities, and opacity accepts any number without going through the theme. Clearing the theme cannot remove them, so they are avoided by convention. Avatars and the presence dot use `rounded-radio-pildora`; dimming uses `opacity-opacidad-deshabilitado`.
 - **Any state that arrives over the socket lives in a signal.** The application is zoneless: nothing re-renders after an event unless a signal changes. Pushing into a plain array does not redraw the view, and the failure is silent.
