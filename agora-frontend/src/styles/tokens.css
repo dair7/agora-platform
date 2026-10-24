@@ -10,9 +10,9 @@
 :root {
   /* Color */
   --superficie-00: #ffffff;               /* Tarjetas, paneles y el fondo del chat */
-  --superficie-10: #edf2f3;               /* Fondo de la página */
+  --superficie-10: #e7f0f2;               /* Fondo de la página */
   --superficie-20: #dce7e9;               /* Relleno discreto: esqueletos de carga, filas alternas, fondo de etiquetas neutras */
-  --borde: #c3d3d6;                       /* Hairline por defecto entre secciones, filas y tarjetas */
+  --borde: #d5e2e5;                       /* Hairline por defecto entre secciones, filas y tarjetas */
   --borde-fuerte: #9ab0b5;                /* Borde de controles interactivos en reposo: campos, casillas, selectores */
   --tinta: #0b2b3c;                       /* Texto principal y títulos */
   --tinta-media: #41616f;                 /* Texto secundario, descripciones y metadatos */
@@ -27,9 +27,12 @@
   --arrecife: #b3402f;                    /* Error y acción destructiva */
   --sonda-viva: #1f7a5c;                  /* Presencia en línea y confirmaciones */
   --tinta-inversa: #ffffff;               /* Texto y iconos sobre un fondo de color: botón primario, botón destructivo, píldoras de estado en ejecución y finalizado */
+  --veril-somero: #3b7f96;                /* El extremo claro del degradado de profundidad: cabeceras de marca y paneles de identidad */
 
   /* Sombra */
-  --sombra-flotante: 0 4px 16px rgba(11, 43, 60, 0.16);
+  --sombra-campo: 0 1px 2px rgba(11, 43, 60, 0.06), 0 0 0 1px rgba(11, 43, 60, 0.07);
+  --sombra-tarjeta: 0 1px 2px rgba(11, 43, 60, 0.05), 0 12px 32px rgba(11, 43, 60, 0.10);
+  --sombra-flotante: 0 24px 56px rgba(4, 22, 32, 0.32);
 
   /* Espaciado */
   --espacio-1: 4px;                       /* Separación entre una etiqueta y su valor */
@@ -41,9 +44,9 @@
   --espacio-8: 48px;                      /* Margen superior de una pantalla y respiro alrededor de estados vacíos */
 
   /* Radios */
-  --radio-sm: 3px;                        /* Campos, casillas y píldoras de estado */
-  --radio-md: 6px;                        /* Botones, tarjetas y paneles */
-  --radio-pildora: 999px;                 /* Solo avatares y el punto de presencia */
+  --radio-sm: 8px;                        /* Campos de formulario y controles pequeños */
+  --radio-md: 16px;                       /* Tarjetas y paneles */
+  --radio-pildora: 999px;                 /* Botones, píldoras de estado, avatares y el punto de presencia */
 
   /* Ancho */
   --ancho-formulario: 360px;              /* Ancho máximo de un formulario de una columna: inicio de sesión, registro, crear proyecto */
@@ -54,9 +57,18 @@
   /* Familias */
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-cond: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
 }
 
 /* Estilos de texto. Se aplican como clase: <h1 class="titulo-pagina"> */
+
+/* Display */
+.display-grande {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 49px;
+  font-weight: 400;
+}
 
 /* Títulos */
 .titulo-pagina {

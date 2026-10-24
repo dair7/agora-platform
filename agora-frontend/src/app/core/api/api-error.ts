@@ -44,3 +44,18 @@ export const apiErrorCode = (error: unknown): ErrorCode | null => {
 
   return isErrorCode(code) ? code : null;
 };
+
+/** Los errores por campo de un `VALIDATION_ERROR`, como `{ campo: mensaje }`. */
+export const apiFieldErrors = (error: unknown): Record<string, string> => {
+  if (!(error instanceof HttpErrorResponse)) {
+    return {};
+  }
+
+  const details = (error.error as Partial<ApiErrorBody> | null)?.error?.details ?? [];
+
+  // Si un campo trae varios mensajes, se muestra el primero.
+  return details.reduce<Record<string, string>>(
+    (fields, { field, message }) => ({ [field]: message, ...fields }),
+    {},
+  );
+};

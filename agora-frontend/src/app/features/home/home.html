@@ -1,6 +1,29 @@
 <main class="p-espacio-6">
   <h1 class="titulo-pagina">Inicio</h1>
-  <p class="secundario text-tinta-media mt-espacio-2">
+
+  @if (session.user(); as user) {
+    <p class="cuerpo mt-espacio-2">
+      Sesión iniciada como <span class="cuerpo-fuerte">{{ user.fullName }}</span>
+    </p>
+    <p class="secundario text-tinta-media">{{ user.email }} · {{ roleLabels[user.systemRole] }}</p>
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      class="mt-espacio-5"
+      [disabled]="leaving()"
+      (click)="logout()"
+    >
+      {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
+    </button>
+  } @else {
+    <p class="cuerpo text-tinta-media mt-espacio-2">
+      No has iniciado sesión.
+      <a routerLink="/entrar" class="text-veril underline">Iniciar sesión</a>
+    </p>
+  }
+
+  <p class="secundario text-tinta-media mt-espacio-6">
     Ruta protegida de prueba. La protección llega con los guards, en la parte 5.
   </p>
 </main>

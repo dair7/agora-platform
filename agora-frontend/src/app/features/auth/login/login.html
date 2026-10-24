@@ -1,6 +1,43 @@
-<main class="p-espacio-6">
+<main class="mx-auto max-w-ancho-formulario px-espacio-4 py-espacio-8">
   <h1 class="titulo-pagina">Iniciar sesión</h1>
-  <p class="secundario text-tinta-media mt-espacio-2">
-    Cascarón. El formulario llega en la parte 4.
+  <p class="cuerpo text-tinta-media mt-espacio-2">Entra para ver tus proyectos.</p>
+
+  <form class="grid gap-espacio-4 mt-espacio-6" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (notice(); as message) {
+      <app-notice tone="error">{{ message }}</app-notice>
+    }
+
+    <app-field for="login-email" label="Correo" [error]="fieldErrors().email">
+      <input
+        appInput
+        id="login-email"
+        type="email"
+        autocomplete="username"
+        formControlName="email"
+        [invalid]="!!fieldErrors().email"
+        [describedBy]="fieldErrors().email ? 'login-email-error' : null"
+      />
+    </app-field>
+
+    <app-field for="login-password" label="Contraseña" [error]="fieldErrors().password">
+      <input
+        appInput
+        id="login-password"
+        type="password"
+        autocomplete="current-password"
+        formControlName="password"
+        [invalid]="!!fieldErrors().password"
+        [describedBy]="fieldErrors().password ? 'login-password-error' : null"
+      />
+    </app-field>
+
+    <button appButton type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+    </button>
+  </form>
+
+  <p class="secundario text-tinta-media mt-espacio-5">
+    ¿Aún no tienes cuenta?
+    <a routerLink="/registro" class="text-veril underline">Crear cuenta</a>
   </p>
 </main>
