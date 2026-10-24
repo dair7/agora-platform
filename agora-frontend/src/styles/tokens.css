@@ -28,6 +28,9 @@
   --sonda-viva: #1f7a5c;                  /* Presencia en línea y confirmaciones */
   --tinta-inversa: #ffffff;               /* Texto y iconos sobre un fondo de color: botón primario, botón destructivo, píldoras de estado en ejecución y finalizado */
   --veril-somero: #3b7f96;                /* El extremo claro del degradado de profundidad: cabeceras de marca y paneles de identidad */
+  --cristal: rgba(255, 255, 255, 0.88);   /* Parada CLARA del relleno de cristal, la de arriba, donde el degradado de detrás es más somero y puede permitirse transparencia */
+  --cristal-hondo: rgba(255, 255, 255, 0.96);/* Parada OPACA del relleno de cristal, la de abajo, donde el degradado de detrás es casi negro y el blanco tiene que taparlo para que la superficie se siga leyendo blanca */
+  --sonda-honda: #0d5038;                 /* El verde cuando tiene que ser texto */
 
   /* Sombra */
   --sombra-campo: 0 1px 2px rgba(11, 43, 60, 0.06), 0 0 0 1px rgba(11, 43, 60, 0.07);
@@ -67,6 +70,12 @@
   font-family: var(--font-display);
   font-size: 44px;
   line-height: 49px;
+  font-weight: 400;
+}
+.display-mediano {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 34px;
   font-weight: 400;
 }
 

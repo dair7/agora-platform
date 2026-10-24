@@ -1,43 +1,309 @@
-<main class="mx-auto max-w-ancho-formulario px-espacio-4 py-espacio-8">
-  <h1 class="titulo-pagina">Iniciar sesión</h1>
-  <p class="cuerpo text-tinta-media mt-espacio-2">Entra para ver tus proyectos.</p>
+<!-- Pantalla partida, copiada de la maqueta de entrada. Las dos columnas se
+     envuelven por debajo de 1080px: el formulario arriba y el panel de marca
+     debajo, sin la onda. Los valores sin token viven en login.css. -->
+<div class="entrada flex flex-wrap min-h-screen bg-superficie-10 text-tinta">
+  <main class="entrada-izq flex min-w-0 items-center justify-center">
+    <form
+      class="entrada-form flex w-full flex-col"
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      novalidate
+    >
+      <div class="flex items-center gap-espacio-4">
+        <div
+          class="entrada-logo flex shrink-0 items-center justify-center rounded-radio-md bg-veril"
+        >
+          <svg
+            class="stroke-tinta-inversa"
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="4.5" y="4" width="15" height="17.5" rx="3" stroke-width="1.5" />
+            <rect
+              class="fill-veril"
+              x="9"
+              y="2.5"
+              width="6"
+              height="3.2"
+              rx="1.6"
+              stroke-width="1.5"
+            />
+            <path d="M7.6 10.2l1.1 1.1 2-2.1" stroke-width="1.6" />
+            <path d="M12.8 10.2h3.6" stroke-width="1.5" />
+            <path d="M7.6 14.6l1.1 1.1 2-2.1" stroke-width="1.6" />
+            <path d="M12.8 14.6h3.6" stroke-width="1.5" />
+            <rect x="7.7" y="17.5" width="2.4" height="2.4" rx="0.6" stroke-width="1.3" />
+            <path d="M12.8 18.7h3.6" stroke-width="1.5" />
+          </svg>
+        </div>
+        <span class="entrada-marca">Ágora</span>
+      </div>
 
-  <form class="grid gap-espacio-4 mt-espacio-6" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    @if (notice(); as message) {
-      <app-notice tone="error">{{ message }}</app-notice>
-    }
+      <div class="entrada-encabezado flex flex-col">
+        <h1 class="entrada-titulo">Iniciar sesión</h1>
+        <p class="entrada-subtitulo text-tinta-media">Entra para ver tus proyectos.</p>
+      </div>
 
-    <app-field for="login-email" label="Correo" [error]="fieldErrors().email">
-      <input
-        appInput
-        id="login-email"
-        type="email"
-        autocomplete="username"
-        formControlName="email"
-        [invalid]="!!fieldErrors().email"
-        [describedBy]="fieldErrors().email ? 'login-email-error' : null"
+      <div class="entrada-campos flex flex-col">
+        <div class="flex flex-col gap-espacio-2">
+          <label class="entrada-etiqueta" for="login-email">Correo electrónico</label>
+          <div class="entrada-campo" [class.entrada-campo-invalido]="!!fieldErrors().email">
+            <input
+              id="login-email"
+              type="email"
+              autocomplete="username"
+              placeholder="nombre@example.com"
+              formControlName="email"
+              [attr.aria-invalid]="!!fieldErrors().email || null"
+              [attr.aria-describedby]="fieldErrors().email ? 'login-email-error' : null"
+            />
+          </div>
+          @if (fieldErrors().email; as error) {
+            <p class="entrada-meta text-arrecife" id="login-email-error">{{ error }}</p>
+          }
+        </div>
+
+        <div class="flex flex-col gap-espacio-2">
+          <label class="entrada-etiqueta" for="login-password">Contraseña</label>
+          <div
+            class="entrada-campo entrada-campo-con-boton"
+            [class.entrada-campo-invalido]="!!fieldErrors().password"
+          >
+            <input
+              id="login-password"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="current-password"
+              placeholder="Tu contraseña"
+              formControlName="password"
+              [attr.aria-invalid]="!!fieldErrors().password || null"
+              [attr.aria-describedby]="fieldErrors().password ? 'login-password-error' : null"
+            />
+            <button
+              type="button"
+              class="entrada-ojo flex shrink-0 cursor-pointer items-center justify-center rounded-radio-pildora"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              (click)="showPassword.set(!showPassword())"
+            >
+              <svg
+                class="stroke-tinta-media"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                @if (showPassword()) {
+                  <path d="M3 3l18 18" />
+                  <path
+                    d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"
+                  />
+                  <path d="M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6" />
+                  <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+                } @else {
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+          @if (fieldErrors().password; as error) {
+            <p class="entrada-meta text-arrecife" id="login-password-error">{{ error }}</p>
+          }
+        </div>
+
+        <!-- Inertes hasta que exista el backend: ver el TODO en login.ts. -->
+        <div class="entrada-opciones flex flex-wrap items-center justify-between gap-espacio-3">
+          <label
+            class="entrada-recordar entrada-texto flex cursor-pointer items-center"
+            for="login-remember"
+          >
+            <input id="login-remember" type="checkbox" class="entrada-casilla" />
+            Recordarme
+          </label>
+          <a
+            [routerLink]="[]"
+            fragment="recuperar"
+            class="entrada-enlace entrada-texto entrada-olvido flex items-center"
+            >¿Olvidaste tu contraseña?</a
+          >
+        </div>
+
+        @if (notice(); as message) {
+          <div class="entrada-alerta flex items-start text-arrecife" role="alert">
+            <svg
+              class="shrink-0 stroke-arrecife"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7.5v5.5" />
+              <path d="M12 16.5h.01" />
+            </svg>
+            <span>{{ message }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="entrada-acciones flex flex-col">
+        <button
+          type="submit"
+          class="entrada-boton w-full cursor-pointer rounded-radio-pildora bg-veril text-tinta-inversa hover:enabled:bg-veril-hundido disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado"
+          [disabled]="submitting()"
+        >
+          {{ submitting() ? 'Entrando…' : 'Entrar' }}
+        </button>
+        <p class="entrada-pie text-center text-tinta-media">
+          ¿Aún no tienes cuenta?
+          <a routerLink="/registro" class="entrada-enlace entrada-enlace-fuerte">Crear cuenta</a>
+        </p>
+      </div>
+    </form>
+  </main>
+
+  <!-- Panel de marca. El degradado es siempre el mismo: veril-somero arriba,
+       veril al 55% y tinta abajo, interpolado en sRGB como el de la maqueta. -->
+  <aside
+    class="entrada-der relative flex min-w-0 flex-col justify-center overflow-hidden text-tinta-inversa bg-linear-to-b/srgb from-veril-somero via-veril via-55% to-tinta"
+  >
+    <!-- La onda recorta el panel con el color del fondo de la página. -->
+    <svg
+      class="entrada-onda absolute h-full"
+      viewBox="0 0 120 900"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        class="fill-superficie-10"
+        d="M0 0 H78 C28 160 112 290 66 450 C22 600 104 760 54 900 H0 Z"
       />
-    </app-field>
-
-    <app-field for="login-password" label="Contraseña" [error]="fieldErrors().password">
-      <input
-        appInput
-        id="login-password"
-        type="password"
-        autocomplete="current-password"
-        formControlName="password"
-        [invalid]="!!fieldErrors().password"
-        [describedBy]="fieldErrors().password ? 'login-password-error' : null"
+      <path
+        class="stroke-tinta-inversa"
+        d="M96 0 C46 160 130 290 84 450 C40 600 122 760 72 900"
+        fill="none"
+        stroke-opacity="0.22"
+        stroke-width="1.2"
       />
-    </app-field>
+    </svg>
 
-    <button appButton type="submit" [disabled]="submitting()">
-      {{ submitting() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
-    </button>
-  </form>
+    <!-- Isobatas: las curvas de profundidad de la carta, de fondo. -->
+    <svg
+      class="entrada-isobatas pointer-events-none absolute size-full"
+      viewBox="0 0 800 900"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <g class="stroke-tinta-inversa" fill="none" stroke-width="1.2">
+        <path d="M140 60 C320 20 520 110 820 40" stroke-opacity="0.10" />
+        <path d="M220 120 C400 80 580 160 820 105" stroke-opacity="0.07" />
+        <path d="M100 800 C300 740 520 860 820 780" stroke-opacity="0.10" />
+        <path d="M60 860 C280 810 540 900 820 840" stroke-opacity="0.07" />
+      </g>
+    </svg>
 
-  <p class="secundario text-tinta-media mt-espacio-5">
-    ¿Aún no tienes cuenta?
-    <a routerLink="/registro" class="text-veril underline">Crear cuenta</a>
-  </p>
-</main>
+    <div class="entrada-panel relative flex w-full flex-col">
+      <div class="flex flex-col gap-espacio-4">
+        <!-- Dos versiones de la frase: la que no toca va en display:none. -->
+        <h2 class="entrada-frase">El estado real de cada proyecto, <em>sin pedir informes.</em></h2>
+        <h2 class="entrada-frase-movil">
+          El estado real de cada proyecto, <em>sin pedir informes.</em>
+        </h2>
+        <p class="entrada-apoyo">
+          Avance, entregas y responsables de todo el grupo de investigación, en un solo lugar.
+        </p>
+      </div>
+
+      <!-- Muestra fija del producto: una imagen para el lector de pantalla. -->
+      <figure
+        class="relative m-0 pointer-events-none select-none"
+        role="img"
+        aria-label="Vista previa de Ágora: lista de proyectos con su estado, avance y quién está conectado"
+      >
+        <div class="cristal overflow-hidden rounded-radio-md text-tinta">
+          <div class="entrada-tarjeta-cabecera flex items-center justify-between gap-espacio-3">
+            <span class="entrada-cabecera">Tus proyectos</span>
+            <div class="entrada-conectados flex items-center">
+              <div class="flex">
+                @for (person of samplePeople; track person.initials; let first = $first) {
+                  <div
+                    class="entrada-avatar flex items-center justify-center rounded-radio-pildora border-superficie-00"
+                    [class]="person.classes"
+                    [class.-ml-espacio-2]="!first"
+                  >
+                    {{ person.initials }}
+                  </div>
+                }
+              </div>
+              <div class="entrada-presencia flex items-center rounded-radio-pildora">
+                <span class="entrada-punto latido rounded-radio-pildora bg-sonda-viva"></span>3 en
+                línea
+              </div>
+            </div>
+          </div>
+
+          @for (project of sampleProjects; track project.title; let last = $last) {
+            <div
+              class="entrada-fila grid gap-x-espacio-4 gap-y-espacio-3 border-t border-borde"
+              [class.entrada-fila-ultima]="last"
+            >
+              <div class="flex min-w-0 flex-col gap-espacio-1">
+                <span class="entrada-fila-titulo">{{ project.title }}</span>
+                <span
+                  class="entrada-meta flex flex-wrap items-center gap-espacio-2 text-tinta-media"
+                >
+                  {{ project.lead }} · {{ project.members }} miembros
+                  @if (project.news) {
+                    <span
+                      class="entrada-chip entrada-novedades rounded-radio-pildora bg-veril-tenue text-tinta"
+                      >{{ project.news }} novedades</span
+                    >
+                  }
+                </span>
+              </div>
+              <div class="entrada-fila-estado flex flex-col items-end">
+                <span
+                  class="entrada-chip entrada-estado whitespace-nowrap rounded-radio-pildora"
+                  [class]="status[project.status].pill"
+                >
+                  {{ status[project.status].label }}
+                </span>
+                <span class="entrada-meta whitespace-nowrap tabular-nums text-tinta-media">
+                  {{ project.date }}
+                </span>
+              </div>
+              <div class="col-span-full flex items-center gap-espacio-3">
+                <div
+                  class="entrada-barra flex-1 overflow-hidden rounded-radio-pildora bg-superficie-20"
+                >
+                  <div
+                    class="h-full rounded-radio-pildora"
+                    [class]="status[project.status].bar"
+                    [style.width.%]="project.progress"
+                  ></div>
+                </div>
+                <span
+                  class="entrada-meta entrada-porcentaje text-right tabular-nums text-tinta-media"
+                >
+                  {{ project.progress }}%
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </figure>
+    </div>
+  </aside>
+</div>

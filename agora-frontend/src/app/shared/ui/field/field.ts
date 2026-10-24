@@ -28,7 +28,13 @@ export class Field {
   readonly error = input<string | null | undefined>();
 }
 
-/** El aspecto del control dentro de un Campo. Con `invalid`, el borde pasa a `arrecife`. */
+/**
+ * El aspecto del control dentro de un Campo: una superficie blanca apoyada sobre
+ * el fondo, sin borde propio. El hairline lo pone `sombra-campo`.
+ *
+ * Con `invalid`, el contorno pasa a `arrecife` con un anillo, no con un borde:
+ * el anillo se suma a la sombra en vez de sustituirla, y no mueve el campo.
+ */
 @Directive({
   selector: 'input[appInput]',
   host: {
@@ -43,8 +49,8 @@ export class FieldInput {
 
   protected readonly classes = computed(
     () =>
-      'cuerpo w-full text-tinta bg-superficie-00 p-espacio-3 border rounded-radio-sm ' +
-      'placeholder:text-tinta-tenue ' +
-      (this.invalid() ? 'border-arrecife' : 'border-borde-fuerte'),
+      'cuerpo w-full text-tinta bg-superficie-00 p-espacio-3 rounded-radio-sm ' +
+      'shadow-sombra-campo placeholder:text-tinta-tenue ' +
+      (this.invalid() ? 'ring-1 ring-arrecife' : ''),
   );
 }

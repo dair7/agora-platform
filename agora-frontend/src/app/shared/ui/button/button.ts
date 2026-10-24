@@ -4,6 +4,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'subtle' | 'destructive';
 
 // Del componente Botón del sistema de diseño. Una sola acción primaria por
 // pantalla: si dos botones `veril` compiten, uno de los dos es secundario.
+// La forma de píldora dice "esto se pulsa"; las superficies son rectángulos.
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     'bg-veril text-tinta-inversa border-transparent hover:enabled:bg-veril-hundido active:enabled:bg-veril-hundido',
@@ -27,7 +28,7 @@ export class Button {
 
   protected readonly classes = computed(
     () =>
-      'cuerpo-fuerte px-espacio-4 py-espacio-3 rounded-radio-md border cursor-pointer ' +
+      'cuerpo-fuerte px-espacio-4 py-espacio-3 rounded-radio-pildora border cursor-pointer ' +
       'disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado ' +
       VARIANTS[this.variant()],
   );

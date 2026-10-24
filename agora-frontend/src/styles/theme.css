@@ -44,8 +44,14 @@
   --color-arrecife: var(--arrecife);
   --color-sonda-viva: var(--sonda-viva);
   --color-tinta-inversa: var(--tinta-inversa);
+  --color-veril-somero: var(--veril-somero);
+  --color-cristal: var(--cristal);
+  --color-cristal-hondo: var(--cristal-hondo);
+  --color-sonda-honda: var(--sonda-honda);
 
   /* Sombra */
+  --shadow-sombra-campo: var(--sombra-campo);
+  --shadow-sombra-tarjeta: var(--sombra-tarjeta);
   --shadow-sombra-flotante: var(--sombra-flotante);
 
   /* Espaciado */

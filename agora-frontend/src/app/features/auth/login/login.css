@@ -1,0 +1,391 @@
+/* Pantalla de entrada, copiada de la maqueta (artifact «Ágora · Iniciar
+   sesión», project/Main.dc.html).
+
+   Este archivo es la lista de lo que falta reconciliar con el sistema de
+   diseño: cada regla de aquí lleva al menos un valor de la maqueta que no es
+   token, marcado con «sin token». Lo que sí es token está en la plantilla como
+   utilidad, o aquí como var(--…). Cuando el sistema absorba un valor, la regla
+   se reemplaza por su utilidad y sale de este archivo. */
+
+/* Tipografía: la maqueta usa Geist en toda la pantalla (sin token; el sistema
+   usa IBM Plex Sans). Se carga en src/index.html. */
+.entrada {
+  font-family: 'Geist', system-ui, sans-serif; /* sin token */
+}
+
+/* Composición. Las columnas se envuelven solas cuando no caben sus bases
+   (520 + 560 = 1080px), el mismo punto que el @media de abajo. */
+.entrada-izq {
+  flex: 1 1 520px; /* sin token */
+  padding: var(--espacio-8) 56px; /* 56px sin token */
+}
+
+.entrada-der {
+  flex: 1.2 1 560px; /* sin token */
+  padding: 72px 64px 88px 136px; /* sin token */
+}
+
+.entrada-form {
+  max-width: 450px; /* sin token (ancho-formulario es 360px) */
+  gap: 40px; /* sin token */
+}
+
+.entrada-panel {
+  max-width: 580px; /* sin token */
+  gap: 40px; /* sin token */
+}
+
+/* Las posiciones a cero van aquí y no como `top-0`/`inset-0`: Tailwind las
+   calcula con `var(--spacing)`, que theme.css vacía, y no generan nada. */
+.entrada-onda {
+  top: 0;
+  left: 0;
+  width: 120px; /* sin token */
+}
+
+.entrada-isobatas {
+  inset: 0;
+}
+
+.entrada-encabezado {
+  gap: 10px; /* sin token */
+}
+
+.entrada-campos,
+.entrada-acciones {
+  gap: 20px; /* sin token */
+}
+
+/* Marca y encabezado */
+.entrada-logo {
+  width: 56px; /* sin token */
+  height: 56px;
+}
+
+.entrada-marca {
+  font-size: 34px; /* sin token */
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.entrada-titulo {
+  font-size: 30px; /* sin token */
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.entrada-subtitulo {
+  font-size: 17px; /* sin token */
+  line-height: 26px;
+}
+
+/* Campos */
+.entrada-etiqueta {
+  font-size: 15px; /* sin token */
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.entrada-campo {
+  display: flex;
+  align-items: center;
+  height: 52px; /* sin token */
+  padding: 0 var(--espacio-4);
+  background: var(--superficie-00);
+  border: 1px solid #7f979e; /* sin token (borde-fuerte es #9ab0b5) */
+  border-radius: 10px; /* sin token (radio-sm es 8px) */
+  box-shadow: 0 1px 2px rgba(11, 43, 60, 0.06); /* sin token: primera capa de sombra-campo, sin el hairline */
+}
+
+.entrada-campo:focus-within {
+  outline: 2px solid var(--veril);
+  outline-offset: 2px;
+}
+
+.entrada-campo-invalido {
+  border-color: var(--arrecife);
+}
+
+.entrada-campo-con-boton {
+  padding-right: var(--espacio-1);
+}
+
+.entrada-campo input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 16px; /* sin token */
+  font-weight: 500;
+  color: var(--tinta);
+}
+
+/* El autocompletado del navegador pinta el campo de azul y su background-color
+   no se puede pisar: se tapa con una sombra interior del color del campo. */
+.entrada-campo input:-webkit-autofill,
+.entrada-campo input:-webkit-autofill:hover,
+.entrada-campo input:-webkit-autofill:focus,
+.entrada-campo input:-webkit-autofill:active {
+  -webkit-box-shadow: inset 0 0 0 1000px var(--superficie-00);
+  box-shadow: inset 0 0 0 1000px var(--superficie-00);
+  -webkit-text-fill-color: var(--tinta);
+  caret-color: var(--tinta);
+}
+
+.entrada-campo input::placeholder {
+  color: var(--tinta-tenue);
+}
+
+.entrada-ojo {
+  width: 44px; /* sin token */
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.entrada-ojo:hover {
+  background: var(--superficie-10);
+}
+
+/* Recordarme y olvido */
+.entrada-opciones {
+  margin-top: -6px; /* sin token */
+}
+
+.entrada-texto {
+  font-size: 15px; /* sin token */
+  line-height: 20px;
+}
+
+.entrada-recordar {
+  gap: 10px; /* sin token */
+  min-height: 44px; /* sin token */
+}
+
+.entrada-casilla {
+  width: 18px; /* sin token */
+  height: 18px;
+  margin: 0;
+  accent-color: var(--veril);
+}
+
+.entrada-olvido {
+  min-height: 44px; /* sin token */
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.entrada-enlace {
+  color: var(--veril);
+}
+
+.entrada-enlace:hover {
+  color: var(--veril-hundido);
+}
+
+.entrada-enlace-fuerte {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Error de la sesión */
+.entrada-alerta {
+  gap: 10px; /* sin token */
+  padding: var(--espacio-3) 14px; /* 14px sin token */
+  border-radius: 10px; /* sin token */
+  background: #f8e9e6; /* sin token */
+  font-size: 15px; /* sin token */
+  line-height: 21px;
+}
+
+/* Acciones */
+.entrada-boton {
+  height: 54px; /* sin token */
+  border: 0;
+  font-family: inherit;
+  font-size: 16px; /* sin token */
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.entrada-pie {
+  font-size: 15px; /* sin token */
+  line-height: 22px;
+}
+
+/* Panel de marca */
+.entrada-frase,
+.entrada-frase-movil {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.entrada-frase {
+  font-size: 52px; /* sin token (display-grande es 44/49) */
+  line-height: 56px;
+}
+
+.entrada-frase-movil {
+  display: none;
+  font-size: 32px; /* sin token (display-mediano es 30/34) */
+  line-height: 36px;
+}
+
+.entrada-apoyo {
+  max-width: 460px; /* sin token */
+  font-size: 16px; /* sin token */
+  line-height: 24px;
+}
+
+/* Tarjeta de muestra */
+.entrada-tarjeta-cabecera {
+  padding: 18px var(--espacio-5); /* 18px sin token */
+}
+
+.entrada-cabecera {
+  font-size: 17px; /* sin token: el tamaño de titulo-tarjeta, en Geist */
+  line-height: 23px;
+  font-weight: 600;
+}
+
+.entrada-conectados {
+  gap: 10px; /* sin token */
+}
+
+/* content-box como en la maqueta: 26px de círculo más el borde, 30px en total. */
+.entrada-avatar {
+  box-sizing: content-box;
+  width: 26px; /* sin token */
+  height: 26px;
+  border-width: 2px; /* sin token */
+  border-style: solid;
+  font-size: 10px; /* sin token */
+  font-weight: 600;
+}
+
+.entrada-presencia {
+  gap: 6px; /* sin token */
+  padding: var(--espacio-1) 10px; /* 10px sin token */
+  background-color: #14a3234b; /* sin token */
+  color: #10593f; /* sin token (sonda-honda es #0d5038) */
+  font-size: 16px; /* sin token */
+  line-height: 23px;
+  font-weight: 600;
+  opacity: 0.98; /* sin token */
+}
+
+.entrada-punto {
+  width: 7px; /* sin token */
+  height: 7px;
+}
+
+.entrada-fila {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 18px var(--espacio-5); /* 18px sin token */
+}
+
+.entrada-fila-ultima {
+  padding-bottom: 22px; /* sin token */
+}
+
+.entrada-fila-titulo {
+  font-size: 16px; /* sin token */
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.entrada-fila-estado {
+  gap: 6px; /* sin token */
+}
+
+.entrada-meta {
+  font-size: 13px; /* sin token: el tamaño de secundario, en Geist */
+  line-height: 19px;
+}
+
+.entrada-chip {
+  font-size: 12px; /* sin token: el tamaño de etiqueta, en Geist */
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.entrada-estado {
+  padding: 3px 10px; /* sin token */
+}
+
+.entrada-novedades {
+  padding: 1px var(--espacio-2); /* 1px sin token */
+}
+
+.entrada-barra {
+  height: 6px; /* sin token */
+}
+
+.entrada-porcentaje {
+  min-width: 36px; /* sin token */
+  font-weight: 500;
+}
+
+/* Receta de cristal del sistema de diseño (README, sección «Cristal»). Coincide
+   con la de la maqueta valor por valor. */
+.cristal {
+  background-image: linear-gradient(to bottom, var(--cristal), var(--cristal-hondo));
+  -webkit-backdrop-filter: blur(26px) saturate(50%);
+  backdrop-filter: blur(26px) saturate(50%);
+  border: 1px solid color-mix(in srgb, var(--superficie-00) 65%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--superficie-00) 85%, transparent),
+    var(--sombra-flotante);
+}
+
+/* Latido del punto de presencia (README, sección «Movimiento»). */
+.latido {
+  animation: latido 2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Con movimiento reducido se para, no se atenúa. */
+@media (prefers-reduced-motion: reduce) {
+  .latido {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Una sola columna: formulario arriba, panel debajo, sin la onda y con la frase
+   pequeña. 1080px es el punto de la maqueta (sin token: no es un punto de
+   corte de Tailwind). */
+@media (max-width: 1080px) {
+  .entrada-izq {
+    padding: var(--espacio-6) var(--espacio-4) 40px; /* 40px sin token */
+  }
+
+  .entrada-der {
+    padding: var(--espacio-8) 20px 64px; /* 20px y 64px sin token */
+  }
+
+  .entrada-onda,
+  .entrada-frase {
+    display: none;
+  }
+
+  .entrada-frase-movil {
+    display: block;
+  }
+}
