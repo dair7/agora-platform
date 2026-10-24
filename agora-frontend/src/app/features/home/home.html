@@ -6,6 +6,14 @@
       Sesión iniciada como <span class="cuerpo-fuerte">{{ user.fullName }}</span>
     </p>
     <p class="secundario text-tinta-media">{{ user.email }} · {{ roleLabels[user.systemRole] }}</p>
+
+    <!-- Solo lo ve quien puede entrar: nadie ve un enlace que el guard le negaría. -->
+    @if (user.systemRole === 'COORDINATOR') {
+      <p class="cuerpo mt-espacio-4">
+        <a routerLink="/reportes" class="text-veril underline">Ver reportes</a>
+      </p>
+    }
+
     <button
       appButton
       variant="secondary"
@@ -16,14 +24,5 @@
     >
       {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
     </button>
-  } @else {
-    <p class="cuerpo text-tinta-media mt-espacio-2">
-      No has iniciado sesión.
-      <a routerLink="/entrar" class="text-veril underline">Iniciar sesión</a>
-    </p>
   }
-
-  <p class="secundario text-tinta-media mt-espacio-6">
-    Ruta protegida de prueba. La protección llega con los guards, en la parte 5.
-  </p>
 </main>
