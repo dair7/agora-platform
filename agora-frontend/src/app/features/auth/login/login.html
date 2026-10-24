@@ -158,19 +158,15 @@
         }
       </div>
 
-      <div class="entrada-acciones flex flex-col">
-        <button
-          type="submit"
-          class="entrada-boton w-full cursor-pointer rounded-radio-pildora bg-veril text-tinta-inversa hover:enabled:bg-veril-hundido disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado"
-          [disabled]="submitting()"
-        >
-          {{ submitting() ? 'Entrando…' : 'Entrar' }}
-        </button>
-        <p class="entrada-pie text-center text-tinta-media">
-          ¿Aún no tienes cuenta?
-          <a routerLink="/registro" class="entrada-enlace entrada-enlace-fuerte">Crear cuenta</a>
-        </p>
-      </div>
+      <!-- Sin «Crear cuenta»: no hay registro público, las cuentas las crea la
+           coordinación. -->
+      <button
+        type="submit"
+        class="entrada-boton w-full cursor-pointer rounded-radio-pildora bg-veril text-tinta-inversa hover:enabled:bg-veril-hundido disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Entrando…' : 'Entrar' }}
+      </button>
     </form>
   </main>
 

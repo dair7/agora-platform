@@ -51,8 +51,7 @@
   gap: 10px; /* sin token */
 }
 
-.entrada-campos,
-.entrada-acciones {
+.entrada-campos {
   gap: 20px; /* sin token */
 }
 
@@ -190,11 +189,6 @@
   color: var(--veril-hundido);
 }
 
-.entrada-enlace-fuerte {
-  font-weight: 600;
-  text-decoration: underline;
-}
-
 /* Error de la sesión */
 .entrada-alerta {
   gap: 10px; /* sin token */
@@ -213,11 +207,6 @@
   font-size: 16px; /* sin token */
   line-height: 22px;
   font-weight: 600;
-}
-
-.entrada-pie {
-  font-size: 15px; /* sin token */
-  line-height: 22px;
 }
 
 /* Panel de marca */
