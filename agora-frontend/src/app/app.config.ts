@@ -1,14 +1,22 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
+import { authInterceptor } from './core/session/auth.interceptor';
+import { SessionService } from './core/session/session.service';
 
-// La recuperación de la sesión al arrancar (`SessionService.restore`) se registra
-// en la parte 3, junto con el interceptor: sin él, `/perfil` saldría sin token.
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    // Antes de la primera pantalla: si la pestaña conserva su refresh token, la
+    // sesión se recupera tras una recarga en vez de pedir entrar otra vez.
+    provideAppInitializer(() => inject(SessionService).restore()),
   ],
 };

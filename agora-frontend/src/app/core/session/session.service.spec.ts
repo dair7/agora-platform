@@ -30,8 +30,13 @@ describe('SessionService', () => {
   });
 
   afterEach(() => {
-    http.verify();
     sessionStorage.clear();
+    try {
+      http.verify();
+    } finally {
+      // Si `verify` falla, el módulo se reinicia igual y no arrastra a la siguiente.
+      TestBed.resetTestingModule();
+    }
   });
 
   describe('coordinación de la renovación', () => {
