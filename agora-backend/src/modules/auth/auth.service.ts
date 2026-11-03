@@ -72,8 +72,8 @@ export const register = async (input: RegisterInput): Promise<PublicUser> => {
     email: input.email,
     passwordHash: await hash(input.password, BCRYPT_ROUNDS),
     fullName: input.fullName,
-    // El rol no viene del cliente: quien se registra es investigador. Las
-    // cuentas de coordinador salen del seed.
+    // El rol no viene del cliente: la coordinación crea siempre investigadores.
+    // Las cuentas de coordinador salen del seed; una no puede crear otra.
     systemRole: SystemRole.RESEARCHER,
   });
 

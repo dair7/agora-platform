@@ -236,11 +236,13 @@ No cookies are used.
 
 | Method | Route | Auth | Body | Response |
 | --- | --- | --- | --- | --- |
-| `POST` | `/registro` | — | `{ email, password, fullName }` | `201 { user }`. Always created as `RESEARCHER`. |
+| `POST` | `/registro` | Coordinator | `{ email, password, fullName }` | `201 { user }`. Always created as `RESEARCHER`. `401` without a session, `403` for a researcher. |
 | `POST` | `/iniciar-sesion` | — | `{ email, password }` | `200 { user, accessToken, refreshToken }` |
 | `POST` | `/refrescar` | — | `{ refreshToken }` | `200 { accessToken, refreshToken }`. The old token is revoked. |
 | `POST` | `/cerrar-sesion` | — | `{ refreshToken }` | `204`. Idempotent. |
 | `GET` | `/perfil` | Token | — | `200 { user }`, read from the database |
+
+There is no public sign-up: accounts are created by the coordinator. Coordinator accounts come only from the seed, so one coordinator cannot create another.
 
 Reusing a refresh token that was already revoked revokes **every** session of that user.
 

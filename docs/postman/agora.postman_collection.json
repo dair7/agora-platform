@@ -126,60 +126,6 @@
                 }
               },
               "response": []
-            },
-            {
-              "name": "Registro inválido",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\r\n  \"email\": \"no-es-correo\",\r\n  \"password\": \"123\",\r\n  \"fullName\": \"a\"\r\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/registro",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "auth",
-                    "registro"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Escalada de privilegios",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\r\n  \"email\": \"escalada.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Intento de Escalada\",\r\n  \"systemRole\": \"COORDINATOR\"\r\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/auth/registro",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "auth",
-                    "registro"
-                  ]
-                }
-              },
-              "response": []
             }
           ]
         },
@@ -316,31 +262,324 @@
           "response": []
         },
         {
-          "name": "Registro",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"email\": \"prueba.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Cuenta de Prueba Postman\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+          "name": "registro (solo coordinación)",
+          "item": [
+            {
+              "name": "1. Sesión coordinadora",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\npm.environment.set('coordinatorToken', body.accessToken);\r\n\r\npm.test('200 y es COORDINATOR', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.user.systemRole).to.eql('COORDINATOR');\r\n});"
+                    ]
+                  }
                 }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/registro",
-              "host": [
-                "{{baseUrl}}"
               ],
-              "path": [
-                "auth",
-                "registro"
-              ]
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"email\": \"coordinacion@example.com\", \"password\": \"Coordinador123*\" }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/iniciar-sesion",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "iniciar-sesion"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2. Sesión investigadora",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\npm.environment.set('researcherToken', body.accessToken);\r\n\r\npm.test('200 y es RESEARCHER', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.user.systemRole).to.eql('RESEARCHER');\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"email\": \"laura.mendoza@example.com\", \"password\": \"Investigador123*\" }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/iniciar-sesion",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "iniciar-sesion"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3. 401 registro sin sesión",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\n\r\npm.test('401: el registro no es público', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('UNAUTHENTICATED');\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"prueba.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Cuenta de Prueba Postman\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/registro",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "registro"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4. 403 investigadora registrando",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\n\r\npm.test('403 por el eje de sistema', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"prueba.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Cuenta de Prueba Postman\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/registro",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "registro"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{researcherToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5. Registro como coordinadora",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\n\r\npm.test('201 y siempre RESEARCHER (409 si ya se corrió)', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.user.systemRole).to.eql('RESEARCHER');\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"prueba.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Cuenta de Prueba Postman\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/registro",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "registro"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{coordinatorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "6. 400 registro inválido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\n\r\npm.test('400 con details por campo', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n  pm.expect(body.error.details).to.be.an('array').that.is.not.empty;\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"no-es-correo\",\r\n  \"password\": \"123\",\r\n  \"fullName\": \"a\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/registro",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "registro"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{coordinatorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "7. Escalada de privilegios ignorada",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const body = pm.response.json();\r\n\r\npm.test('201 y el systemRole del cuerpo se ignora', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.user.systemRole).to.eql('RESEARCHER');\r\n});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"escalada.postman@example.com\",\r\n  \"password\": \"Postman123*\",\r\n  \"fullName\": \"Intento de Escalada\",\r\n  \"systemRole\": \"COORDINATOR\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/registro",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "registro"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{coordinatorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "response": []
             }
-          },
-          "response": []
+          ]
         },
         {
           "name": "Salud",
