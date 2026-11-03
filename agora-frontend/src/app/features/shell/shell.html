@@ -1,0 +1,31 @@
+<header class="bg-superficie-00 border-b border-borde">
+  <div
+    class="armazon-ancho mx-auto flex items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
+  >
+    <a routerLink="/proyectos" class="titulo-seccion text-tinta">Ágora</a>
+
+    @if (session.user(); as user) {
+      <div class="flex items-center gap-espacio-4">
+        <div class="text-right">
+          <p class="cuerpo-fuerte text-tinta">{{ user.fullName }}</p>
+          <p class="secundario text-tinta-media">{{ roleLabels[user.systemRole] }}</p>
+        </div>
+        <button
+          appButton
+          variant="subtle"
+          type="button"
+          class="shrink-0"
+          [disabled]="leaving()"
+          (click)="logout()"
+        >
+          {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
+        </button>
+      </div>
+    }
+  </div>
+</header>
+
+<!-- Cada pantalla trae su propio <main>: las de antes del armazón ya lo hacían. -->
+<div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-8 pb-espacio-8">
+  <router-outlet />
+</div>

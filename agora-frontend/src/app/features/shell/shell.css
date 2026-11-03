@@ -1,0 +1,11 @@
+/* Armazón de la aplicación con sesión.
+
+   Como en login.css, este archivo es la lista de lo que no es token: cada regla
+   lleva un valor marcado con «sin token». Lo que sí es token va en la plantilla
+   como utilidad. */
+
+/* El ancho del contenido, el mismo en la barra y en la pantalla para que el
+   «Ágora» y el título de la pantalla queden alineados. */
+.armazon-ancho {
+  max-width: 1040px; /* sin token */
+}

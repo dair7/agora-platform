@@ -5,7 +5,13 @@
    diseño: cada regla de aquí lleva al menos un valor de la maqueta que no es
    token, marcado con «sin token». Lo que sí es token está en la plantilla como
    utilidad, o aquí como var(--…). Cuando el sistema absorba un valor, la regla
-   se reemplaza por su utilidad y sale de este archivo. */
+   se reemplaza por su utilidad y sale de este archivo.
+
+   También entra en esa reconciliación: login.html lleva `min-w-0` en tres
+   sitios, y no genera CSS (Tailwind la calcula con var(--spacing), que
+   theme.css vacía). No se agrega al tema: min-width: 0 es mecánica de flexbox,
+   no un valor de diseño, así que donde haga falta se escribe aquí con su marca
+   «sin token». */
 
 /* Tipografía: la maqueta usa Geist en toda la pantalla (sin token; el sistema
    usa IBM Plex Sans). Se carga en src/index.html. */

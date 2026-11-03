@@ -1,0 +1,12 @@
+/* Lista de proyectos.
+
+   Como en login.css, este archivo es la lista de lo que no es token: cada regla
+   lleva un valor marcado con «sin token». Lo que sí es token va en la plantilla
+   como utilidad. */
+
+/* El buscador crece con la fila hasta un máximo; en pantalla estrecha ocupa
+   todo el ancho. */
+.lista-busqueda {
+  flex: 1 1 auto;
+  max-width: 320px; /* sin token */
+}

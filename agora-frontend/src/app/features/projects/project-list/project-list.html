@@ -1,0 +1,160 @@
+<main class="grid gap-espacio-5">
+  <div class="flex flex-wrap items-start justify-between gap-espacio-4">
+    <div>
+      <h1 class="titulo-pagina text-tinta">Proyectos</h1>
+      <!-- Se anuncia cuando cambia por un filtro o una búsqueda. -->
+      <p class="secundario text-tinta-media mt-espacio-1" role="status">{{ countLabel() }}</p>
+    </div>
+
+    <!-- La única acción primaria de la pantalla, y solo para quien puede usarla. -->
+    @if (isCoordinator()) {
+      <button appButton type="button" (click)="createProject()">Crear proyecto</button>
+    }
+  </div>
+
+  <div class="flex flex-wrap items-center gap-espacio-3">
+    <label for="buscar-proyectos" class="sr-only">Buscar proyectos por nombre</label>
+    <input
+      appInput
+      id="buscar-proyectos"
+      type="search"
+      class="lista-busqueda"
+      placeholder="Buscar por nombre"
+      autocomplete="off"
+      [value]="query().buscar"
+      (input)="search($any($event.target).value)"
+    />
+
+    <!-- El elegido se distingue por el borde y el texto en veril, no por el fondo:
+         veril-tenue sobre superficie-10 da 1.11:1 y solo se leía como más apagado.
+         El único relleno veril de la pantalla sigue siendo el botón primario. -->
+    <div class="flex flex-wrap gap-espacio-2" role="group" aria-label="Filtrar por estado">
+      @for (filter of statusFilters; track filter.label) {
+        <button
+          type="button"
+          class="secundario px-espacio-3 py-espacio-2 rounded-radio-pildora border cursor-pointer"
+          [class]="
+            query().estado === filter.value
+              ? 'bg-veril-tenue border-veril text-veril'
+              : 'bg-superficie-00 border-borde-fuerte text-tinta'
+          "
+          [attr.aria-pressed]="query().estado === filter.value"
+          (click)="filterByStatus(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+       «Carga y vacío» en CLAUDE.md. -->
+  <app-loading-status [loading]="projects.isLoading()" />
+
+  <section aria-label="Lista de proyectos" [attr.aria-busy]="projects.isLoading() || null">
+    @if (projects.isLoading()) {
+      <div class="grid gap-espacio-3">
+        @for (placeholder of [1, 2, 3]; track placeholder) {
+          <div
+            class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-4 grid gap-espacio-2"
+          >
+            <div class="flex items-start gap-espacio-3">
+              <div class="flex-1"><app-skeleton class="titulo-tarjeta" /></div>
+              <app-skeleton width="espacio-8" class="etiqueta" />
+            </div>
+            <app-skeleton class="secundario" />
+          </div>
+        }
+      </div>
+    } @else if (errorMessage(); as message) {
+      <app-notice tone="error">
+        {{ message }}
+        <button
+          appButton
+          variant="secondary"
+          type="button"
+          noticeAction
+          (click)="projects.reload()"
+        >
+          Reintentar
+        </button>
+      </app-notice>
+    } @else if (page(); as result) {
+      @if (result.items.length === 0) {
+        @if (hasFilters()) {
+          <app-empty
+            title="Ningún proyecto coincide con la búsqueda"
+            description="Prueba con otro término o quita los filtros."
+          >
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              emptyAction
+              (click)="clearFilters()"
+            >
+              Limpiar filtros
+            </button>
+          </app-empty>
+        } @else if (isCoordinator()) {
+          <app-empty
+            title="Todavía no hay proyectos"
+            description="Crea el primero y nombra a su investigador principal."
+          >
+            <!-- Secundario: el primario ya está en la cabecera, y es uno por pantalla. -->
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              emptyAction
+              (click)="createProject()"
+            >
+              Crear proyecto
+            </button>
+          </app-empty>
+        } @else {
+          <app-empty
+            title="Todavía no estás en ningún proyecto"
+            description="Cuando la coordinación o un investigador principal te agregue a uno, aparecerá aquí."
+          />
+        }
+      } @else {
+        <ul class="grid gap-espacio-3">
+          @for (project of result.items; track project.id) {
+            <li><app-project-card [project]="project" /></li>
+          }
+        </ul>
+
+        <!-- Solo cuando no todo cabe en una página. -->
+        @if (result.total > result.perPage) {
+          <nav
+            class="flex items-center justify-center gap-espacio-4 mt-espacio-5"
+            aria-label="Paginación"
+          >
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              [disabled]="query().pagina <= 1"
+              (click)="goToPage(query().pagina - 1)"
+            >
+              Anterior
+            </button>
+            <span class="secundario text-tinta-media tabular-nums">
+              Página {{ query().pagina }} de {{ pageCount() }}
+            </span>
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              [disabled]="query().pagina >= pageCount()"
+              (click)="goToPage(query().pagina + 1)"
+            >
+              Siguiente
+            </button>
+          </nav>
+        }
+      }
+    }
+  </section>
+</main>

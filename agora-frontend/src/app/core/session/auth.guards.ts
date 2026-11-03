@@ -12,9 +12,9 @@ import type { SystemRole } from './session.types';
 export const authGuard: CanMatchFn = () =>
   inject(SessionService).isAuthenticated() || inject(Router).parseUrl('/entrar');
 
-/** Entrar y registrarse son para quien no tiene sesión: con ella, al inicio. */
+/** Entrar y registrarse son para quien no tiene sesión: con ella, a la lista de proyectos. */
 export const guestGuard: CanMatchFn = () =>
-  !inject(SessionService).isAuthenticated() || inject(Router).parseUrl('/inicio');
+  !inject(SessionService).isAuthenticated() || inject(Router).parseUrl('/proyectos');
 
 /**
  * Autorización por `users.system_role`, el gemelo de `authorize` en el backend.
