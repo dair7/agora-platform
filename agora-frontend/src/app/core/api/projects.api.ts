@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { toQueryParams } from './query-params';
 import type {
   AddMemberInput,
   CreateProjectInput,
@@ -27,19 +28,9 @@ export class ProjectsApi {
 
   /** Solo los proyectos visibles para quien llama: la regla de oro la aplica el backend. */
   list(query: ListProjectsQuery = {}): Promise<ProjectPage> {
-    let params = new HttpParams();
-
-    for (const [name, raw] of Object.entries(query)) {
-      // El texto se recorta, y si queda vacío no se envía: `buscar=` vacío es un
-      // 400, y al cargar la lista por primera vez el campo de búsqueda está vacío.
-      const value = typeof raw === 'string' ? raw.trim() : raw;
-
-      if (value !== undefined && value !== '') {
-        params = params.set(name, value);
-      }
-    }
-
-    return firstValueFrom(this.#http.get<ProjectPage>(this.#url, { params }));
+    return firstValueFrom(
+      this.#http.get<ProjectPage>(this.#url, { params: toQueryParams({ ...query }) }),
+    );
   }
 
   /** Solo la coordinación. */

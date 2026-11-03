@@ -7,6 +7,7 @@
 // fecha (`startDate`, `endDate`) llegan a medianoche UTC: `2026-03-01T00:00:00.000Z`.
 
 import type { SystemRole } from '../session/session.types';
+import type { UserSummary } from './users.types';
 
 // `SystemRole` ya vive en los tipos de la sesión; se reexporta para no tener dos
 // definiciones del mismo enum.
@@ -49,13 +50,7 @@ export interface Member {
   id: string;
   role: ProjectRole;
   joinedAt: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    systemRole: SystemRole;
-    isActive: boolean;
-  };
+  user: UserSummary;
 }
 
 export interface Phase {
@@ -71,9 +66,23 @@ export interface Phase {
   updatedAt: string;
 }
 
+/**
+ * Un elemento de `GET /proyectos`. No es el mismo tipo que el `Project` de `POST`,
+ * `PATCH` y el detalle: la lista suma el investigador principal y el número de
+ * miembros, resueltos en la misma consulta, y las escrituras no los traen.
+ */
+export interface ProjectListItem extends Project {
+  /**
+   * `null` aunque la API lo garantice: el esquema no. Borrar a una persona en la
+   * base arrastra sus membresías en cascada y el proyecto se queda sin él.
+   */
+  principalInvestigator: UserSummary | null;
+  memberCount: number;
+}
+
 /** Respuesta de `GET /proyectos`. Sin sobre: llega así, no dentro de `{ project }`. */
 export interface ProjectPage {
-  items: Project[];
+  items: ProjectListItem[];
   total: number;
   page: number;
   perPage: number;
