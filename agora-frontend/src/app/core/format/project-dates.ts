@@ -47,3 +47,18 @@ export const formatProjectPeriod = (startDate: string | null, endDate: string | 
 
   return '';
 };
+
+/**
+ * La fecha de cierre, **en la hora local de quien mira, no en UTC**.
+ *
+ * El UTC de arriba no vale para todo. `startDate` y `endDate` son columnas `date`:
+ * un día del calendario sin hora, que llega a medianoche UTC y por eso se lee en
+ * UTC. `closedAt` es un `timestamptz`: un instante real. Un proyecto cerrado a las
+ * 21:00 del 29 de enero en Cartagena se guarda como el 30 a las 02:00 UTC, y leído
+ * en UTC diría «30 ene», un día después de cuando se cerró.
+ */
+export const formatClosedAt = (closedAt: string): string => {
+  const date = new Date(closedAt);
+
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+};
