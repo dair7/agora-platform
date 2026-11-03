@@ -781,7 +781,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const body = pm.response.json();\r\n\r\npm.test('la coordinadora ve el proyecto recién creado', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.items.map((p) => p.id)).to.include(pm.environment.get('projectId'));\r\n});"
+                  "const body = pm.response.json();\r\nconst created = body.items.find((p) => p.id === pm.environment.get('projectId'));\r\n\r\npm.test('la coordinadora ve el proyecto recién creado', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(created).to.exist;\r\n});\r\n\r\npm.test('cada elemento trae su investigador principal y su número de miembros', () => {\r\n  pm.expect(created.principalInvestigator.id).to.eql(pm.environment.get('researcherUserId'));\r\n  pm.expect(Object.keys(created.principalInvestigator)).to.have.members(['id', 'email', 'fullName', 'systemRole', 'isActive']);\r\n  pm.expect(created.memberCount).to.eql(1);\r\n});\r\n\r\npm.test('sin los detalles internos de Prisma', () => {\r\n  pm.expect(created).to.not.have.any.keys('_count', 'members');\r\n});"
                 ]
               }
             }
@@ -1691,6 +1691,336 @@
                 "proyectos",
                 "{{projectId}}",
                 "cerrar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "usuarios (solo coordinación)",
+      "item": [
+        {
+          "name": "1. Sesión coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coordinatorToken', body.accessToken);\r\n\r\npm.test('200 y es COORDINATOR', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.user.systemRole).to.eql('COORDINATOR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"coordinacion@example.com\", \"password\": \"Coordinador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Sesión investigadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('researcherToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"laura.mendoza@example.com\", \"password\": \"Investigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Listar usuarios como coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { users } = pm.response.json();\r\n\r\npm.test('200 con cuentas activas', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(users).to.be.an('array').that.is.not.empty;\r\n  pm.expect(users.every((u) => u.isActive)).to.be.true;\r\n});\r\n\r\npm.test('la misma forma que el user de los miembros, sin el hash', () => {\r\n  pm.expect(Object.keys(users[0])).to.have.members(['id', 'email', 'fullName', 'systemRole', 'isActive']);\r\n});\r\n\r\npm.test('ordenadas por nombre', () => {\r\n  const names = users.map((u) => u.fullName);\r\n  pm.expect(names).to.eql([...names].sort((a, b) => a.localeCompare(b)));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Filtrar investigadores por nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { users } = pm.response.json();\r\n\r\npm.test('rol y búsqueda sin distinguir mayúsculas', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(users.every((u) => u.systemRole === 'RESEARCHER')).to.be.true;\r\n  pm.expect(users.map((u) => u.email)).to.include('laura.mendoza@example.com');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?rol=RESEARCHER&buscar=LAURA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "rol",
+                  "value": "RESEARCHER"
+                },
+                {
+                  "key": "buscar",
+                  "value": "LAURA"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Búsqueda vacía no es un error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: buscar vacío se trata como si no viniera', () => {\r\n  pm.response.to.have.status(200);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?buscar=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "buscar",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. 400 con rol inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400 VALIDATION_ERROR en rol', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n  pm.expect(body.error.details[0].field).to.eql('rol');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?rol=ADMIN",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "rol",
+                  "value": "ADMIN"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. 403 investigadora listando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403 por el eje de sistema', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. 401 sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('401 UNAUTHENTICATED', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('UNAUTHENTICATED');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
               ]
             }
           },

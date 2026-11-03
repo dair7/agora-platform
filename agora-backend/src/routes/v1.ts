@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes.js';
 import chatRoutes from '../modules/chat/chat.routes.js';
 import projectRoutes from '../modules/projects/projects.routes.js';
+import userRoutes from '../modules/users/users.routes.js';
 
 // Monta todos los módulos bajo /api/v1. La ruta /salud queda fuera a propósito:
 // es infraestructura, no parte de la API pública.
@@ -13,5 +14,6 @@ router.use('/auth', authRoutes);
 // autentica por su cuenta.
 router.use('/proyectos/:projectId/mensajes', chatRoutes);
 router.use('/proyectos', projectRoutes);
+router.use('/usuarios', userRoutes);
 
 export default router;

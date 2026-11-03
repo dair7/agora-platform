@@ -3,7 +3,9 @@ import type { Project } from '@prisma/client';
 import { AppError } from '../../middlewares/error-handler.js';
 import type { ProjectAccess } from '../../middlewares/project-access.js';
 import { joinProjectRoom, leaveProjectRoom } from '../../sockets/emitter.js';
+import type { UserSummary } from '../users/users.repository.js';
 import * as repository from './projects.repository.js';
+import type { ProjectListRow } from './projects.repository.js';
 import type {
   AddMemberInput,
   CreateProjectInput,
@@ -16,12 +18,33 @@ interface ScopedUser {
   systemRole: SystemRole;
 }
 
+/**
+ * Un elemento de la lista: el proyecto más su investigador principal y su número
+ * de miembros. Es otro tipo que el `Project` de las escrituras y del detalle.
+ *
+ * `principalInvestigator` admite `null` aunque la API lo garantice —crear un
+ * proyecto lo exige y quitarlo responde 409—: el esquema no. Borrar a una
+ * persona en la base arrastra sus membresías en cascada, y el proyecto quedaría
+ * sin investigador principal sin que nada lo impida.
+ */
+export type ProjectListItem = Project & {
+  principalInvestigator: UserSummary | null;
+  memberCount: number;
+};
+
 export interface ProjectPage {
-  items: Project[];
+  items: ProjectListItem[];
   total: number;
   page: number;
   perPage: number;
 }
+
+// `_count` es un detalle de Prisma: sale traducido, no tal cual.
+const toListItem = ({ members, _count, ...project }: ProjectListRow): ProjectListItem => ({
+  ...project,
+  principalInvestigator: members[0]?.user ?? null,
+  memberCount: _count.members,
+});
 
 /**
  * El alcance no se decide aquí: `visibleProjectsFilter` es la única traducción
@@ -31,13 +54,13 @@ export const listProjects = async (
   user: ScopedUser,
   query: ListProjectsQuery,
 ): Promise<ProjectPage> => {
-  const [items, total] = await repository.findProjects(
+  const [rows, total] = await repository.findProjects(
     repository.visibleProjectsFilter(user),
     { status: query.status, search: query.search },
     { page: query.page, perPage: query.perPage },
   );
 
-  return { items, total, page: query.page, perPage: query.perPage };
+  return { items: rows.map(toListItem), total, page: query.page, perPage: query.perPage };
 };
 
 /** El acceso ya lo resolvió el middleware; aquí solo se cargan las relaciones. */

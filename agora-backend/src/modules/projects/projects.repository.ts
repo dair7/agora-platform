@@ -1,6 +1,7 @@
 import { ConversationType, Prisma, ProjectRole, SystemRole } from '@prisma/client';
 import type { Project, ProjectMember, ProjectStatus, User } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
+import { userSummarySelect } from '../users/users.repository.js';
 
 /** Lo mínimo que hace falta para decidir el alcance. Encaja con `AuthUser`. */
 interface ScopedUser {
@@ -55,20 +56,36 @@ export type ProjectWithMembership = Project & { members: ProjectMember[] };
 export const visibleProjectsFilter = (user: ScopedUser): Prisma.ProjectWhereInput =>
   user.systemRole === SystemRole.COORDINATOR ? {} : { members: { some: { userId: user.id } } };
 
-// Selección explícita del autor: nunca `include: { user: true }`, que arrastra
-// `password_hash` hasta la respuesta.
+// La persona sale con `userSummarySelect`, la misma forma que en la lista de
+// proyectos y en la consulta de usuarios.
 const memberSelect = {
   id: true,
   role: true,
   joinedAt: true,
-  user: { select: { id: true, email: true, fullName: true, systemRole: true, isActive: true } },
+  user: { select: userSummarySelect },
 } satisfies Prisma.ProjectMemberSelect;
+
+/**
+ * Lo que la lista añade a cada proyecto, en la misma consulta: el investigador
+ * principal, con un `include` acotado a su rol, y el número de miembros. Pedir
+ * el detalle de cada proyecto sería una consulta por fila.
+ */
+const listItemInclude = {
+  members: {
+    where: { role: ProjectRole.PRINCIPAL_INVESTIGATOR },
+    select: { user: { select: userSummarySelect } },
+    take: 1,
+  },
+  _count: { select: { members: true } },
+} satisfies Prisma.ProjectInclude;
+
+export type ProjectListRow = Prisma.ProjectGetPayload<{ include: typeof listItemInclude }>;
 
 export const findProjects = (
   scope: Prisma.ProjectWhereInput,
   filters: ListFilters,
   pagination: Pagination,
-): Promise<[Project[], number]> => {
+): Promise<[ProjectListRow[], number]> => {
   const where: Prisma.ProjectWhereInput = {
     AND: [
       scope,
@@ -82,6 +99,7 @@ export const findProjects = (
   return prisma.$transaction([
     prisma.project.findMany({
       where,
+      include: listItemInclude,
       orderBy: { createdAt: 'desc' },
       skip: (pagination.page - 1) * pagination.perPage,
       take: pagination.perPage,
