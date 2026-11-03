@@ -58,7 +58,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, projects, chat (one folder per domain)
+│       ├── modules/         # auth, users, projects, chat (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── app.ts           # Express application
@@ -246,11 +246,19 @@ There is no public sign-up: accounts are created by the coordinator. Coordinator
 
 Reusing a refresh token that was already revoked revokes **every** session of that user.
 
+**Users** — `/api/v1/usuarios`
+
+| Method | Route | Who | Query | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Coordinator | `?rol=COORDINATOR\|RESEARCHER&buscar=` | `200 { users }`, each `{ id, email, fullName, systemRole, isActive }` |
+
+Only active accounts, ordered by `fullName`. `buscar` matches name or email, case-insensitive; an empty `buscar` is ignored rather than rejected. There is no pagination: the system holds dozens of accounts, not thousands. A researcher gets `403`, since only the coordinator appoints principal investigators; principal investigators invite members by email.
+
 **Projects** — `/api/v1/proyectos`
 
 | Method | Route | Who | Body / query | Response |
 | --- | --- | --- | --- | --- |
-| `GET` | `/` | Any user (only visible projects) | `?estado=&buscar=&pagina=1&porPagina=20` | `200 { items, total, page, perPage }` |
+| `GET` | `/` | Any user (only visible projects) | `?estado=&buscar=&pagina=1&porPagina=20` | `200 { items, total, page, perPage }`. Each item also carries `principalInvestigator` and `memberCount`. |
 | `POST` | `/` | Coordinator | `{ title, principalInvestigatorId, description?, objectives?, startDate?, endDate?, budget? }` | `201 { project }` |
 | `GET` | `/:projectId` | Member or coordinator | — | `200 { project }` |
 | `PATCH` | `/:projectId` | Principal investigator | At least one of `title`, `description`, `objectives`, `status`, `startDate`, `endDate`, `budget` | `200 { project }` |
@@ -260,6 +268,13 @@ Reusing a refresh token that was already revoked revokes **every** session of th
 | `DELETE` | `/:projectId/miembros/:userId` | Principal investigator | — | `204` |
 
 Dates use the `YYYY-MM-DD` format.
+
+List items are not the same shape as the `project` returned by `POST`, `PATCH` and the detail. Each item adds:
+
+- `principalInvestigator`: `{ id, email, fullName, systemRole, isActive }`, the same shape as `user` in a member. It can be `null`: the API never leaves a project without one, but the database schema does not enforce it.
+- `memberCount`: how many members the project has.
+
+Both come from the same list query, not from one request per project.
 
 **Project chat** — `/api/v1/proyectos/:projectId/mensajes`
 
