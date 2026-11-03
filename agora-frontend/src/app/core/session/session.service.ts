@@ -3,7 +3,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { apiErrorCode } from '../api/api-error';
+import { SessionEndedError } from './session-ended.error';
 import type { AuthSession, AuthTokens, LoginInput, PublicUser } from './session.types';
+
+// Vive en su propio archivo para que `core/api` lo use sin depender de la sesión.
+// Se reexporta para que quien ya lo importaba de aquí no tenga que cambiar.
+export { SessionEndedError };
 
 /**
  * Marca las peticiones de la propia sesión (iniciar, refrescar, cerrar). El
@@ -13,14 +18,6 @@ import type { AuthSession, AuthTokens, LoginInput, PublicUser } from './session.
 export const SESSION_REQUEST = new HttpContextToken<boolean>(() => false);
 
 const sessionRequest = () => ({ context: new HttpContext().set(SESSION_REQUEST, true) });
-
-/** La renovación no fue posible y la sesión terminó: hay que volver a entrar. */
-export class SessionEndedError extends Error {
-  constructor(options?: { cause?: unknown }) {
-    super('La sesión terminó', options);
-    this.name = 'SessionEndedError';
-  }
-}
 
 export const REFRESH_TOKEN_KEY = 'agora.refreshToken';
 
