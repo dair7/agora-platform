@@ -1,18 +1,68 @@
-import { Component, computed, effect, inject, resource } from '@angular/core';
+import {
+  Component,
+  type WritableSignal,
+  computed,
+  effect,
+  inject,
+  resource,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { apiErrorCode, apiErrorOutcome } from '../../../core/api/api-error';
+import {
+  apiErrorCode,
+  apiErrorOutcome,
+  type ApiErrorMessages,
+  type ErrorCode,
+} from '../../../core/api/api-error';
 import { ProjectsApi } from '../../../core/api/projects.api';
 import type { Member, ProjectRole } from '../../../core/api/projects.types';
 import { formatBudget } from '../../../core/format/project-budget';
 import { formatClosedAt, formatProjectPeriod } from '../../../core/format/project-dates';
 import { formatProjectLead } from '../../../core/format/project-lead';
+import { SessionService } from '../../../core/session/session.service';
 import { Button } from '../../../shared/ui/button/button';
+import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Empty } from '../../../shared/ui/empty/empty';
+import { Field, FieldInput } from '../../../shared/ui/field/field';
 import { Notice } from '../../../shared/ui/notice/notice';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
+
+/** Un error de una acción, para el aviso de la página. `CONFLICT` va en el tono de bloqueo. */
+interface ActionError {
+  code: ErrorCode | null;
+  message: string;
+}
+
+const CLOSE_MESSAGES: ApiErrorMessages = { CONFLICT: 'Este proyecto ya estaba cerrado.' };
+
+const REMOVE_MESSAGES: ApiErrorMessages = {
+  CONFLICT: 'No se puede retirar al investigador principal.',
+};
+
+/**
+ * `NOT_FOUND` rompe aquí, a propósito, la regla de que un 404 siempre dice «no
+ * existe o no tienes acceso». Esa regla protege la existencia de un *proyecto*:
+ * un 404 genérico impide confirmar que un identificador corresponde a uno real.
+ * Este 404 responde a un correo que la persona acaba de escribir en un campo, y
+ * contestarle «no existe o no tienes acceso» haría el formulario inusable.
+ *
+ * El costo es real: permite averiguar si un correo tiene cuenta. Es aceptable
+ * porque solo puede hacerlo un investigador principal autenticado, desde su
+ * propio proyecto.
+ *
+ * `CONFLICT` cubre dos casos que el backend no distingue —ya es miembro, o es la
+ * coordinación—, y el cliente no adivina cuál fue.
+ */
+const ADD_MEMBER_MESSAGES: ApiErrorMessages = {
+  NOT_FOUND: 'No hay ninguna cuenta activa con ese correo.',
+  CONFLICT: 'Esa persona ya es miembro, o el correo es de la coordinación.',
+};
+
+/** Los errores del formulario de agregar que se dicen bajo el campo y no en un aviso. */
+const ADD_MEMBER_FIELD_CODES: readonly (ErrorCode | null)[] = ['NOT_FOUND', 'CONFLICT'];
 
 /**
  * Nombres de función y no de persona, como el rol del armazón: así no hay que
@@ -27,17 +77,30 @@ const ROLE_LABELS: Record<ProjectRole, string> = {
 const textOrNull = (value: string | null): string | null => (value?.trim() ? value : null);
 
 /**
- * El detalle de un proyecto: cabecera, resumen y miembros. Solo lectura; las
- * acciones son de la pieza siguiente, y las fases, del cronograma de la fase 12.
+ * El detalle de un proyecto: cabecera, resumen y miembros, con las acciones del
+ * investigador principal —cerrar el proyecto, agregar y retirar miembros—. Las
+ * fases no se pintan: son del cronograma de la fase 12.
  */
 @Component({
   selector: 'app-project-detail',
-  imports: [Button, Empty, LoadingStatus, Notice, ProjectStatusPill, RouterLink, Skeleton],
+  imports: [
+    Button,
+    Dialog,
+    Empty,
+    Field,
+    FieldInput,
+    LoadingStatus,
+    Notice,
+    ProjectStatusPill,
+    RouterLink,
+    Skeleton,
+  ],
   templateUrl: './project-detail.html',
 })
 export class ProjectDetail {
   readonly #api = inject(ProjectsApi);
   readonly #title = inject(Title);
+  readonly #session = inject(SessionService);
   protected readonly roleLabels = ROLE_LABELS;
 
   readonly #params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
@@ -101,6 +164,142 @@ export class ProjectDetail {
       budget: formatBudget(project.budget),
     };
   });
+
+  /**
+   * Nadie ve un botón que el backend le negaría: no se pinta deshabilitado, no se
+   * pinta. Las tres acciones son del investigador principal **de este proyecto**, y
+   * solo con el proyecto abierto. La coordinación ve el proyecto pero no lo
+   * gestiona (el backend le responde 403), y un coinvestigador tampoco.
+   *
+   * Se decide con lo que ya trae el detalle, sin otra petición: quien mira es el
+   * investigador principal si hay un miembro con su id y ese rol.
+   *
+   * Con el proyecto cerrado se esconden también agregar y retirar, pero es
+   * comodidad, no seguridad: hoy el backend no los bloquea en un proyecto
+   * `COMPLETED` (hueco anotado para la fase 11).
+   */
+  protected readonly canManage = computed(() => {
+    const view = this.view();
+    const me = this.#session.user()?.id;
+
+    return (
+      view !== null &&
+      view.project.status !== 'COMPLETED' &&
+      view.members.some((m) => m.role === 'PRINCIPAL_INVESTIGATOR' && m.user.id === me)
+    );
+  });
+
+  /** El error de la última acción de cerrar o retirar; se limpia al empezar otra. */
+  protected readonly actionError = signal<ActionError | null>(null);
+
+  // Cerrar el proyecto.
+  protected readonly closing = signal(false);
+
+  protected async closeProject(dialog: Dialog): Promise<void> {
+    await this.#runInDialog(dialog, this.closing, CLOSE_MESSAGES, (id) => this.#api.close(id));
+  }
+
+  // Retirar un miembro. La persona elegida da el texto del diálogo.
+  protected readonly memberToRemove = signal<Member | null>(null);
+  protected readonly removing = signal(false);
+
+  protected askToRemove(member: Member, dialog: Dialog): void {
+    this.memberToRemove.set(member);
+    dialog.open();
+  }
+
+  protected async removeMember(dialog: Dialog): Promise<void> {
+    const member = this.memberToRemove();
+
+    if (member) {
+      await this.#runInDialog(dialog, this.removing, REMOVE_MESSAGES, (id) =>
+        this.#api.removeMember(id, member.user.id),
+      );
+    }
+  }
+
+  // Agregar un miembro. Sin diálogo: no es destructivo.
+  protected readonly newMemberEmail = signal('');
+  protected readonly adding = signal(false);
+  /** El error que va bajo el campo de correo. */
+  protected readonly addFieldError = signal<string | null>(null);
+  /** El que no tiene que ver con el correo (red, servidor), en un aviso. */
+  protected readonly addError = signal<string | null>(null);
+
+  protected async addMember(event: Event): Promise<void> {
+    event.preventDefault();
+    const project = this.view()?.project;
+
+    // El botón ya se deshabilita con el correo en blanco, y con el botón de envío
+    // deshabilitado Enter no envía el formulario; esto es solo la red de seguridad.
+    if (!project || this.adding() || this.newMemberEmail().trim() === '') {
+      return;
+    }
+
+    this.adding.set(true);
+    this.addFieldError.set(null);
+    this.addError.set(null);
+
+    try {
+      await this.#api.addMember(project.id, { email: this.newMemberEmail() });
+      this.newMemberEmail.set('');
+      this.project.reload();
+    } catch (error) {
+      const outcome = apiErrorOutcome(error, ADD_MEMBER_MESSAGES);
+
+      if (outcome.kind === 'fields') {
+        // El único campo es el correo; cualquier otro detalle cae en el respaldo.
+        this.addFieldError.set(outcome.fields['email'] ?? outcome.message);
+      } else if (outcome.kind === 'message') {
+        if (ADD_MEMBER_FIELD_CODES.includes(outcome.code)) {
+          this.addFieldError.set(outcome.message);
+        } else {
+          this.addError.set(outcome.message);
+        }
+      }
+    } finally {
+      this.adding.set(false);
+    }
+  }
+
+  /**
+   * La acción confirmada en un diálogo: con éxito, cierra el diálogo y recarga el
+   * proyecto. No hay aviso de éxito: la pantalla cambia sola, y eso dice más que un
+   * mensaje. Con error, cierra igual, recarga —lo que mostraba la pantalla quedó
+   * viejo— y deja el mensaje en un aviso.
+   */
+  async #runInDialog(
+    dialog: Dialog,
+    busy: WritableSignal<boolean>,
+    messages: ApiErrorMessages,
+    action: (projectId: string) => Promise<unknown>,
+  ): Promise<void> {
+    const project = this.view()?.project;
+
+    if (!project || busy()) {
+      return;
+    }
+
+    busy.set(true);
+    this.actionError.set(null);
+
+    try {
+      await action(project.id);
+    } catch (error) {
+      const outcome = apiErrorOutcome(error, messages);
+
+      if (outcome.kind !== 'none') {
+        this.actionError.set({
+          code: outcome.kind === 'message' ? outcome.code : 'VALIDATION_ERROR',
+          message: outcome.message,
+        });
+      }
+    } finally {
+      busy.set(false);
+      dialog.close();
+      this.project.reload();
+    }
+  }
 
   constructor() {
     // El título de la ruta es «Proyecto · Ágora» mientras carga; con el proyecto
