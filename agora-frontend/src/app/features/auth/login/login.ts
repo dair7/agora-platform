@@ -132,7 +132,7 @@ export class Login {
     this.submitting.set(true);
     try {
       await this.#session.login({ email, password });
-      await this.#router.navigateByUrl('/inicio');
+      await this.#router.navigateByUrl('/proyectos');
     } catch (error) {
       this.#showError(error);
     } finally {

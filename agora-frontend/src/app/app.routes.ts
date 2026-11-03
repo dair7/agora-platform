@@ -4,7 +4,7 @@ import { authGuard, guestGuard, roleGuard } from './core/session/auth.guards';
 // Rutas en español, como las de la API: es lo que ve la persona en la barra de
 // direcciones. Cada pantalla se carga diferida, solo cuando se visita.
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+  { path: '', pathMatch: 'full', redirectTo: 'proyectos' },
   {
     path: 'entrar',
     title: 'Iniciar sesión · Ágora',
@@ -19,12 +19,22 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/session-expired/session-expired').then((m) => m.SessionExpired),
   },
-  // Todo lo de aquí dentro exige sesión. Una ruta nueva de la aplicación se
-  // agrega como hija, no al lado: así no puede quedarse sin protección.
+  // Todo lo de aquí dentro exige sesión y se pinta dentro del armazón. Una ruta
+  // nueva de la aplicación se agrega como hija, no al lado: así no puede quedarse
+  // sin protección.
   {
     path: '',
     canMatch: [authGuard],
+    loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),
     children: [
+      {
+        path: 'proyectos',
+        title: 'Proyectos · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-list/project-list').then((m) => m.ProjectList),
+      },
+      // Pantalla provisional de la fase 3. La reemplaza el inicio por rol de la
+      // fase 13; hasta entonces se queda, aunque la raíz ya no lleve aquí.
       {
         path: 'inicio',
         title: 'Inicio · Ágora',
@@ -39,5 +49,5 @@ export const routes: Routes = [
     ],
   },
   // Hasta que exista la pantalla de "no encontrado".
-  { path: '**', redirectTo: 'inicio' },
+  { path: '**', redirectTo: 'proyectos' },
 ];
