@@ -1,0 +1,135 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="project.isLoading()" />
+
+<main class="grid gap-espacio-6" [attr.aria-busy]="project.isLoading() || null">
+  @if (project.isLoading()) {
+    <div class="grid gap-espacio-2">
+      <app-skeleton width="espacio-8" class="cuerpo-fuerte" />
+      <app-skeleton class="titulo-pagina" />
+      <app-skeleton class="secundario" />
+    </div>
+
+    <div
+      class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5 grid gap-espacio-5"
+    >
+      @for (block of [1, 2, 3]; track block) {
+        <div class="grid gap-espacio-1">
+          <app-skeleton width="espacio-8" class="etiqueta" />
+          <app-skeleton class="cuerpo" />
+        </div>
+      }
+    </div>
+
+    <div class="grid gap-espacio-3">
+      <app-skeleton width="espacio-8" class="titulo-seccion" />
+      <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+        @for (row of [1, 2]; track row) {
+          <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+            <app-skeleton class="cuerpo-fuerte" />
+            <app-skeleton class="secundario" />
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (notFound()) {
+    <!-- Ocupa la pantalla entera: no es un aviso encima de un detalle a medio pintar. -->
+    <app-empty title="Este proyecto no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
+    </app-empty>
+  } @else if (errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button appButton variant="secondary" type="button" noticeAction (click)="project.reload()">
+        Reintentar
+      </button>
+    </app-notice>
+  } @else if (view(); as view) {
+    <header class="grid gap-espacio-2">
+      <!-- El margen negativo compensa el relleno lateral del botón discreto
+           (espacio-4): la flecha arranca en la misma vertical que el título. -->
+      <div>
+        <a appButton variant="subtle" routerLink="/proyectos" class="-ml-espacio-4">
+          <span aria-hidden="true" class="mr-espacio-2">←</span>Proyectos
+        </a>
+      </div>
+
+      <div class="flex items-start justify-between gap-espacio-4">
+        <h1 class="titulo-pagina text-tinta">{{ view.project.title }}</h1>
+        <app-project-status class="shrink-0" [status]="view.project.status" />
+      </div>
+
+      <!-- Las piezas se separan con «·», como en la tarjeta, para que dos fechas
+           seguidas no se confundan. El punto es un elemento propio con aria-hidden
+           (el lector no lee puntos) y desaparece cuando la línea se apila: ahí ya
+           separa el salto de línea. -->
+      <div
+        class="secundario text-tinta-media flex flex-col sm:flex-row sm:flex-wrap sm:gap-x-espacio-2"
+      >
+        <span>{{ view.lead }}</span>
+        @if (view.period) {
+          <span aria-hidden="true" class="hidden sm:inline">·</span>
+          <span class="tabular-nums">{{ view.period }}</span>
+        }
+        @if (view.closedAt) {
+          <span aria-hidden="true" class="hidden sm:inline">·</span>
+          <span class="tabular-nums">Cerrado el {{ view.closedAt }}</span>
+        }
+      </div>
+    </header>
+
+    <section
+      aria-label="Resumen"
+      class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5"
+    >
+      <dl class="grid gap-espacio-5">
+        <div class="grid gap-espacio-1">
+          <dt class="etiqueta text-tinta">Descripción</dt>
+          @if (view.description; as description) {
+            <dd class="cuerpo text-tinta whitespace-pre-line">{{ description }}</dd>
+          } @else {
+            <dd class="cuerpo text-tinta-media">Sin descripción</dd>
+          }
+        </div>
+        <div class="grid gap-espacio-1">
+          <dt class="etiqueta text-tinta">Objetivos</dt>
+          @if (view.objectives; as objectives) {
+            <dd class="cuerpo text-tinta whitespace-pre-line">{{ objectives }}</dd>
+          } @else {
+            <dd class="cuerpo text-tinta-media">Sin objetivos</dd>
+          }
+        </div>
+        <div class="grid gap-espacio-1">
+          <dt class="etiqueta text-tinta">Presupuesto</dt>
+          @if (view.budget; as budget) {
+            <dd class="dato text-tinta">{{ budget }}</dd>
+          } @else {
+            <dd class="cuerpo text-tinta-media">Sin presupuesto</dd>
+          }
+        </div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="miembros-titulo" class="grid gap-espacio-3">
+      <h2 id="miembros-titulo" class="titulo-seccion text-tinta">
+        Miembros <span class="text-tinta-media tabular-nums">{{ view.members.length }}</span>
+      </h2>
+
+      <!-- Dentro de una tarjeta las filas se separan con línea, no con sombra. -->
+      <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+        @for (member of view.members; track member.id) {
+          <li class="flex items-start justify-between gap-espacio-3 px-espacio-4 py-espacio-3">
+            <div class="wrap-anywhere">
+              <p class="cuerpo-fuerte text-tinta">{{ member.user.fullName }}</p>
+              <p class="secundario text-tinta-media">{{ member.user.email }}</p>
+              @if (!member.user.isActive) {
+                <p class="secundario text-tinta-media">Cuenta desactivada</p>
+              }
+            </div>
+            <p class="secundario text-tinta-media shrink-0">{{ roleLabels[member.role] }}</p>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</main>
