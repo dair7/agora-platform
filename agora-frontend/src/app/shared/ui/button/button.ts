@@ -17,9 +17,12 @@ const VARIANTS: Record<ButtonVariant, string> = {
  * Atributo sobre un `<button>` nativo, no un componente que lo envuelva: así el
  * botón conserva su teclado, su foco, su `type` y su `disabled` sin reimplementarlos.
  * El texto lo pone quien lo usa y dice exactamente qué ocurre al pulsarlo.
+ *
+ * También vale sobre un `<a>`, para la navegación que se ve como botón («Volver a
+ * proyectos»): sigue siendo un enlace, con su teclado y su menú contextual.
  */
 @Component({
-  selector: 'button[appButton]',
+  selector: 'button[appButton], a[appButton]',
   template: '<ng-content />',
   host: { '[class]': 'classes()' },
 })
@@ -28,7 +31,7 @@ export class Button {
 
   protected readonly classes = computed(
     () =>
-      'cuerpo-fuerte px-espacio-4 py-espacio-3 rounded-radio-pildora border cursor-pointer ' +
+      'inline-block cuerpo-fuerte px-espacio-4 py-espacio-3 rounded-radio-pildora border cursor-pointer ' +
       'disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado ' +
       VARIANTS[this.variant()],
   );

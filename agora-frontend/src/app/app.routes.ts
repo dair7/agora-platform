@@ -33,6 +33,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-list/project-list').then((m) => m.ProjectList),
       },
+      {
+        path: 'proyectos/:projectId',
+        // Provisional: la pantalla lo cambia por el nombre del proyecto cuando llega.
+        title: 'Proyecto · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-detail/project-detail').then((m) => m.ProjectDetail),
+      },
       // Pantalla provisional de la fase 3. La reemplaza el inicio por rol de la
       // fase 13; hasta entonces se queda, aunque la raíz ya no lleve aquí.
       {
