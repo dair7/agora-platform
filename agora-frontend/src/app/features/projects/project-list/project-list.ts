@@ -149,9 +149,9 @@ export class ProjectList {
     void this.#router.navigate([], { relativeTo: this.#route, queryParams: {} });
   }
 
-  // TODO(fase 5, crear proyecto): la pieza del formulario lo convierte en una
-  // navegación a la pantalla de crear proyecto.
-  protected createProject(): void {}
+  protected createProject(): void {
+    void this.#router.navigate(['/proyectos/nuevo']);
+  }
 
   /** `null` quita el parámetro de la URL; los demás se conservan. */
   #navigate(params: Record<string, string | number | null>, replaceUrl = false): void {
