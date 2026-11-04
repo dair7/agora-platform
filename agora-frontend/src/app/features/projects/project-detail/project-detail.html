@@ -53,12 +53,21 @@
           <span aria-hidden="true" class="mr-espacio-2">←</span>Proyectos
         </a>
 
-        <!-- Secundario y no destructivo: cerrar no es borrar. Y no primario, para que
-             «Editar» quepa al lado sin mover nada. -->
+        <!-- Las dos en secundario: esta pantalla es para leer y editar es ocasional, así
+             que se queda sin acción primaria. Cerrar tampoco es destructivo: no es borrar. -->
         @if (canManage()) {
-          <button appButton variant="secondary" type="button" (click)="closeDialog.open()">
-            Cerrar proyecto
-          </button>
+          <div class="flex flex-wrap gap-espacio-3">
+            <a
+              appButton
+              variant="secondary"
+              [routerLink]="['/proyectos', view.project.id, 'editar']"
+            >
+              Editar
+            </a>
+            <button appButton variant="secondary" type="button" (click)="closeDialog.open()">
+              Cerrar proyecto
+            </button>
+          </div>
         }
       </div>
 

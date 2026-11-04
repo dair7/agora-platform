@@ -50,6 +50,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-detail/project-detail').then((m) => m.ProjectDetail),
       },
+      // Sin guard: ser investigador principal depende del proyecto, y un guard no lo
+      // sabe sin pedirlo. Lo comprueba la pantalla, que de todos modos lo carga.
+      {
+        path: 'proyectos/:projectId/editar',
+        title: 'Editar proyecto · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-edit/project-edit').then((m) => m.ProjectEdit),
+      },
       // Pantalla provisional de la fase 3. La reemplaza el inicio por rol de la
       // fase 13; hasta entonces se queda, aunque la raíz ya no lleve aquí.
       {

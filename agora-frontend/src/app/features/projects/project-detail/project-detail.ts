@@ -29,6 +29,7 @@ import { Field, FieldInput } from '../../../shared/ui/field/field';
 import { Notice } from '../../../shared/ui/notice/notice';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { canManageProject } from '../project-permissions';
 
 /** Un error de una acción, para el aviso de la página. `CONFLICT` va en el tono de bloqueo. */
 interface ActionError {
@@ -78,8 +79,8 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
 
 /**
  * El detalle de un proyecto: cabecera, resumen y miembros, con las acciones del
- * investigador principal —cerrar el proyecto, agregar y retirar miembros—. Las
- * fases no se pintan: son del cronograma de la fase 12.
+ * investigador principal —editar y cerrar el proyecto, agregar y retirar
+ * miembros—. Las fases no se pintan: son del cronograma de la fase 12.
  */
 @Component({
   selector: 'app-project-detail',
@@ -167,12 +168,8 @@ export class ProjectDetail {
 
   /**
    * Nadie ve un botón que el backend le negaría: no se pinta deshabilitado, no se
-   * pinta. Las tres acciones son del investigador principal **de este proyecto**, y
-   * solo con el proyecto abierto. La coordinación ve el proyecto pero no lo
-   * gestiona (el backend le responde 403), y un coinvestigador tampoco.
-   *
-   * Se decide con lo que ya trae el detalle, sin otra petición: quien mira es el
-   * investigador principal si hay un miembro con su id y ese rol.
+   * pinta. Cubre editar, cerrar, agregar y retirar; la regla está en
+   * `canManageProject`.
    *
    * Con el proyecto cerrado se esconden también agregar y retirar, pero es
    * comodidad, no seguridad: hoy el backend no los bloquea en un proyecto
@@ -180,13 +177,8 @@ export class ProjectDetail {
    */
   protected readonly canManage = computed(() => {
     const view = this.view();
-    const me = this.#session.user()?.id;
 
-    return (
-      view !== null &&
-      view.project.status !== 'COMPLETED' &&
-      view.members.some((m) => m.role === 'PRINCIPAL_INVESTIGATOR' && m.user.id === me)
-    );
+    return view !== null && canManageProject(view.project, this.#session.user()?.id);
   });
 
   /** El error de la última acción de cerrar o retirar; se limpia al empezar otra. */
