@@ -24,6 +24,9 @@ const STATUS: Record<ProjectStatus, { label: string; classes: string }> = {
   CANCELLED: { label: 'Cancelado', classes: 'bg-superficie-20 text-tinta-media' },
 };
 
+/** El texto de un estado, para quien lo ofrece fuera de la píldora: el desplegable de editar. */
+export const projectStatusLabel = (status: ProjectStatus): string => STATUS[status].label;
+
 @Component({
   selector: 'app-project-status',
   template: '{{ label() }}',
