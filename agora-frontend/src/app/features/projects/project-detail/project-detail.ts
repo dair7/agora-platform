@@ -32,6 +32,7 @@ import { Notice } from '../../../shared/ui/notice/notice';
 import { PresencePill } from '../../../shared/ui/presence/presence';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { UnreadBadge } from '../../../shared/ui/unread-badge/unread-badge';
 import { canManageProject } from '../project-permissions';
 
 /** Un error de una acción, para el aviso de la página. `CONFLICT` va en el tono de bloqueo. */
@@ -100,6 +101,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
     ProjectStatusPill,
     RouterLink,
     Skeleton,
+    UnreadBadge,
   ],
   templateUrl: './project-detail.html',
 })
@@ -195,6 +197,20 @@ export class ProjectDetail {
 
     return view !== null && canManageProject(view.project, this.#session.user()?.id);
   });
+
+  /**
+   * La conversación es de los miembros. La coordinación ve el proyecto pero no
+   * participa de su chat, así que tampoco ve el enlace.
+   */
+  protected readonly canChat = computed(() => {
+    const me = this.#session.user()?.id;
+
+    return this.view()?.members.some((m) => m.user.id === me) ?? false;
+  });
+
+  protected readonly unread = computed(() =>
+    this.#realtime.unreadIn(this.#params().get('projectId') ?? ''),
+  );
 
   /** El error de la última acción de cerrar o retirar; se limpia al empezar otra. */
   protected readonly actionError = signal<ActionError | null>(null);
