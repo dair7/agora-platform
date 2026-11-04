@@ -125,7 +125,7 @@ const END_BEFORE_START = 'La fecha de fin no puede ser anterior a la de inicio';
   selector: 'app-project-form',
   imports: [Button, Field, FieldInput, FieldSelect, FieldTextarea, Notice],
   templateUrl: './project-form.html',
-  host: { class: 'block max-w-ancho-formulario' },
+  host: { class: 'block' },
 })
 export class ProjectForm {
   readonly #host = inject<ElementRef<HTMLElement>>(ElementRef);

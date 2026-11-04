@@ -11,7 +11,16 @@
    sitios, y no genera CSS (Tailwind la calcula con var(--spacing), que
    theme.css vacía). No se agrega al tema: min-width: 0 es mecánica de flexbox,
    no un valor de diseño, así que donde haga falta se escribe aquí con su marca
-   «sin token». */
+   «sin token».
+
+   Y de las pantallas de proyectos, para la misma pasada:
+   - Valores sin token: los 1040px del armazón (shell.css), los 320px del buscador
+     (project-list.css) y, en `FieldTextarea` (field.ts), las 10 filas del techo
+     de las áreas de texto.
+   - Los ajustes finos de espaciado del detalle y del formulario.
+   - La etiqueta «Investigación principal» sobre el desplegable de personas
+     (project-form.html): nombra una función, y encima de una lista de personas
+     quizá pida otro texto. */
 
 /* Tipografía: la maqueta usa Geist en toda la pantalla (sin token; el sistema
    usa IBM Plex Sans). Se carga en src/index.html. */

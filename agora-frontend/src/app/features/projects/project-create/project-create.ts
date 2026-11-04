@@ -14,7 +14,7 @@ import { ProjectForm } from '../project-form/project-form';
   selector: 'app-project-create',
   imports: [ProjectForm],
   template: `
-    <main class="grid gap-espacio-5">
+    <main class="grid gap-espacio-5 mx-auto max-w-ancho-formulario">
       <h1 class="titulo-pagina text-tinta">Crear proyecto</h1>
       <app-project-form
         mode="create"

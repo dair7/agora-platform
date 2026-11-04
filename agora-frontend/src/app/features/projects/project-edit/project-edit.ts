@@ -26,7 +26,10 @@ import { canManageProject } from '../project-permissions';
   template: `
     <app-loading-status [loading]="project.isLoading()" />
 
-    <main class="grid gap-espacio-5" [attr.aria-busy]="project.isLoading() || null">
+    <main
+      class="grid gap-espacio-5 mx-auto max-w-ancho-formulario"
+      [attr.aria-busy]="project.isLoading() || null"
+    >
       <h1 class="titulo-pagina text-tinta">Editar proyecto</h1>
 
       @if (errorMessage(); as message) {
@@ -52,9 +55,7 @@ import { canManageProject } from '../project-permissions';
           (cancelled)="backToDetail()"
         />
       } @else {
-        <div
-          class="bg-superficie-00 rounded-radio-md p-espacio-4 grid gap-espacio-4 max-w-ancho-formulario"
-        >
+        <div class="bg-superficie-00 rounded-radio-md p-espacio-4 grid gap-espacio-4">
           @for (field of [1, 2, 3]; track field) {
             <div class="grid gap-espacio-1">
               <app-skeleton width="espacio-8" class="etiqueta" />
