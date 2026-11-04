@@ -1,0 +1,179 @@
+<form class="grid gap-espacio-4" novalidate (submit)="submit($event)">
+  <app-field for="project-title" label="Título" [error]="error('title')" [hint]="hint('title')">
+    <!-- Con `!`, porque `resize-y` de la directiva va después en la hoja y ganaría.
+         Área de texto para ver entero un título largo, pero de una sola línea: ver
+         `submitOnLineBreak` y `updateTitle`. -->
+    <textarea
+      appTextarea
+      id="project-title"
+      class="resize-none!"
+      rows="2"
+      autocomplete="off"
+      required
+      [invalid]="error('title') !== null"
+      [describedBy]="describedBy('title', 'project-title')"
+      [value]="initial().title"
+      (beforeinput)="submitOnLineBreak($event)"
+      (input)="updateTitle($event)"
+    ></textarea>
+  </app-field>
+
+  @if (mode() === 'create') {
+    <app-field
+      for="project-lead"
+      label="Investigación principal"
+      [error]="error('principalInvestigatorId')"
+    >
+      <select
+        appSelect
+        id="project-lead"
+        required
+        [disabled]="leadsLoading() || leadsError() !== null"
+        [invalid]="error('principalInvestigatorId') !== null"
+        [describedBy]="describedBy('principalInvestigatorId', 'project-lead')"
+        (input)="update('principalInvestigatorId', $event)"
+      >
+        <option value="">{{ leadPlaceholder() }}</option>
+        @for (lead of leads(); track lead.id) {
+          <option [value]="lead.id">{{ lead.fullName }}</option>
+        }
+      </select>
+    </app-field>
+
+    @if (leadsError(); as message) {
+      <app-notice tone="error">
+        {{ message }}
+        <button
+          appButton
+          variant="secondary"
+          type="button"
+          noticeAction
+          (click)="retryLeads.emit()"
+        >
+          Reintentar
+        </button>
+      </app-notice>
+    }
+  } @else {
+    <app-field for="project-status" label="Estado" [error]="error('status')">
+      <select
+        appSelect
+        id="project-status"
+        [invalid]="error('status') !== null"
+        [describedBy]="describedBy('status', 'project-status')"
+        (input)="update('status', $event)"
+      >
+        <!-- `selected` en cada opción y no `value` en el select: al asignarlo, las
+             opciones del @for todavía no existen y no quedaría ninguna elegida. -->
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value" [selected]="option.value === initial().status">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </app-field>
+  }
+
+  <app-field for="project-description" label="Descripción" [error]="error('description')">
+    <textarea
+      appTextarea
+      id="project-description"
+      rows="4"
+      [invalid]="error('description') !== null"
+      [describedBy]="describedBy('description', 'project-description')"
+      [value]="initial().description"
+      (input)="update('description', $event)"
+    ></textarea>
+  </app-field>
+
+  <app-field for="project-objectives" label="Objetivos" [error]="error('objectives')">
+    <textarea
+      appTextarea
+      id="project-objectives"
+      rows="4"
+      [invalid]="error('objectives') !== null"
+      [describedBy]="describedBy('objectives', 'project-objectives')"
+      [value]="initial().objectives"
+      (input)="update('objectives', $event)"
+    ></textarea>
+  </app-field>
+
+  <!-- `max` limita el año a cuatro dígitos: el navegador admite seis, y el backend no. -->
+  <app-field
+    for="project-start"
+    label="Fecha de inicio"
+    [error]="error('startDate')"
+    [hint]="hint('startDate')"
+  >
+    <input
+      appInput
+      id="project-start"
+      name="startDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('startDate') !== null"
+      [describedBy]="describedBy('startDate', 'project-start')"
+      [value]="initial().startDate"
+      (input)="update('startDate', $event)"
+    />
+  </app-field>
+
+  <app-field
+    for="project-end"
+    label="Fecha de fin"
+    [error]="error('endDate')"
+    [hint]="hint('endDate')"
+  >
+    <input
+      appInput
+      id="project-end"
+      name="endDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('endDate') !== null"
+      [describedBy]="describedBy('endDate', 'project-end')"
+      [value]="initial().endDate"
+      (input)="update('endDate', $event)"
+    />
+  </app-field>
+
+  <!-- Texto y no `type="number"`: ese campo borra el segundo separador sin avisar, y
+       «48.500.000», como se escribe aquí un monto, llegaba como 48.5 pesos. -->
+  <app-field
+    for="project-budget"
+    label="Presupuesto"
+    [error]="error('budget')"
+    [hint]="hint('budget')"
+  >
+    <input
+      appInput
+      id="project-budget"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      [invalid]="error('budget') !== null"
+      [describedBy]="describedBy('budget', 'project-budget')"
+      [value]="initial().budget"
+      (input)="update('budget', $event)"
+    />
+  </app-field>
+
+  @if (notice(); as notice) {
+    <app-notice [tone]="notice.tone">{{ notice.message }}</app-notice>
+  }
+
+  <!-- En el orden del diálogo: «Cancelar» y después la acción. Cancelar se deshabilita
+       al enviar, porque salir ya no detendría nada. -->
+  <div class="flex flex-wrap justify-end gap-espacio-3">
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      [disabled]="busy()"
+      (click)="cancelled.emit()"
+    >
+      Cancelar
+    </button>
+    <button appButton type="submit" [disabled]="!canSubmit()">{{ submitLabel() }}</button>
+  </div>
+</form>
