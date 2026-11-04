@@ -21,6 +21,13 @@
      presence.css), los 2 segundos y el 0.35 del latido (presence.css). El relleno
      de la pastilla, `sonda-viva` al 15%, sale de una utilidad, pero el sistema no
      tiene ese valor como token.
+   - Del chat (chat-message.css, project-chat.css, unread-badge.css): los 340px de
+     la burbuja, el hueco de 32px del avatar, el alto de la lista (50dvh y 280px, que
+     el sistema no define), y del contador, los 18px, el relleno de 5px y el peso.
+   - Del Mensaje del sistema: su preview usa 0.55 para lo que se está enviando y
+     `tinta-tenue` para la hora. Aquí van `opacidad-deshabilitado` y `tinta-media`,
+     como dice su prosa: el preview debería corregirse. El separador de día y el
+     mensaje fallido tampoco están dibujados.
    - Los ajustes finos de espaciado del detalle y del formulario.
    - La etiqueta «Investigación principal» sobre el desplegable de personas
      (project-form.html): nombra una función, y encima de una lista de personas

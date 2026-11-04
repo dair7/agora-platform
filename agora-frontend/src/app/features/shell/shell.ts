@@ -1,5 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { RealtimeService } from '../../core/realtime/realtime.service';
 import { SessionService } from '../../core/session/session.service';
 import type { SystemRole } from '../../core/session/session.types';
@@ -33,6 +35,17 @@ export class Shell {
   protected readonly realtime = inject(RealtimeService);
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly leaving = signal(false);
+
+  readonly #url = toSignal(
+    this.#router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => this.#router.url),
+    ),
+    { initialValue: this.#router.url },
+  );
+
+  /** El aviso de reconexión no promete lo que no hay: solo en el chat se puede escribir. */
+  protected readonly canWrite = computed(() => this.#url().endsWith('/conversacion'));
 
   protected async logout(): Promise<void> {
     this.leaving.set(true);

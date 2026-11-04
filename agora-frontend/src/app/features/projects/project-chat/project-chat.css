@@ -1,0 +1,9 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin
+   token», y está en la lista de reconciliación de esa cabecera. */
+
+/* El historial se desplaza por dentro, para que el compositor quede a la vista. */
+.chat-lista {
+  height: 50dvh; /* sin token */
+  min-height: 280px; /* sin token */
+  overflow-y: auto;
+}
