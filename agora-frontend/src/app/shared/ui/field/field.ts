@@ -89,7 +89,8 @@ const textareaHeight = (rows: number): string => `calc(${rows}lh + 2 * var(--esp
   },
 })
 export class FieldTextarea extends FieldControl {
-  protected override readonly extraClasses = 'resize-y field-sizing-content';
+  protected override readonly extraClasses =
+    'resize-y field-sizing-content disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado';
 
   protected readonly minHeight = textareaHeight(
     Number(inject(new HostAttributeToken('rows'), { optional: true }) ?? 2),

@@ -58,6 +58,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-edit/project-edit').then((m) => m.ProjectEdit),
       },
+      // Sin guard, como editar: que la persona participe lo decide el backend.
+      {
+        path: 'proyectos/:projectId/conversacion',
+        title: 'Conversación · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-chat/project-chat').then((m) => m.ProjectChat),
+      },
       // Pantalla provisional de la fase 3. La reemplaza el inicio por rol de la
       // fase 13; hasta entonces se queda, aunque la raíz ya no lleve aquí.
       {

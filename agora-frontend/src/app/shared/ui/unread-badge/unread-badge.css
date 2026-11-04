@@ -1,0 +1,8 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin
+   token», y está en la lista de reconciliación de esa cabecera. */
+:host(.sin-leer) {
+  min-width: 18px; /* sin token */
+  padding: 0 5px; /* sin token */
+  text-align: center;
+  font-weight: 600; /* sin token: el tamaño lo hereda, y el peso solo viene con los estilos de texto */
+}

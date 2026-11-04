@@ -1,0 +1,16 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin
+   token», y está en la lista de reconciliación de esa cabecera. */
+
+/* El sitio del avatar en los mensajes seguidos de una racha. */
+.chat-hueco {
+  width: 32px; /* sin token */
+}
+
+/* Sin esto, una palabra larga no deja encoger la columna y se desborda a 360px. */
+.chat-cuerpo {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}
+
+.chat-burbuja {
+  max-width: 340px; /* sin token */
+}

@@ -55,8 +55,20 @@
 
         <!-- Las dos en secundario: esta pantalla es para leer y editar es ocasional, así
              que se queda sin acción primaria. Cerrar tampoco es destructivo: no es borrar. -->
-        @if (canManage()) {
-          <div class="flex flex-wrap gap-espacio-3">
+        <div class="flex flex-wrap gap-espacio-3">
+          @if (canChat()) {
+            <a
+              appButton
+              variant="secondary"
+              [routerLink]="['/proyectos', view.project.id, 'conversacion']"
+            >
+              Conversación
+              @if (unread(); as unread) {
+                <app-unread-badge class="ml-espacio-2" [count]="unread" />
+              }
+            </a>
+          }
+          @if (canManage()) {
             <a
               appButton
               variant="secondary"
@@ -67,8 +79,8 @@
             <button appButton variant="secondary" type="button" (click)="closeDialog.open()">
               Cerrar proyecto
             </button>
-          </div>
-        }
+          }
+        </div>
       </div>
 
       <!-- La píldora va pegada al título y no a la derecha: ese lado es de las acciones,

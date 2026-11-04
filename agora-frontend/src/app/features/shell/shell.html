@@ -29,7 +29,11 @@
      se va cuando la conexión vuelve. -->
 @if (realtime.status() === 'reconnecting') {
   <div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-4">
-    <app-notice tone="attention">Reconectando con el servidor.</app-notice>
+    <app-notice tone="attention"
+      >Reconectando con el servidor.{{
+        canWrite() ? ' Puedes seguir escribiendo.' : ''
+      }}</app-notice
+    >
   </div>
 }
 

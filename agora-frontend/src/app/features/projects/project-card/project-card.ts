@@ -1,9 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ProjectListItem } from '../../../core/api/projects.types';
 import { formatProjectPeriod } from '../../../core/format/project-dates';
 import { formatProjectLead } from '../../../core/format/project-lead';
+import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
+import { UnreadBadge } from '../../../shared/ui/unread-badge/unread-badge';
 
 /**
  * Del componente TarjetaProyecto del sistema de diseño: una fila de la lista de
@@ -14,7 +16,7 @@ import { ProjectStatusPill } from '../../../shared/ui/project-status/project-sta
  */
 @Component({
   selector: 'app-project-card',
-  imports: [ProjectStatusPill, RouterLink],
+  imports: [ProjectStatusPill, RouterLink, UnreadBadge],
   template: `
     <a
       class="grid gap-espacio-2 p-espacio-4 bg-superficie-00 border border-borde rounded-radio-md hover:border-veril"
@@ -29,8 +31,13 @@ import { ProjectStatusPill } from '../../../shared/ui/project-status/project-sta
         class="secundario text-tinta-media flex flex-col sm:flex-row sm:justify-between sm:gap-espacio-3"
       >
         <span>{{ lead() }}</span>
-        @if (period()) {
-          <span class="tabular-nums sm:shrink-0">{{ period() }}</span>
+        @if (period() || unread()) {
+          <span class="tabular-nums sm:shrink-0">
+            @if (unread(); as unread) {
+              <app-unread-badge class="mr-espacio-2" [count]="unread" />
+            }
+            {{ period() }}
+          </span>
         }
       </div>
     </a>
@@ -38,7 +45,11 @@ import { ProjectStatusPill } from '../../../shared/ui/project-status/project-sta
   host: { class: 'block' },
 })
 export class ProjectCard {
+  readonly #realtime = inject(RealtimeService);
+
   readonly project = input.required<ProjectListItem>();
+
+  protected readonly unread = computed(() => this.#realtime.unreadIn(this.project().id));
 
   protected readonly lead = computed(() => {
     const { principalInvestigator, memberCount } = this.project();

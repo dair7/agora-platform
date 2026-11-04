@@ -1,3 +1,5 @@
+import type { ChatMessage } from '../api/chat.types';
+
 // Copia de lo que este cliente escucha del contrato de `sockets/events.ts`. Crece
 // con él: los eventos se declaran primero en el backend.
 
@@ -13,6 +15,7 @@ export interface PresenceChange {
 }
 
 export interface ServerToClientEvents {
+  'chat:mensaje': (payload: ChatMessage) => void;
   'presencia:inicial': (payload: ProjectPresence[]) => void;
   'usuario:conectado': (payload: PresenceChange) => void;
   'usuario:desconectado': (payload: PresenceChange) => void;

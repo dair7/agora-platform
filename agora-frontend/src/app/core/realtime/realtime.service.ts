@@ -1,7 +1,9 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
 import { io, type Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
+import type { ChatMessage } from '../api/chat.types';
 import { expireSession } from '../session/expire-session';
 import { SessionEndedError, SessionService } from '../session/session.service';
 import type { ClientToServerEvents, RealtimeStatus, ServerToClientEvents } from './realtime.types';
@@ -38,13 +40,31 @@ export class RealtimeService {
 
   readonly #status = signal<RealtimeStatus>('disconnected');
   readonly #presence = signal<Presence>(NO_PRESENCE);
+  readonly #unread = signal<ReadonlyMap<string, number>>(new Map());
+  readonly #chatMessages = new Subject<ChatMessage>();
+  readonly #connected = new Subject<void>();
 
   #socket: AppSocket | null = null;
   #retryTimer: ReturnType<typeof setTimeout> | undefined;
   /** Ya se renovó para este intento: un segundo `TOKEN_EXPIRED` no renueva otra vez. */
   #renewedForHandshake = false;
+  /** El chat que la persona tiene abierto ahora: lo que llega ahí ya está leído. */
+  #openChatId: string | null = null;
 
   readonly status = this.#status.asReadonly();
+
+  /**
+   * Los mensajes que llegan por el socket. Un flujo y no una señal: una señal
+   * fusiona dos cambios en el mismo ciclo, y se perdería un mensaje. La lista en sí
+   * vive en una señal, en la pantalla del chat.
+   */
+  readonly chatMessages = this.#chatMessages.asObservable();
+
+  /**
+   * Cada conexión establecida, también la primera. Es síncrono a propósito: quien
+   * escucha ve la lista tal como estaba antes de que llegue ningún mensaje nuevo.
+   */
+  readonly connected = this.#connected.asObservable();
 
   constructor() {
     effect(() => {
@@ -60,6 +80,25 @@ export class RealtimeService {
    */
   presenceIn(projectId: string): ReadonlySet<string> | null {
     return this.#presence().get(projectId) ?? null;
+  }
+
+  /**
+   * Los mensajes sin leer de un proyecto. Viven en memoria y no sobreviven a una
+   * recarga: `last_read_at` existe en la base, pero ningún endpoint lo expone. Es un
+   * hueco de la fase 11.
+   */
+  unreadIn(projectId: string): number {
+    return this.#unread().get(projectId) ?? 0;
+  }
+
+  /** La persona está mirando este chat: lo que había queda leído, y lo que llegue también. */
+  openChat(projectId: string): void {
+    this.#openChatId = projectId;
+    this.#setUnread(projectId, 0);
+  }
+
+  closeChat(): void {
+    this.#openChatId = null;
   }
 
   #connect(): void {
@@ -79,11 +118,13 @@ export class RealtimeService {
     socket.on('connect', () => {
       this.#renewedForHandshake = false;
       this.#status.set('connected');
+      this.#connected.next();
     });
 
     socket.on('disconnect', (reason) => {
       // Sin conexión ya no se sabe quién está. Dejar los puntos verdes encendidos
-      // sería mentir; al reconectar, `presencia:inicial` los vuelve a llenar.
+      // sería mentir; al reconectar, `presencia:inicial` los vuelve a llenar. Los no
+      // leídos no se tocan: esos siguen siendo ciertos aunque se caiga la conexión.
       this.#presence.set(NO_PRESENCE);
 
       if (reason === 'io client disconnect') {
@@ -95,6 +136,18 @@ export class RealtimeService {
     });
 
     socket.on('connect_error', (error) => void this.#onConnectError(socket, error));
+
+    socket.on('chat:mensaje', (message) => {
+      const mine = message.sender.id === this.#session.user()?.id;
+
+      // El propio no cuenta: el evento también llega a las otras pestañas de quien lo
+      // escribió.
+      if (!mine && message.projectId !== this.#openChatId) {
+        this.#setUnread(message.projectId, this.unreadIn(message.projectId) + 1);
+      }
+
+      this.#chatMessages.next(message);
+    });
 
     socket.on('presencia:inicial', (entries) => {
       this.#presence.set(new Map(entries.map((e) => [e.projectId, new Set(e.userIds)])));
@@ -115,6 +168,8 @@ export class RealtimeService {
     this.#socket = null;
     this.#renewedForHandshake = false;
     this.#presence.set(NO_PRESENCE);
+    // Aquí sí: esto es el fin de la sesión, y quien entre después es otra persona.
+    this.#unread.set(new Map());
     this.#status.set('disconnected');
   }
 
@@ -190,6 +245,10 @@ export class RealtimeService {
 
     clearTimeout(this.#retryTimer);
     this.#retryTimer = setTimeout(() => socket.connect(), RETRY_DELAY_MS);
+  }
+
+  #setUnread(projectId: string, count: number): void {
+    this.#unread.set(new Map(this.#unread()).set(projectId, count));
   }
 
   /** Solo sobre proyectos conocidos: una entrada suelta contaría a medias. */
