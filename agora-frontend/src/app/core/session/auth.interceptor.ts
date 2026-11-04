@@ -3,9 +3,8 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { apiErrorCode } from '../api/api-error';
+import { expireSession } from './expire-session';
 import { SESSION_REQUEST, SessionEndedError, SessionService } from './session.service';
-
-const SESSION_EXPIRED_URL = '/sesion-expirada';
 
 const withToken = (req: HttpRequest<unknown>, token: string | null) =>
   token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
@@ -43,11 +42,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // el token. Todas las peticiones que esperaban llegan aquí juntas y fallan;
       // ninguna se queda colgada.
       if (error instanceof SessionEndedError || apiErrorCode(error) === 'INVALID_TOKEN') {
-        session.end();
-
-        if (!router.url.startsWith(SESSION_EXPIRED_URL)) {
-          void router.navigateByUrl(SESSION_EXPIRED_URL);
-        }
+        expireSession(session, router);
       }
 
       return throwError(() => error);
