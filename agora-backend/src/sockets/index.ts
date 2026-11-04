@@ -31,7 +31,8 @@ export const initSocketServer = (httpServer: HttpServer): AppServer => {
   io.on('connection', (socket) => {
     handleConnection(socket).catch((error: unknown) => {
       // Un socket sin sus salas no recibiría nada y el cliente no se enteraría.
-      // Mejor cortarlo: socket.io-client reintenta solo.
+      // Mejor cortarlo. socket.io-client no reintenta tras una desconexión del
+      // servidor: lo hace `RealtimeService`, en el frontend.
       console.error(error);
       socket.disconnect(true);
     });

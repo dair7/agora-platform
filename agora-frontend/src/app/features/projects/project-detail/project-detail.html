@@ -136,20 +136,31 @@
     </section>
 
     <section aria-labelledby="miembros-titulo" class="grid gap-espacio-3">
-      <h2 id="miembros-titulo" class="titulo-seccion text-tinta">
-        Miembros <span class="text-tinta-media tabular-nums">{{ view.members.length }}</span>
-      </h2>
+      <div class="flex flex-wrap items-center gap-espacio-3">
+        <h2 id="miembros-titulo" class="titulo-seccion text-tinta">
+          Miembros <span class="text-tinta-media tabular-nums">{{ view.members.length }}</span>
+        </h2>
+        @if (online(); as online) {
+          <app-presence-pill [count]="online.size" />
+        }
+      </div>
 
       <!-- Dentro de una tarjeta las filas se separan con línea, no con sombra. -->
       <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
         @for (member of view.members; track member.id) {
           <li class="flex items-start justify-between gap-espacio-3 px-espacio-4 py-espacio-3">
-            <div class="wrap-anywhere">
-              <p class="cuerpo-fuerte text-tinta">{{ member.user.fullName }}</p>
-              <p class="secundario text-tinta-media">{{ member.user.email }}</p>
-              @if (!member.user.isActive) {
-                <p class="secundario text-tinta-media">Cuenta desactivada</p>
-              }
+            <div class="flex items-start gap-espacio-2">
+              <app-avatar
+                [name]="member.user.fullName"
+                [online]="online()?.has(member.user.id) ?? false"
+              />
+              <div class="wrap-anywhere">
+                <p class="cuerpo-fuerte text-tinta">{{ member.user.fullName }}</p>
+                <p class="secundario text-tinta-media">{{ member.user.email }}</p>
+                @if (!member.user.isActive) {
+                  <p class="secundario text-tinta-media">Cuenta desactivada</p>
+                }
+              </div>
             </div>
             <div class="flex flex-col items-end gap-espacio-2 shrink-0">
               <p class="secundario text-tinta-media">{{ roleLabels[member.role] }}</p>

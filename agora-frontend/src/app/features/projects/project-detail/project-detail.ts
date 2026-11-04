@@ -21,12 +21,15 @@ import type { Member, ProjectRole } from '../../../core/api/projects.types';
 import { formatBudget } from '../../../core/format/project-budget';
 import { formatClosedAt, formatProjectPeriod } from '../../../core/format/project-dates';
 import { formatProjectLead } from '../../../core/format/project-lead';
+import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { SessionService } from '../../../core/session/session.service';
+import { Avatar } from '../../../shared/ui/avatar/avatar';
 import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Empty } from '../../../shared/ui/empty/empty';
 import { Field, FieldInput } from '../../../shared/ui/field/field';
 import { Notice } from '../../../shared/ui/notice/notice';
+import { PresencePill } from '../../../shared/ui/presence/presence';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { canManageProject } from '../project-permissions';
@@ -85,6 +88,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
 @Component({
   selector: 'app-project-detail',
   imports: [
+    Avatar,
     Button,
     Dialog,
     Empty,
@@ -92,6 +96,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
     FieldInput,
     LoadingStatus,
     Notice,
+    PresencePill,
     ProjectStatusPill,
     RouterLink,
     Skeleton,
@@ -102,6 +107,7 @@ export class ProjectDetail {
   readonly #api = inject(ProjectsApi);
   readonly #title = inject(Title);
   readonly #session = inject(SessionService);
+  readonly #realtime = inject(RealtimeService);
   protected readonly roleLabels = ROLE_LABELS;
 
   readonly #params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
@@ -110,6 +116,15 @@ export class ProjectDetail {
     params: () => this.#params().get('projectId') ?? '',
     loader: ({ params }) => this.#api.get(params),
   });
+
+  /**
+   * Quién está en línea, o `null` si no se sabe: sin conexión, a la coordinación
+   * (no entra a las salas), o a quien acaban de sumar al proyecto. Con `null` la
+   * pantalla no muestra cuenta: una inventada es peor que ninguna.
+   */
+  protected readonly online = computed(() =>
+    this.#realtime.presenceIn(this.#params().get('projectId') ?? ''),
+  );
 
   /**
    * `NOT_FOUND` y `VALIDATION_ERROR` comparten pantalla y texto, a propósito.

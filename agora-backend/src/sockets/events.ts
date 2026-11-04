@@ -13,6 +13,7 @@ export interface ServerToClientEvents {
   'chat:mensaje': (payload: ChatMessagePayload) => void;
   'usuario:conectado': (payload: PresencePayload) => void;
   'usuario:desconectado': (payload: PresencePayload) => void;
+  'presencia:inicial': (payload: InitialPresencePayload) => void;
 }
 
 /**
@@ -45,6 +46,19 @@ export interface PresencePayload {
   userId: string;
   projectId: string;
 }
+
+/**
+ * Quién está en línea en un proyecto. `userIds` incluye a quien se acaba de
+ * conectar, y va vacío si no hay nadie: el cliente tiene que poder distinguir
+ * «nadie conectado» de «todavía no sé nada de ese proyecto».
+ */
+export interface ProjectPresence {
+  projectId: string;
+  userIds: string[];
+}
+
+/** Una entrada por cada sala de proyecto a la que el socket acaba de entrar. */
+export type InitialPresencePayload = ProjectPresence[];
 
 export type AppServer = Server<
   ClientToServerEvents,
