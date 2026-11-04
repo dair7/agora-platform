@@ -1,6 +1,6 @@
 import { findMemberProjectIds } from '../modules/projects/projects.repository.js';
 import { projectRoom, userRoom } from './events.js';
-import type { AppSocket } from './events.js';
+import type { AppSocket, SocketData } from './events.js';
 
 const PROJECT_ROOM_PREFIX = projectRoom('');
 
@@ -20,6 +20,16 @@ const projectIdsOf = (socket: AppSocket): string[] =>
   [...socket.rooms]
     .filter((room) => room.startsWith(PROJECT_ROOM_PREFIX))
     .map((room) => room.slice(PROJECT_ROOM_PREFIX.length));
+
+/**
+ * Sale de los sockets de la sala y no de un registro propio: es exacto y no hay
+ * estado que mantener. Varias pestañas de una persona son una sola entrada.
+ */
+const onlineUserIds = async (socket: AppSocket, projectId: string): Promise<string[]> => {
+  const sockets = await socket.nsp.in(projectRoom(projectId)).fetchSockets();
+
+  return [...new Set(sockets.map(({ data }: { data: SocketData }) => data.user.id))];
+};
 
 /**
  * Las salas las decide el servidor a partir de la base de datos, nunca el
@@ -69,4 +79,17 @@ export const handleConnection = async (socket: AppSocket): Promise<void> => {
       socket.to(projectRoom(projectId)).emit('usuario:conectado', { userId, projectId });
     }
   }
+
+  // Sin esto la presencia es asimétrica: quien ya estaba ve llegar al nuevo, pero el
+  // nuevo no sabe quién estaba. Va después de `usuario:conectado` porque aquí se
+  // espera: anunciar la entrada tras esa espera podría llegar después de un
+  // `usuario:desconectado` y dejar en línea a quien ya se fue.
+  const presence = await Promise.all(
+    projectIds.map(async (projectId) => ({
+      projectId,
+      userIds: await onlineUserIds(socket, projectId),
+    })),
+  );
+
+  socket.emit('presencia:inicial', presence);
 };

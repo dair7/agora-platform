@@ -366,10 +366,13 @@ There are no client → server events: all changes go through REST.
 | `chat:mensaje` | `proyecto:{id}` | `{ id, projectId, content, createdAt, sender: { id, fullName } }` | After a message sent with `POST /proyectos/:projectId/mensajes` is saved |
 | `usuario:conectado` | The person's project rooms | `{ userId, projectId }` | The person's **first** socket connects |
 | `usuario:desconectado` | The person's project rooms | `{ userId, projectId }` | The person's **last** socket disconnects |
+| `presencia:inicial` | Only the socket that just connected | `[{ projectId, userIds }]` | Right after that socket joins its rooms |
 
 `chat:mensaje` has the same shape as the `message` returned by the REST call. The event also goes back to the sender. The tab that sent the message already has it from the REST response and discards the duplicate by `id`, while the sender's other tabs display it.
 
 Presence is tracked per person, not per tab: opening a second tab does not announce the person again.
+
+`presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected does not send a new snapshot.
 
 Planned for Deliveries 3 and 4: `avance:creado`, `tarea:actualizada`, `documento:subido`, `cronograma:modificado`.
 
