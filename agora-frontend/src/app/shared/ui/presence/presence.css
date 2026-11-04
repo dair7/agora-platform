@@ -1,0 +1,20 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin
+   token», y está en la lista de reconciliación de esa cabecera. */
+:host(.presencia-punto) {
+  width: 9px; /* sin token */
+  height: 9px; /* sin token */
+  animation: latido 2s ease-in-out infinite; /* 2s sin token */
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.35; /* sin token */
+  }
+}
+
+/* Se para, no se atenúa: el punto se queda a opacidad plena y no se pierde nada. */
+@media (prefers-reduced-motion: reduce) {
+  :host(.presencia-punto) {
+    animation: none;
+  }
+}

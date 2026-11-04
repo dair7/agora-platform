@@ -1,0 +1,15 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin
+   token», y está en la lista de reconciliación de esa cabecera. */
+:host(.avatar) {
+  width: 32px; /* sin token */
+  height: 32px; /* sin token */
+}
+
+/* El punto mide 9px y el borde va por fuera, como en el sistema: con el `border-box`
+   de Tailwind, esos 2px por lado se comerían el punto. */
+.avatar-punto {
+  position: absolute;
+  right: -1px; /* sin token */
+  bottom: -1px; /* sin token */
+  box-sizing: content-box;
+}

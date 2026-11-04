@@ -1,8 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { RealtimeService } from '../../core/realtime/realtime.service';
 import { SessionService } from '../../core/session/session.service';
 import type { SystemRole } from '../../core/session/session.types';
 import { Button } from '../../shared/ui/button/button';
+import { Notice } from '../../shared/ui/notice/notice';
 
 /**
  * El rol en palabras, nunca el valor del enum. Son nombres de área y no de
@@ -21,13 +23,14 @@ const ROLE_LABELS: Record<SystemRole, string> = {
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterOutlet, Button],
+  imports: [RouterLink, RouterOutlet, Button, Notice],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
 export class Shell {
   readonly #router = inject(Router);
   protected readonly session = inject(SessionService);
+  protected readonly realtime = inject(RealtimeService);
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly leaving = signal(false);
 

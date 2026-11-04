@@ -25,6 +25,14 @@
   </div>
 </header>
 
+<!-- Aquí y no en cada pantalla, para que cubra toda la aplicación. No se cierra sola:
+     se va cuando la conexión vuelve. -->
+@if (realtime.status() === 'reconnecting') {
+  <div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-4">
+    <app-notice tone="attention">Reconectando con el servidor.</app-notice>
+  </div>
+}
+
 <!-- Cada pantalla trae su propio <main>: las de antes del armazón ya lo hacían. -->
 <div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-8 pb-espacio-8">
   <router-outlet />

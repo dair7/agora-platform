@@ -17,6 +17,10 @@
    - Valores sin token: los 1040px del armazón (shell.css), los 320px del buscador
      (project-list.css) y, en `FieldTextarea` (field.ts), las 10 filas del techo
      de las áreas de texto.
+   - De la presencia: los 32px del avatar y los 9px del punto (avatar.css,
+     presence.css), los 2 segundos y el 0.35 del latido (presence.css). El relleno
+     de la pastilla, `sonda-viva` al 15%, sale de una utilidad, pero el sistema no
+     tiene ese valor como token.
    - Los ajustes finos de espaciado del detalle y del formulario.
    - La etiqueta «Investigación principal» sobre el desplegable de personas
      (project-form.html): nombra una función, y encima de una lista de personas
