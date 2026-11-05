@@ -27,7 +27,7 @@ import { Avatar } from '../../../shared/ui/avatar/avatar';
 import { Button } from '../../../shared/ui/button/button';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { Empty } from '../../../shared/ui/empty/empty';
-import { Field, FieldInput } from '../../../shared/ui/field/field';
+import { Field, FieldInput, FieldSelect } from '../../../shared/ui/field/field';
 import { Notice } from '../../../shared/ui/notice/notice';
 import { PresencePill } from '../../../shared/ui/presence/presence';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
@@ -45,6 +45,12 @@ const CLOSE_MESSAGES: ApiErrorMessages = { CONFLICT: 'Este proyecto ya estaba ce
 
 const REMOVE_MESSAGES: ApiErrorMessages = {
   CONFLICT: 'No se puede retirar al investigador principal.',
+};
+
+const TRANSFER_MESSAGES: ApiErrorMessages = {
+  NOT_FOUND: 'Esa persona ya no es miembro activo del proyecto.',
+  FORBIDDEN: 'Ya no eres el investigador principal de este proyecto.',
+  CONFLICT: 'El proyecto se cerró y ya no admite cambios.',
 };
 
 /**
@@ -95,6 +101,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
     Empty,
     Field,
     FieldInput,
+    FieldSelect,
     LoadingStatus,
     Notice,
     PresencePill,
@@ -233,6 +240,31 @@ export class ProjectDetail {
     if (member) {
       await this.#runInDialog(dialog, this.removing, REMOVE_MESSAGES, (id) =>
         this.#api.removeMember(id, member.user.id),
+      );
+    }
+  }
+
+  // El relevo. Solo a un miembro activo: el backend rechaza a cualquier otro.
+  protected readonly leadCandidates = computed(
+    () =>
+      this.view()?.members.filter(
+        (member) => member.role === 'CO_INVESTIGATOR' && member.user.isActive,
+      ) ?? [],
+  );
+  protected readonly newLeadId = signal('');
+  protected readonly transferring = signal(false);
+
+  protected askToTransfer(dialog: Dialog): void {
+    this.newLeadId.set('');
+    dialog.open();
+  }
+
+  protected async transferLead(dialog: Dialog): Promise<void> {
+    const userId = this.newLeadId();
+
+    if (userId) {
+      await this.#runInDialog(dialog, this.transferring, TRANSFER_MESSAGES, (id) =>
+        this.#api.transferLead(id, userId),
       );
     }
   }

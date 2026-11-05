@@ -68,6 +68,20 @@ export class ProjectsApi {
     return project;
   }
 
+  /**
+   * Solo el investigador principal. Pasa a coinvestigación y el elegido ocupa su lugar, en
+   * una transacción. Devuelve la lista completa.
+   */
+  async transferLead(projectId: string, userId: string): Promise<Member[]> {
+    const { members } = await firstValueFrom(
+      this.#http.put<{ members: Member[] }>(`${this.#url}/${projectId}/investigador-principal`, {
+        userId,
+      }),
+    );
+
+    return members;
+  }
+
   async listMembers(projectId: string): Promise<Member[]> {
     const { members } = await firstValueFrom(
       this.#http.get<{ members: Member[] }>(`${this.#url}/${projectId}/miembros`),
