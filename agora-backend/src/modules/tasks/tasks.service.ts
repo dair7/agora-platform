@@ -10,18 +10,25 @@ import type { MissingReference, TaskRow, WrittenTask } from './tasks.repository.
 import type { CreateTaskInput, UpdateTaskInput } from './tasks.schema.js';
 
 /**
- * La tarea más su responsable y las tareas de las que depende. Una sola forma
- * para la lista y para las escrituras.
+ * La tarea más su responsable, las tareas de las que depende y cuánto cuelga de ella.
+ * Una sola forma para la lista y para las escrituras.
+ *
+ * Los dos conteos son lo que perdería su vínculo al borrarla. Salen de aquí porque el
+ * cliente no los puede calcular: la lista de documentos solo trae la última versión.
  */
 export type TaskItem = Task & {
   assignee: UserSummary | null;
   dependsOnTaskIds: string[];
+  progressCount: number;
+  documentCount: number;
 };
 
-// `dependencies` es un detalle de Prisma: sale traducido, no tal cual.
-const toTaskItem = ({ dependencies, ...task }: TaskRow): TaskItem => ({
+// `dependencies` y `_count` son detalles de Prisma: salen traducidos, no tal cual.
+const toTaskItem = ({ dependencies, _count, ...task }: TaskRow): TaskItem => ({
   ...task,
   dependsOnTaskIds: dependencies.map((dependency) => dependency.dependsOnTaskId),
+  progressCount: _count.progress,
+  documentCount: _count.documents,
 });
 
 /** Mismo criterio que la edición del proyecto: cerrado es de solo lectura. */

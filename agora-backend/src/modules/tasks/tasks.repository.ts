@@ -42,6 +42,7 @@ const inProject = (projectId: string): Prisma.TaskWhereInput => ({ phase: { proj
 const taskInclude = {
   assignee: { select: userSummarySelect },
   dependencies: { select: { dependsOnTaskId: true }, orderBy: { createdAt: 'asc' } },
+  _count: { select: { progress: true, documents: true } },
 } satisfies Prisma.TaskInclude;
 
 export type TaskRow = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
