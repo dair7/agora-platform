@@ -28,8 +28,9 @@ const getPhase = async (projectId: string, phaseId: string): Promise<Phase> => {
  * solo una de las dos fechas, y la otra es la que ya está guardada.
  */
 const assertDateRange = (phase: Phase, input: UpdatePhaseInput): void => {
-  const startDate = input.startDate ?? phase.startDate;
-  const endDate = input.endDate ?? phase.endDate;
+  // `undefined` y no `??`: `null` vacía la fecha, no es «la que ya estaba».
+  const startDate = input.startDate === undefined ? phase.startDate : input.startDate;
+  const endDate = input.endDate === undefined ? phase.endDate : input.endDate;
 
   if (startDate && endDate && startDate > endDate) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Los datos enviados no son válidos', [

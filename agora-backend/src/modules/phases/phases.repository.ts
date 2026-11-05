@@ -11,10 +11,10 @@ interface CreatePhaseData {
 
 export interface UpdatePhaseData {
   name?: string;
-  description?: string;
+  description?: string | null;
   status?: PhaseStatus;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: Date | null;
+  endDate?: Date | null;
 }
 
 /**

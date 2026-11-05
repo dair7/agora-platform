@@ -58,18 +58,19 @@ export const createPhaseSchema = z
   });
 
 // Actualización parcial: la coherencia entre fechas la resuelve el servicio,
-// porque el cuerpo puede traer solo una y la otra está en la base.
+// porque el cuerpo puede traer solo una y la otra está en la base. `null` vacía el
+// campo y ausente no lo cambia; `name` no lo admite, porque es obligatorio al crear.
 export const updatePhaseSchema = z
-  .object(
+  .strictObject(
     {
       name: name.optional(),
-      description: optionalText,
+      description: optionalText.nullable(),
       status: status.optional(),
-      startDate: date.optional(),
-      endDate: date.optional(),
+      startDate: date.nullable().optional(),
+      endDate: date.nullable().optional(),
       position,
     },
-    invalidBody,
+    'El cuerpo debe ser un objeto JSON y traer solo campos de la fase',
   )
   .refine((input) => Object.keys(input).length > 0, {
     message: 'Hay que enviar al menos un campo para actualizar',
