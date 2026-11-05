@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { io, type Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import type { ChatMessage } from '../api/chat.types';
+import type { AppNotification } from '../api/notifications.types';
 import { expireSession } from '../session/expire-session';
 import { SessionEndedError, SessionService } from '../session/session.service';
 import type { ClientToServerEvents, RealtimeStatus, ServerToClientEvents } from './realtime.types';
@@ -46,6 +47,9 @@ export class RealtimeService {
   readonly #disconnected = new Subject<void>();
   readonly #scheduleChanged = new Subject<string>();
   readonly #tasksChanged = new Subject<string>();
+  readonly #progressChanged = new Subject<string>();
+  readonly #documentsChanged = new Subject<string>();
+  readonly #notifications = new Subject<AppNotification>();
 
   #socket: AppSocket | null = null;
   #retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -78,6 +82,15 @@ export class RealtimeService {
 
   /** El id del proyecto cuyas tareas cambiaron. Quien las muestra vuelve a pedirlas. */
   readonly tasksChanged = this.#tasksChanged.asObservable();
+
+  /** El id del proyecto cuyos avances cambiaron: uno nuevo, editado o borrado. */
+  readonly progressChanged = this.#progressChanged.asObservable();
+
+  /** El id del proyecto cuyos documentos cambiaron: uno subido o una versión borrada. */
+  readonly documentsChanged = this.#documentsChanged.asObservable();
+
+  /** Lo que llega a la sala personal. Un flujo, como `chatMessages`: dos no se fusionan. */
+  readonly notifications = this.#notifications.asObservable();
 
   constructor() {
     effect(() => {
@@ -162,6 +175,11 @@ export class RealtimeService {
 
     socket.on('cronograma:modificado', ({ projectId }) => this.#scheduleChanged.next(projectId));
     socket.on('tarea:actualizada', ({ projectId }) => this.#tasksChanged.next(projectId));
+    socket.on('avance:creado', ({ projectId }) => this.#progressChanged.next(projectId));
+    socket.on('avance:modificado', ({ projectId }) => this.#progressChanged.next(projectId));
+    socket.on('documento:subido', ({ projectId }) => this.#documentsChanged.next(projectId));
+    socket.on('documento:modificado', ({ projectId }) => this.#documentsChanged.next(projectId));
+    socket.on('notificacion:nueva', (notification) => this.#notifications.next(notification));
 
     socket.on('presencia:inicial', (entries) => {
       this.#presence.set(new Map(entries.map((e) => [e.projectId, new Set(e.userIds)])));
