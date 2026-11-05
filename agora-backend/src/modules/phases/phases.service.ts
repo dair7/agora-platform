@@ -108,9 +108,17 @@ export const reorderPhases = async (
 ): Promise<Phase[]> => {
   assertProjectOpen(access.project);
 
-  const phases = await repository.reorderPhases(access.project.id, input.phaseIds);
+  const phases = await repository.reorderPhases(
+    access.project.id,
+    input.phaseIds,
+    input.expectedPhaseIds,
+  );
 
-  if (!phases) {
+  if (phases === 'stale') {
+    throw new AppError(409, 'CONFLICT', 'El cronograma cambió mientras se ordenaba');
+  }
+
+  if (phases === 'invalid') {
     throw new AppError(400, 'VALIDATION_ERROR', 'Los datos enviados no son válidos', [
       {
         field: 'phaseIds',

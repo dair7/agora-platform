@@ -80,12 +80,21 @@ export const updatePhaseSchema = z
 // deja huecos y empates si dos personas reordenan a la vez, y una lista completa
 // no puede quedar a medias. Que sean exactamente las fases del proyecto lo
 // comprueba el repositorio, que es quien las tiene.
+//
+// `expectedPhaseIds` es el orden que el cliente vio antes de mover. Sin él, dos personas
+// moviendo a la vez: gana la última y la otra nunca se entera de que su cambio se perdió.
 export const reorderPhasesSchema = z.object(
   {
     phaseIds: z.array(
       z.uuid('Cada identificador de fase debe ser válido'),
       'Hay que enviar la lista completa de fases',
     ),
+    expectedPhaseIds: z
+      .array(
+        z.uuid('Cada identificador de fase debe ser válido'),
+        'El orden visto debe ser una lista de fases',
+      )
+      .optional(),
   },
   invalidBody,
 );
