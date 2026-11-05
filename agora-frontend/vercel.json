@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "angular",
+  "installCommand": "npx --yes pnpm@10.28.2 install --frozen-lockfile --filter agora-frontend...",
+  "buildCommand": "npm run build:deploy",
+  "outputDirectory": "dist/agora-frontend/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

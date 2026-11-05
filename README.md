@@ -19,6 +19,7 @@ Academic project for the *Programación Distribuida* course, Universidad de Cart
 - [REST API](#rest-api)
 - [Real-time events (Socket.io)](#real-time-events-socketio)
 - [Connectivity demo](#connectivity-demo)
+- [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
@@ -171,12 +172,12 @@ The server validates these values at startup with Zod. If any value is missing o
 | `JWT_SECRET` | — (required) | Signing key for access tokens, at least 32 characters |
 | `JWT_EXPIRES_IN` | `15m` | Access token lifetime. Format: a number followed by `s`, `m`, `h` or `d` |
 | `REFRESH_TOKEN_EXPIRES_IN` | `7d` | Refresh token lifetime, same format |
-| `CORS_ORIGIN` | `http://localhost:4200` | Allowed origin for both REST and Socket.io (the Angular dev server) |
+| `CORS_ORIGIN` | `http://localhost:4200` | Allowed origin for both REST and Socket.io (the Angular dev server). One origin, no path; a trailing slash is removed. **Required in production** |
 | `SUPABASE_URL` | — (optional) | Supabase project URL |
 | `SUPABASE_SECRET_KEY` | — (optional) | Secret key (`sb_secret_...`). Backend only |
 | `SUPABASE_BUCKET` | — (optional) | Private bucket for the files |
 
-**The three `SUPABASE_*` variables are optional, and they go together: all three or none.** Without them, files are stored on local disk under `agora-backend/uploads/` (ignored by git), so you can clone the repository and run everything without a Supabase account, including the documents of the seed. With them, files go to Supabase Storage. The server logs which one it uses at startup. Setting only some of them stops the server at startup. Use Supabase in production: a host such as Render does not keep its local disk across restarts.
+**The three `SUPABASE_*` variables are optional, and they go together: all three or none.** Without them, files are stored on local disk under `agora-backend/uploads/` (ignored by git), so you can clone the repository and run everything without a Supabase account, including the documents of the seed. With them, files go to Supabase Storage. The server logs which one it uses at startup. Setting only some of them stops the server at startup. **In production they are required:** with `NODE_ENV=production` and no Supabase, the server refuses to start, because a host such as Render does not keep its local disk across restarts.
 
 Run the seed after changing the storage: it uploads its four documents to whichever one is active.
 
@@ -520,6 +521,41 @@ The event log panel on the right records every REST call and every socket event:
 | Wrong password | Edit the password field before logging in | `401 INVALID_CREDENTIALS` |
 
 The demo does not refresh tokens. After 15 minutes, requests fail with `TOKEN_EXPIRED`; log out and back in to continue.
+
+## Deployment
+
+The backend runs on Render and the client on Vercel. Vercel cannot host the backend: it does not support the persistent WebSocket connections Socket.io needs. Both services build from the same repository, using the lockfile at its root. Node is pinned in `.node-version` (Render) and in `engines` of `agora-frontend/package.json` (Vercel, which only selects the major version).
+
+### Backend (Render web service)
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | Empty: the repository root |
+| Build Command | `npx --yes pnpm@10.28.2 install --frozen-lockfile --prod=false --filter agora-backend... && npm --prefix agora-backend run build:deploy` |
+| Start Command | `npm --prefix agora-backend run start:prod` |
+| Health Check Path | `/salud` |
+
+`--prod=false` keeps the dev dependencies whatever `NODE_ENV` says: the build needs `typescript` and `prisma`, and the start command needs `prisma`. `DATABASE_URL` must also be available during the build: `prisma.config.ts` requires it even for `prisma generate`.
+
+`start:prod` runs `prisma migrate deploy` and then starts the server. It only applies pending migrations and never resets anything; if it fails, the server does not start. **Never use `prisma db push` or `prisma migrate reset` against production.**
+
+Required variables: `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (the client's origin) and the three `SUPABASE_*`. `PORT` is provided by Render. Without `CORS_ORIGIN` or Supabase the server exits at startup and names what is missing.
+
+### Client (Vercel project)
+
+Set **Root Directory** to `agora-frontend`. Everything else is in `agora-frontend/vercel.json`, including the rewrite that lets the single-page application answer on any route.
+
+The only variable is `API_URL`, the full URL of the API, such as `https://your-backend.onrender.com/api/v1`. **It is fixed at build time:** after changing it, deploy again. The build fails if it is missing, is not `https`, or does not end in `/api/v1`. A plain `pnpm build` does not read it and leaves the URL empty, so that output is not deployable.
+
+### Seeding production
+
+**The seed never runs on deploy.** It is run by hand, once, from your machine, against an empty production database:
+
+```bash
+NODE_ENV=production DATABASE_URL="<external database URL>" SUPABASE_URL="<production value>" SUPABASE_SECRET_KEY="<production value>" SUPABASE_BUCKET="<production bucket>" pnpm --filter agora-backend seed
+```
+
+Run it from a machine that has `agora-backend/.env`, and set all of these explicitly: anything missing is read from that file. The seed creates the accounts in [Seed accounts](#seed-accounts), whose passwords are public in this repository. Running it again overwrites what it created, passwords and project states included.
 
 ## Troubleshooting
 
