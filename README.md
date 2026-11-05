@@ -58,7 +58,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat, notifications (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── storage/         # file storage: one port, Supabase and local disk behind it
@@ -277,17 +277,23 @@ Only active accounts unless `incluirInactivas=true`, ordered by `fullName`. `bus
 | `PATCH` | `/:projectId` | Principal investigator | At least one of `title`, `description`, `objectives`, `status`, `startDate`, `endDate`, `budget` | `200 { project }` |
 | `POST` | `/:projectId/cerrar` | Principal investigator | — | `200 { project }`. Sets `COMPLETED`; the project becomes read-only. |
 | `GET` | `/:projectId/miembros` | Member or coordinator | — | `200 { members }` |
-| `POST` | `/:projectId/miembros` | Principal investigator | `{ email }` | `201 { members }` |
-| `DELETE` | `/:projectId/miembros/:userId` | Principal investigator | — | `204`. Their tasks in this project become unassigned. |
+| `POST` | `/:projectId/miembros` | Principal investigator | `{ email }` | `201 { members }`. `409` on a `COMPLETED` project. |
+| `DELETE` | `/:projectId/miembros/:userId` | Principal investigator | — | `204`. Their tasks in this project become unassigned. `409` on a `COMPLETED` project. |
+| `PUT` | `/:projectId/investigador-principal` | Principal investigator | `{ userId }` | `200 { members }`. Hands the project over. |
 
 Dates use the `YYYY-MM-DD` format.
+
+**Emptying fields.** On `PATCH`, `null` empties a field and leaving it out does not change it. That works for `description`, `objectives`, `startDate`, `endDate` and `budget` on projects, `description`, `startDate` and `endDate` on phases, and `description`, `startDate`, `dueDate` and `assigneeId` on tasks. The end date cannot be before the start date when both are present. Fields that are not declared return `400`.
+
+**Handing a project over.** `PUT /:projectId/investigador-principal` swaps both roles in one transaction: the current principal investigator becomes a co-investigator and the new one takes over, so nobody ever reads zero or two of them. Only the current principal investigator can do it, and the new one must already be an active member (`404` otherwise). It returns `409` for yourself and on a `COMPLETED` project.
 
 List items are not the same shape as the `project` returned by `POST`, `PATCH` and the detail. Each item adds:
 
 - `principalInvestigator`: `{ id, email, fullName, systemRole, isActive }`, the same shape as `user` in a member. It can be `null`: the API never leaves a project without one, but the database schema does not enforce it.
 - `memberCount`: how many members the project has.
+- `unreadCount`: chat messages from others that the caller has not read. `0` for the coordinator, who does not take part in the chat.
 
-Both come from the same list query, not from one request per project.
+None of them takes one request per project.
 
 **Project chat** — `/api/v1/proyectos/:projectId/mensajes`
 
@@ -295,8 +301,12 @@ Both come from the same list query, not from one request per project.
 | --- | --- | --- | --- | --- |
 | `GET` | `/` | Project member | `?antes=<messageId>&limite=50` (1–100) | `200 { messages, nextCursor }` |
 | `POST` | `/` | Project member | `{ content }` (1–2000 characters, trimmed) | `201 { message }`, then emits `chat:mensaje` |
+| `GET` | `/lectura` | Project member | — | `200 { lastReadAt, unreadCount }` |
+| `PUT` | `/lectura` | Project member | `{ messageId }` | `200 { lastReadAt, unreadCount }` |
 
 The history uses cursor pagination. Each page comes back in chronological order. To load older messages, pass the page's `nextCursor` as `antes`; `nextCursor` is `null` when there is no more history. The coordinator can see projects but does not take part in their chats (`403`). Sending to a `COMPLETED` project returns `409`.
+
+The read mark is computed on the server, so it survives a reload. The client sends the id of the last message it saw, and the server takes the date of that message: it never accepts a date, because the client's clock is not the server's. The mark only moves forward. A message from another conversation returns `404`. `unreadCount` counts messages from others after the mark, or all of them if there is no mark.
 
 **Project phases** — `/api/v1/proyectos/:projectId/fases`
 
@@ -366,6 +376,18 @@ A new version is a new row linked to the previous one, which stays in place with
 `DELETE` removes that version and its file, not the chain. Deleting a version in the middle links its neighbours, so the chain stays whole. Deleting the latest makes the previous one the latest again.
 
 Downloads always go through the backend. There are no signed URLs: access is checked on every download, and both storage implementations follow the same path.
+
+**Notifications** — `/api/v1/notificaciones`
+
+| Method | Route | Who | Query | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Any user, their own | `?limite=50` (1–100) | `200 { notifications, unreadCount }`, newest first |
+| `POST` | `/:notificationId/leida` | Its owner | — | `200 { notification }`. Idempotent. |
+| `POST` | `/leidas` | Any user, their own | — | `200 { updated }` |
+
+A notification is `{ id, type, title, body, resourceId, projectId, isRead, readAt, createdAt }`. Somebody else's notification returns `404`. Only two facts create one, both caused by someone else and aimed at one person: being added to a project (`PROJECT_INVITATION`, `resourceId` is the project), which includes being named principal investigator of a new project, and being assigned a task (`TASK_ASSIGNED`, `resourceId` is the task). Doing either to yourself creates none. Everything else already travels as a project room event.
+
+`projectId` is resolved on every response, so a notification can link to its project: there is no route to a task without one. It is `null` when the target can no longer be reached, because the task was deleted or the person left the project. The notification stays in the list either way, and a client should simply not offer the link.
 
 ### Access rules
 
@@ -437,7 +459,7 @@ A connection that is already open survives token expiry. This is safe because th
 | `proyecto:{projectId}` | Every socket of every member of that project |
 | `usuario:{userId}` | Every socket (browser tab) of one person |
 
-Rooms follow membership changes live. Adding someone to a project, or removing them, updates the rooms of all their open sockets without a reconnect. The coordinator joins no project rooms.
+Rooms follow membership changes live. Adding someone to a project, or removing them, updates the rooms of all their open sockets without a reconnect. A person added while connected receives `presencia:inicial` and the room sees `usuario:conectado`; a person removed while connected makes the room see `usuario:desconectado`. The coordinator joins no project rooms.
 
 ### Server → client events
 
@@ -448,19 +470,20 @@ There are no client → server events: all changes go through REST.
 | `chat:mensaje` | `proyecto:{id}` | `{ id, projectId, content, createdAt, sender: { id, fullName } }` | After a message sent with `POST /proyectos/:projectId/mensajes` is saved |
 | `usuario:conectado` | The person's project rooms | `{ userId, projectId }` | The person's **first** socket connects |
 | `usuario:desconectado` | The person's project rooms | `{ userId, projectId }` | The person's **last** socket disconnects |
-| `presencia:inicial` | Only the socket that just connected | `[{ projectId, userIds }]` | Right after that socket joins its rooms |
+| `presencia:inicial` | The socket that just connected, or every socket of a person added to a project | `[{ projectId, userIds }]` | Right after joining the rooms |
 | `cronograma:modificado` | `proyecto:{id}` | `{ projectId }` | After a phase is created, edited, deleted or reordered |
 | `tarea:actualizada` | `proyecto:{id}` | `{ projectId }` | After a task or one of its dependencies is created, edited or deleted, or a member with tasks is removed |
 | `avance:creado` | `proyecto:{id}` | `{ projectId }` | After a progress entry is created |
 | `avance:modificado` | `proyecto:{id}` | `{ projectId }` | After a progress entry is edited or deleted |
 | `documento:subido` | `proyecto:{id}` | `{ projectId }` | After a document or a new version is uploaded |
 | `documento:modificado` | `proyecto:{id}` | `{ projectId }` | After a document version is deleted |
+| `notificacion:nueva` | `usuario:{id}` | The notification, as in `GET /notificaciones` | After a notification is saved |
 
 `chat:mensaje` has the same shape as the `message` returned by the REST call. The event also goes back to the sender. The tab that sent the message already has it from the REST response and discards the duplicate by `id`, while the sender's other tabs display it.
 
 Presence is tracked per person, not per tab: opening a second tab does not announce the person again.
 
-`presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected does not send a new snapshot.
+`presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected sends a new snapshot of all the person's projects, not only the new one, since a client replaces what it had.
 
 `cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it. `tarea:actualizada` and the progress and document events work the same way: fetch the list again.
 
