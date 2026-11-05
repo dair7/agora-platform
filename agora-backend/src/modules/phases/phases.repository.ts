@@ -111,18 +111,34 @@ export const deletePhase = (projectId: string, phaseId: string): Promise<boolean
   });
 
 /**
- * Devuelve `null` si la lista no son exactamente las fases del proyecto.
+ * Devuelve `stale` si el orden real no es el que el cliente vio, y `invalid` si la lista
+ * no son exactamente las fases del proyecto. En los dos casos no escribe nada.
  *
- * La comparación va aquí y no en el servicio porque tiene que ocurrir con el
- * cronograma bloqueado: hecha antes de la transacción, una fase creada entre
- * medias quedaría fuera de la lista y con una posición repetida.
+ * Las comparaciones van aquí y no en el servicio porque tienen que ocurrir con el
+ * cronograma bloqueado: hechas antes de la transacción, dos reordenamientos a la vez
+ * pasarían los dos, y una fase creada entre medias quedaría fuera de la lista y con una
+ * posición repetida.
  */
-export const reorderPhases = (projectId: string, phaseIds: string[]): Promise<Phase[] | null> =>
+export const reorderPhases = (
+  projectId: string,
+  phaseIds: string[],
+  expectedPhaseIds?: string[],
+): Promise<Phase[] | 'stale' | 'invalid'> =>
   prisma.$transaction(async (tx) => {
     await lockSchedule(tx, projectId);
 
-    const current = await tx.phase.findMany({ where: { projectId }, select: { id: true } });
-    const currentIds = new Set(current.map((phase) => phase.id));
+    const current = await tx.phase.findMany({
+      where: { projectId },
+      select: { id: true },
+      orderBy: { position: 'asc' },
+    });
+    const order = current.map((phase) => phase.id);
+
+    if (expectedPhaseIds && expectedPhaseIds.join() !== order.join()) {
+      return 'stale';
+    }
+
+    const currentIds = new Set(order);
 
     const isExactList =
       phaseIds.length === currentIds.size &&
@@ -130,7 +146,7 @@ export const reorderPhases = (projectId: string, phaseIds: string[]): Promise<Ph
       phaseIds.every((id) => currentIds.has(id));
 
     if (!isExactList) {
-      return null;
+      return 'invalid';
     }
 
     await writePositions(tx, projectId, phaseIds);

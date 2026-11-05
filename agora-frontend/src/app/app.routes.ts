@@ -58,6 +58,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-edit/project-edit').then((m) => m.ProjectEdit),
       },
+      // Sin guard, como editar: qué puede hacer cada quien lo decide la pantalla.
+      {
+        path: 'proyectos/:projectId/cronograma',
+        title: 'Cronograma · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-schedule/project-schedule').then(
+            (m) => m.ProjectSchedule,
+          ),
+      },
+      {
+        path: 'proyectos/:projectId/tareas',
+        title: 'Tareas · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-tasks/project-tasks').then((m) => m.ProjectTasks),
+      },
       // Sin guard, como editar: que la persona participe lo decide el backend.
       {
         path: 'proyectos/:projectId/conversacion',

@@ -44,6 +44,8 @@ export class RealtimeService {
   readonly #chatMessages = new Subject<ChatMessage>();
   readonly #connected = new Subject<void>();
   readonly #disconnected = new Subject<void>();
+  readonly #scheduleChanged = new Subject<string>();
+  readonly #tasksChanged = new Subject<string>();
 
   #socket: AppSocket | null = null;
   #retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -70,6 +72,12 @@ export class RealtimeService {
    * ese momento es hasta donde el historial es continuo.
    */
   readonly disconnected = this.#disconnected.asObservable();
+
+  /** El id del proyecto cuyo cronograma cambió. Quien lo muestra vuelve a pedirlo. */
+  readonly scheduleChanged = this.#scheduleChanged.asObservable();
+
+  /** El id del proyecto cuyas tareas cambiaron. Quien las muestra vuelve a pedirlas. */
+  readonly tasksChanged = this.#tasksChanged.asObservable();
 
   constructor() {
     effect(() => {
@@ -151,6 +159,9 @@ export class RealtimeService {
 
       this.#chatMessages.next(message);
     });
+
+    socket.on('cronograma:modificado', ({ projectId }) => this.#scheduleChanged.next(projectId));
+    socket.on('tarea:actualizada', ({ projectId }) => this.#tasksChanged.next(projectId));
 
     socket.on('presencia:inicial', (entries) => {
       this.#presence.set(new Map(entries.map((e) => [e.projectId, new Set(e.userIds)])));

@@ -1,0 +1,179 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="loading()" />
+<p class="sr-only" role="status">{{ announcement() }}</p>
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="loading() || null">
+  @if (ctx.notFound()) {
+    <app-empty title="Este proyecto no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
+    </app-empty>
+  } @else if (ctx.errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button
+        appButton
+        variant="secondary"
+        type="button"
+        noticeAction
+        (click)="ctx.project.reload()"
+      >
+        Reintentar
+      </button>
+    </app-notice>
+  } @else if (ctx.view(); as project) {
+    <app-project-header [project]="project" />
+    <app-project-tabs [projectId]="project.id" [isMember]="ctx.isMember()" />
+
+    <section aria-labelledby="cronograma-titulo" class="grid gap-espacio-4">
+      <div class="flex flex-wrap items-center justify-between gap-espacio-3">
+        <h2 id="cronograma-titulo" class="titulo-seccion text-tinta">Cronograma</h2>
+        <!-- Con el formulario abierto, la acción primaria es la suya. -->
+        @if (ctx.canManage() && !form()) {
+          <button appButton type="button" (click)="openCreate()">Crear fase</button>
+        }
+      </div>
+
+      @if (notice(); as notice) {
+        <app-notice [tone]="notice.tone">{{ notice.message }}</app-notice>
+      }
+
+      @if (form(); as form) {
+        <app-phase-form
+          [phase]="form.phase"
+          [busy]="saving()"
+          [failure]="failure()"
+          (created)="create($event)"
+          (updated)="update($event)"
+          (cancelled)="closeForm()"
+        />
+      }
+
+      @if (listError(); as message) {
+        <!-- Lo que ya estaba cargado se queda: un fallo de red no borra la pantalla. -->
+        <app-notice tone="error">
+          {{ message }}
+          <button
+            appButton
+            variant="secondary"
+            type="button"
+            noticeAction
+            (click)="phases.refresh()"
+          >
+            Reintentar
+          </button>
+        </app-notice>
+      }
+
+      @if (phases.loading()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2, 3]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      } @else if (phases.items()?.length === 0) {
+        <app-empty
+          title="Este proyecto todavía no tiene fases"
+          [description]="
+            ctx.canManage() ? 'Crea la primera para empezar el cronograma.' : undefined
+          "
+        />
+      } @else if (phases.items()) {
+        <ol class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of rows(); track row.phase.id; let first = $first; let last = $last) {
+            <li
+              class="flex flex-wrap items-start justify-between gap-espacio-3 px-espacio-4 py-espacio-3"
+            >
+              <div class="grid gap-espacio-1">
+                <div class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
+                  <h3 class="cuerpo-fuerte text-tinta">
+                    <span class="text-tinta-media tabular-nums">{{ row.phase.position }}.</span>
+                    {{ row.phase.name }}
+                  </h3>
+                  <app-work-status [status]="row.phase.status" />
+                </div>
+                @if (row.phase.description; as description) {
+                  <p class="secundario text-tinta-media whitespace-pre-line">{{ description }}</p>
+                }
+                <p class="secundario text-tinta-media tabular-nums">
+                  {{ row.period || 'Sin fechas' }}
+                  @if (row.taskCount !== null) {
+                    · {{ row.taskCount }} {{ row.taskCount === 1 ? 'tarea' : 'tareas' }}
+                  }
+                </p>
+                @if (ctx.canManage() && row.taskCount) {
+                  <p class="secundario text-tinta-media">
+                    Para borrar la fase, mueve o borra antes sus tareas.
+                  </p>
+                }
+              </div>
+
+              @if (ctx.canManage()) {
+                <div class="flex flex-wrap items-center">
+                  @if (!first) {
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      [id]="'fase-subir-' + row.phase.id"
+                      [disabled]="moving()"
+                      (click)="move(row.phase, -1)"
+                    >
+                      Subir<span class="sr-only">: {{ row.phase.name }}</span>
+                    </button>
+                  }
+                  @if (!last) {
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      [id]="'fase-bajar-' + row.phase.id"
+                      [disabled]="moving()"
+                      (click)="move(row.phase, 1)"
+                    >
+                      Bajar<span class="sr-only">: {{ row.phase.name }}</span>
+                    </button>
+                  }
+                  <button appButton variant="subtle" type="button" (click)="openEdit(row.phase)">
+                    Editar<span class="sr-only">: {{ row.phase.name }}</span>
+                  </button>
+                  <!-- Con tareas el backend responde 409: el botón no se pinta. -->
+                  @if (row.taskCount === 0) {
+                    <button
+                      appButton
+                      variant="subtle-destructive"
+                      type="button"
+                      (click)="askToDelete(row.phase, deleteDialog)"
+                    >
+                      Borrar<span class="sr-only">: {{ row.phase.name }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  } @else {
+    <div class="grid gap-espacio-2">
+      <app-skeleton width="espacio-8" class="cuerpo-fuerte" />
+      <app-skeleton class="titulo-pagina" />
+    </div>
+  }
+</main>
+
+<app-dialog
+  #deleteDialog
+  [title]="'¿Borrar la fase ' + (phaseToDelete()?.name ?? '') + '?'"
+  confirmLabel="Borrar fase"
+  busyLabel="Borrando fase…"
+  confirmVariant="destructive"
+  [busy]="deleting()"
+  (confirmed)="delete(deleteDialog)"
+>
+  No se puede deshacer. Las demás fases se reacomodan.
+</app-dialog>

@@ -1,0 +1,97 @@
+<form
+  class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5 grid gap-espacio-4"
+  novalidate
+  [attr.aria-label]="editing() ? 'Editar fase' : 'Crear fase'"
+  (submit)="submit($event)"
+>
+  <app-field for="phase-name" label="Nombre" [error]="error('name')">
+    <input
+      appInput
+      id="phase-name"
+      type="text"
+      maxlength="150"
+      [invalid]="error('name') !== null"
+      [describedBy]="describedBy('name', 'phase-name')"
+      [value]="initial().name"
+      (input)="update('name', $event)"
+    />
+  </app-field>
+
+  <app-field for="phase-description" label="Descripción" [error]="error('description')">
+    <textarea
+      appTextarea
+      id="phase-description"
+      rows="3"
+      [invalid]="error('description') !== null"
+      [describedBy]="describedBy('description', 'phase-description')"
+      [value]="initial().description"
+      (input)="update('description', $event)"
+    ></textarea>
+  </app-field>
+
+  <app-field for="phase-status" label="Estado" [error]="error('status')">
+    <select
+      appSelect
+      id="phase-status"
+      [invalid]="error('status') !== null"
+      [describedBy]="describedBy('status', 'phase-status')"
+      (input)="update('status', $event)"
+    >
+      @for (option of statusOptions; track option.value) {
+        <option [value]="option.value" [selected]="option.value === initial().status">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+  </app-field>
+
+  <!-- `max` limita el año a cuatro dígitos: el navegador admite seis, y el backend no. -->
+  <app-field for="phase-start" label="Fecha de inicio" [error]="error('startDate')">
+    <input
+      appInput
+      id="phase-start"
+      name="startDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('startDate') !== null"
+      [describedBy]="describedBy('startDate', 'phase-start')"
+      [value]="initial().startDate"
+      (input)="update('startDate', $event)"
+    />
+  </app-field>
+
+  <app-field for="phase-end" label="Fecha de fin" [error]="error('endDate')">
+    <input
+      appInput
+      id="phase-end"
+      name="endDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('endDate') !== null"
+      [describedBy]="describedBy('endDate', 'phase-end')"
+      [value]="initial().endDate"
+      (input)="update('endDate', $event)"
+    />
+  </app-field>
+
+  @if (notice(); as failure) {
+    <app-notice
+      [tone]="failure.kind === 'message' && failure.code === 'CONFLICT' ? 'block' : 'error'"
+    >
+      {{ failure.message }}
+    </app-notice>
+  }
+
+  <div class="flex flex-wrap gap-espacio-3">
+    <button appButton type="submit" [disabled]="!canSubmit()">{{ submitLabel() }}</button>
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      [disabled]="busy()"
+      (click)="cancelled.emit()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>

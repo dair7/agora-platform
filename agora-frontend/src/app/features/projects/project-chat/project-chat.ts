@@ -25,6 +25,7 @@ import { Empty } from '../../../shared/ui/empty/empty';
 import { Field, FieldTextarea } from '../../../shared/ui/field/field';
 import { Notice } from '../../../shared/ui/notice/notice';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { ProjectTabs } from '../project-tabs/project-tabs';
 import { ChatMessageRow } from './chat-message';
 import { type PendingMessage, buildTimeline, mergeMessages } from './chat-timeline';
 
@@ -51,6 +52,7 @@ const isVisible = (): boolean => document.visibilityState === 'visible';
     FieldTextarea,
     LoadingStatus,
     Notice,
+    ProjectTabs,
     RouterLink,
     Skeleton,
   ],

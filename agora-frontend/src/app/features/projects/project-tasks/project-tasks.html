@@ -1,0 +1,277 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="loading() || null">
+  @if (ctx.notFound()) {
+    <app-empty title="Este proyecto no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
+    </app-empty>
+  } @else if (ctx.errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button
+        appButton
+        variant="secondary"
+        type="button"
+        noticeAction
+        (click)="ctx.project.reload()"
+      >
+        Reintentar
+      </button>
+    </app-notice>
+  } @else if (ctx.view(); as project) {
+    <app-project-header [project]="project" />
+    <app-project-tabs [projectId]="project.id" [isMember]="ctx.isMember()" />
+
+    <section aria-labelledby="tareas-titulo" class="grid gap-espacio-4">
+      <div class="flex flex-wrap items-center justify-between gap-espacio-3">
+        <h2 id="tareas-titulo" class="titulo-seccion text-tinta">Tareas</h2>
+        <!-- Con el formulario abierto, la acción primaria es la suya. Sin fases no hay
+             dónde crear una tarea, y el backend la rechazaría. -->
+        @if (ctx.canManage() && !form() && phases.items()?.length) {
+          <button appButton type="button" (click)="openCreate()">Crear tarea</button>
+        }
+      </div>
+
+      @if (notice(); as notice) {
+        <app-notice [tone]="notice.tone">{{ notice.message }}</app-notice>
+      }
+
+      @if (form(); as form) {
+        <app-task-form
+          [task]="form.task"
+          [defaultPhaseId]="form.phaseId"
+          [phases]="phases.items() ?? []"
+          [assignees]="assignees()"
+          [busy]="saving()"
+          [failure]="failure()"
+          (created)="create($event)"
+          (updated)="update($event)"
+          (cancelled)="closeForm()"
+        />
+      }
+
+      @if (listError(); as message) {
+        <!-- Lo que ya estaba cargado se queda: un fallo de red no borra la pantalla. -->
+        <app-notice tone="error">
+          {{ message }}
+          <button
+            appButton
+            variant="secondary"
+            type="button"
+            noticeAction
+            (click)="tasks.refresh(); phases.refresh()"
+          >
+            Reintentar
+          </button>
+        </app-notice>
+      }
+
+      @if (tasks.loading() || phases.loading()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2, 3]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      } @else if (phases.items()?.length === 0) {
+        <app-empty
+          title="Este proyecto todavía no tiene tareas"
+          [description]="
+            ctx.canManage() ? 'Las tareas viven en una fase: crea primero la primera.' : undefined
+          "
+        >
+          @if (ctx.canManage()) {
+            <a
+              appButton
+              variant="secondary"
+              emptyAction
+              [routerLink]="['/proyectos', project.id, 'cronograma']"
+            >
+              Ir al cronograma
+            </a>
+          }
+        </app-empty>
+      } @else if (tasks.items()?.length === 0) {
+        <app-empty
+          title="Este proyecto todavía no tiene tareas"
+          [description]="
+            ctx.canManage() ? 'Crea la primera para empezar a repartir el trabajo.' : undefined
+          "
+        />
+      } @else if (tasks.items()) {
+        @for (group of groups(); track group.phase.id) {
+          <div class="grid gap-espacio-2">
+            <h3 class="titulo-tarjeta text-tinta">{{ group.phase.name }}</h3>
+
+            @if (group.tasks.length === 0) {
+              <p class="secundario text-tinta-media">Sin tareas en esta fase.</p>
+            } @else {
+              <ul
+                class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde"
+              >
+                @for (row of group.tasks; track row.task.id) {
+                  <li class="grid gap-espacio-2 px-espacio-4 py-espacio-3">
+                    <div class="flex flex-wrap items-start justify-between gap-espacio-3">
+                      <div class="grid gap-espacio-1">
+                        <div class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
+                          <h4 class="cuerpo-fuerte text-tinta">{{ row.task.title }}</h4>
+                          @if (!canChangeStatus(row.task)) {
+                            <app-work-status [status]="row.task.status" />
+                          }
+                        </div>
+                        @if (row.task.description; as description) {
+                          <p class="secundario text-tinta-media whitespace-pre-line">
+                            {{ description }}
+                          </p>
+                        }
+                        <p class="secundario text-tinta-media">
+                          {{ row.task.assignee?.fullName ?? 'Sin responsable' }}
+                          ·
+                          <span class="tabular-nums">{{ row.period || 'Sin fechas' }}</span>
+                          · {{ priorityLabels[row.task.priority] }}
+                        </p>
+                        <p class="secundario text-tinta-media">
+                          @if (row.dependencies.length > 0) {
+                            Depende de:
+                            @for (dependency of row.dependencies; track dependency.id) {
+                              {{ dependency.title }}{{ $last ? '' : ' · ' }}
+                            }
+                          } @else {
+                            Sin dependencias
+                          }
+                        </p>
+                      </div>
+
+                      <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                        @if (canChangeStatus(row.task)) {
+                          <div>
+                            <select
+                              appSelect
+                              [attr.aria-label]="'Estado de ' + row.task.title"
+                              (change)="changeStatus(row.task, $event)"
+                            >
+                              @for (option of statusOptions; track option.value) {
+                                <option
+                                  [value]="option.value"
+                                  [selected]="option.value === row.task.status"
+                                >
+                                  {{ option.label }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                        }
+                        @if (ctx.canManage()) {
+                          <button
+                            appButton
+                            variant="subtle"
+                            type="button"
+                            [attr.aria-expanded]="dependenciesOf() === row.task.id"
+                            (click)="toggleDependencies(row.task)"
+                          >
+                            Dependencias<span class="sr-only">: {{ row.task.title }}</span>
+                          </button>
+                          <button
+                            appButton
+                            variant="subtle"
+                            type="button"
+                            (click)="openEdit(row.task)"
+                          >
+                            Editar<span class="sr-only">: {{ row.task.title }}</span>
+                          </button>
+                          <button
+                            appButton
+                            variant="subtle-destructive"
+                            type="button"
+                            (click)="askToDelete(row.task, deleteDialog)"
+                          >
+                            Borrar<span class="sr-only">: {{ row.task.title }}</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+
+                    @if (ctx.canManage() && dependenciesOf() === row.task.id) {
+                      <div class="grid gap-espacio-2 border-t border-borde pt-espacio-3">
+                        @for (dependency of row.dependencies; track dependency.id) {
+                          <div class="flex flex-wrap items-center justify-between gap-espacio-2">
+                            <span class="secundario text-tinta">{{ dependency.title }}</span>
+                            <button
+                              appButton
+                              variant="subtle-destructive"
+                              type="button"
+                              [disabled]="savingDependency()"
+                              (click)="removeDependency(row.task, dependency.id)"
+                            >
+                              Quitar<span class="sr-only">: {{ dependency.title }}</span>
+                            </button>
+                          </div>
+                        }
+
+                        @if (dependencyOptions(row.task).length > 0) {
+                          <div class="flex flex-wrap items-center gap-espacio-3">
+                            <div class="max-w-ancho-formulario">
+                              <select
+                                appSelect
+                                aria-label="Tarea de la que depende"
+                                (input)="dependencyChoice.set($any($event.target).value)"
+                              >
+                                <option value="" [selected]="dependencyChoice() === ''">
+                                  Elige una tarea
+                                </option>
+                                @for (option of dependencyOptions(row.task); track option.id) {
+                                  <option
+                                    [value]="option.id"
+                                    [selected]="option.id === dependencyChoice()"
+                                  >
+                                    {{ option.title }}
+                                  </option>
+                                }
+                              </select>
+                            </div>
+                            <button
+                              appButton
+                              variant="secondary"
+                              type="button"
+                              [disabled]="savingDependency() || dependencyChoice() === ''"
+                              (click)="addDependency(row.task)"
+                            >
+                              {{ savingDependency() ? 'Agregando…' : 'Agregar dependencia' }}
+                            </button>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      }
+    </section>
+  } @else {
+    <div class="grid gap-espacio-2">
+      <app-skeleton width="espacio-8" class="cuerpo-fuerte" />
+      <app-skeleton class="titulo-pagina" />
+    </div>
+  }
+</main>
+
+<app-dialog
+  #deleteDialog
+  [title]="'¿Borrar la tarea ' + (taskToDelete()?.title ?? '') + '?'"
+  confirmLabel="Borrar tarea"
+  busyLabel="Borrando tarea…"
+  confirmVariant="destructive"
+  [busy]="deleting()"
+  (confirmed)="delete(deleteDialog)"
+>
+  @for (line of deleteWarning(); track line) {
+    <p class="mt-espacio-2">{{ line }}</p>
+  }
+</app-dialog>
