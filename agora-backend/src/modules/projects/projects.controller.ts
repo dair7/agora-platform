@@ -7,6 +7,7 @@ import type {
   CreateProjectInput,
   ListProjectsQuery,
   MemberParams,
+  TransferLeadInput,
   UpdateProjectInput,
 } from './projects.schema.js';
 
@@ -61,6 +62,16 @@ export const addMember: RequestHandler = async (req, res) => {
   const members = await service.addMember(getProjectAccess(req), req.body as AddMemberInput);
 
   res.status(201).json({ members });
+};
+
+export const transferLead: RequestHandler = async (req, res) => {
+  const members = await service.transferLead(
+    getProjectAccess(req),
+    getAuthUser(req).id,
+    req.body as TransferLeadInput,
+  );
+
+  res.json({ members });
 };
 
 export const removeMember: RequestHandler = async (req, res) => {

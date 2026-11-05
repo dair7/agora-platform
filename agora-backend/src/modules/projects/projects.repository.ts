@@ -1,6 +1,13 @@
-import { ConversationType, Prisma, ProjectRole, SystemRole } from '@prisma/client';
-import type { Project, ProjectMember, ProjectStatus } from '@prisma/client';
+import {
+  ConversationType,
+  NotificationType,
+  Prisma,
+  ProjectRole,
+  SystemRole,
+} from '@prisma/client';
+import type { Notification, Project, ProjectMember, ProjectStatus } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
+import { createNotification } from '../notifications/notifications.repository.js';
 import { lockSchedule } from '../phases/phases.repository.js';
 import { userSummarySelect } from '../users/users.repository.js';
 
@@ -33,13 +40,28 @@ interface CreateProjectData {
 
 export interface UpdateProjectData {
   title?: string;
-  description?: string;
-  objectives?: string;
+  description?: string | null;
+  objectives?: string | null;
   status?: ProjectStatus;
-  startDate?: Date;
-  endDate?: Date;
-  budget?: number;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  budget?: number | null;
 }
+
+export type TransferLeadResult = 'done' | 'not-lead' | 'not-member';
+
+const notifyInvitation = (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  project: Pick<Project, 'id' | 'title'>,
+): Promise<Notification> =>
+  createNotification(tx, {
+    userId,
+    type: NotificationType.PROJECT_INVITATION,
+    title: 'Te sumaron a un proyecto',
+    body: project.title,
+    resourceId: project.id,
+  });
 
 export type ProjectWithMembership = Project & { members: ProjectMember[] };
 
@@ -141,22 +163,35 @@ export const findProjectDetail = (projectId: string) =>
  * el proyecto y se borra en cascada con él, así que crearla después obligaría a
  * cada endpoint de chat a contemplar el caso "todavía no existe".
  */
-export const createProject = (data: CreateProjectData): Promise<Project> => {
-  const { principalInvestigatorId, ...project } = data;
+export const createProject = (
+  data: CreateProjectData,
+): Promise<{ project: Project; notification: Notification | null }> => {
+  const { principalInvestigatorId, ...fields } = data;
 
-  return prisma.project.create({
-    data: {
-      ...project,
-      members: {
-        create: { userId: principalInvestigatorId, role: ProjectRole.PRINCIPAL_INVESTIGATOR },
-      },
-      conversation: {
-        create: {
-          type: ConversationType.PROJECT,
-          participants: { create: { userId: principalInvestigatorId } },
+  return prisma.$transaction(async (tx) => {
+    const project = await tx.project.create({
+      data: {
+        ...fields,
+        members: {
+          create: { userId: principalInvestigatorId, role: ProjectRole.PRINCIPAL_INVESTIGATOR },
+        },
+        conversation: {
+          create: {
+            type: ConversationType.PROJECT,
+            participants: { create: { userId: principalInvestigatorId } },
+          },
         },
       },
-    },
+    });
+
+    // Quien crea y quien dirige pueden ser personas distintas. Si son la misma, ya
+    // lo sabe: las notificaciones son para hechos que otro provocó.
+    const notification =
+      principalInvestigatorId === data.createdById
+        ? null
+        : await notifyInvitation(tx, principalInvestigatorId, project);
+
+    return { project, notification };
   });
 };
 
@@ -198,9 +233,11 @@ export const findMemberProjectIds = async (userId: string): Promise<string[]> =>
  * conversación del proyecto tiene que reflejar exactamente quién es miembro, o
  * el módulo de chat heredaría el trabajo de reconciliar las dos listas.
  */
-export const addMember = (projectId: string, userId: string): Promise<ProjectMember> =>
+export const addMember = (project: Project, userId: string): Promise<Notification> =>
   prisma.$transaction(async (tx) => {
-    const member = await tx.projectMember.create({
+    const projectId = project.id;
+
+    await tx.projectMember.create({
       data: { projectId, userId, role: ProjectRole.CO_INVESTIGATOR },
     });
 
@@ -219,7 +256,7 @@ export const addMember = (projectId: string, userId: string): Promise<ProjectMem
       });
     }
 
-    return member;
+    return notifyInvitation(tx, userId, project);
   });
 
 /**
@@ -244,4 +281,44 @@ export const removeMember = (projectId: string, userId: string): Promise<number>
     });
 
     return count;
+  });
+
+/**
+ * Los dos cambios de rol en una transacción: quien lea en cualquier momento ve un
+ * solo investigador principal. El bloqueo serializa dos relevos a la vez, y el rol
+ * de quien lo pide se comprueba con él puesto.
+ */
+export const transferLead = (
+  projectId: string,
+  currentLeadId: string,
+  newLeadId: string,
+): Promise<TransferLeadResult> =>
+  prisma.$transaction(async (tx) => {
+    await lockSchedule(tx, projectId);
+
+    const members = await tx.projectMember.findMany({
+      where: { projectId, userId: { in: [currentLeadId, newLeadId] } },
+      select: { userId: true, role: true, user: { select: { isActive: true } } },
+    });
+    const current = members.find((member) => member.userId === currentLeadId);
+    const next = members.find((member) => member.userId === newLeadId);
+
+    if (current?.role !== ProjectRole.PRINCIPAL_INVESTIGATOR) {
+      return 'not-lead';
+    }
+
+    if (!next?.user.isActive) {
+      return 'not-member';
+    }
+
+    await tx.projectMember.update({
+      where: { projectId_userId: { projectId, userId: currentLeadId } },
+      data: { role: ProjectRole.CO_INVESTIGATOR },
+    });
+    await tx.projectMember.update({
+      where: { projectId_userId: { projectId, userId: newLeadId } },
+      data: { role: ProjectRole.PRINCIPAL_INVESTIGATOR },
+    });
+
+    return 'done';
   });

@@ -45,7 +45,7 @@ export const deactivateUser = async (actorId: string, userId: string): Promise<v
     throw new AppError(
       409,
       'CONFLICT',
-      'Esta persona dirige proyectos abiertos: hay que cerrarlos antes de desactivar su cuenta',
+      'Esta persona dirige proyectos abiertos: tiene que cerrarlos o traspasarlos antes de la baja',
     );
   }
 
