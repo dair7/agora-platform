@@ -1,4 +1,9 @@
-import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import {
+  HttpErrorResponse,
+  HttpHandlerFn,
+  HttpInterceptorFn,
+  HttpRequest,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
@@ -8,6 +13,34 @@ import { SESSION_REQUEST, SessionEndedError, SessionService } from './session.se
 
 const withToken = (req: HttpRequest<unknown>, token: string | null) =>
   token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+
+/**
+ * Una petición con `responseType: 'blob'` recibe también su error como `Blob`, y sin leerlo
+ * nadie ve el `code`: una descarga con el token vencido no se renovaría, y su `404`
+ * llegaría a la pantalla como un error desconocido.
+ */
+const withReadableBody = async (error: HttpErrorResponse): Promise<HttpErrorResponse> => {
+  try {
+    return new HttpErrorResponse({
+      error: JSON.parse(await (error.error as Blob).text()),
+      headers: error.headers,
+      status: error.status,
+      statusText: error.statusText,
+      url: error.url ?? undefined,
+    });
+  } catch {
+    return error;
+  }
+};
+
+const send = (req: HttpRequest<unknown>, next: HttpHandlerFn) =>
+  next(req).pipe(
+    catchError((error: unknown) =>
+      error instanceof HttpErrorResponse && error.error instanceof Blob
+        ? from(withReadableBody(error)).pipe(switchMap((readable) => throwError(() => readable)))
+        : throwError(() => error),
+    ),
+  );
 
 /**
  * Pone el access token en cada petición y hace el refresco silencioso.
@@ -29,13 +62,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const session = inject(SessionService);
   const router = inject(Router);
 
-  return next(withToken(req, session.accessToken)).pipe(
+  return send(withToken(req, session.accessToken), next).pipe(
     catchError((error: unknown) => {
       if (apiErrorCode(error) !== 'TOKEN_EXPIRED') {
         return throwError(() => error);
       }
 
-      return from(session.renew()).pipe(switchMap((token) => next(withToken(req, token))));
+      return from(session.renew()).pipe(switchMap((token) => send(withToken(req, token), next)));
     }),
     catchError((error: unknown) => {
       // La sesión terminó: la renovación fue rechazada, o el backend no reconoce
