@@ -16,7 +16,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorCode, apiErrorOutcome } from '../../../core/api/api-error';
 import { ChatApi } from '../../../core/api/chat.api';
-import type { ChatMessage } from '../../../core/api/chat.types';
+import type { ChatMessage, MessagePage } from '../../../core/api/chat.types';
 import { ProjectsApi } from '../../../core/api/projects.api';
 import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { SessionService } from '../../../core/session/session.service';
@@ -30,6 +30,11 @@ import { type PendingMessage, buildTimeline, mergeMessages } from './chat-timeli
 
 /** Hasta esta distancia del fondo se considera que la persona está abajo. */
 const BOTTOM_TOLERANCE_PX = 32;
+
+/** El máximo que acepta el backend: un hueco grande se recorre en menos peticiones. */
+const CATCH_UP_BLOCK = 100;
+
+const isVisible = (): boolean => document.visibilityState === 'visible';
 
 /**
  * La conversación de un proyecto. Quien no es miembro recibe la pantalla de no
@@ -51,6 +56,7 @@ const BOTTOM_TOLERANCE_PX = 32;
   ],
   templateUrl: './project-chat.html',
   styleUrl: './project-chat.css',
+  host: { '(document:visibilitychange)': 'onScroll()' },
 })
 export class ProjectChat {
   readonly #router = inject(Router);
@@ -101,6 +107,19 @@ export class ProjectChat {
    */
   readonly #composerId = signal<number | null>(null);
 
+  /**
+   * Desde dónde hay que ponerse al día, o `null` si el historial es continuo. Se fija
+   * al caerse la conexión y no al volver: un mensaje propio enviado por REST mientras
+   * el socket estaba caído queda al final de la lista, con un agujero detrás.
+   */
+  #resumeFrom: string | null = null;
+  /** Cada recuperación deja sin efecto a la anterior. */
+  #catchUpRun = 0;
+  /** El último mensaje marcado: mandar otra vez el mismo no aporta nada. */
+  #lastMarkedId: string | null = null;
+  /** Cada marca deja sin efecto la respuesta de la anterior, que pudo llegar después. */
+  #markRun = 0;
+
   protected readonly timeline = computed(() =>
     buildTimeline(this.messages(), this.pending(), this.#session.user()),
   );
@@ -117,9 +136,9 @@ export class ProjectChat {
 
   constructor() {
     effect(() => {
-      const projectId = this.projectId();
+      this.projectId();
 
-      untracked(() => this.#open(projectId));
+      untracked(() => this.#open());
     });
 
     this.#realtime.chatMessages.pipe(takeUntilDestroyed()).subscribe((message) => {
@@ -128,18 +147,41 @@ export class ProjectChat {
       }
     });
 
-    // Durante la desconexión pudieron llegar mensajes que el socket nunca entregó.
-    this.#realtime.connected.pipe(takeUntilDestroyed()).subscribe(() => void this.#syncLatest());
+    this.#realtime.disconnected.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.#resumeFrom ??= this.messages().at(-1)?.id ?? null;
+    });
 
-    inject(DestroyRef).onDestroy(() => this.#realtime.closeChat());
+    // Durante la desconexión pudieron llegar mensajes que el socket nunca entregó. La
+    // primera carga ya pide lo último: aquí no hay nada que recuperar todavía.
+    this.#realtime.connected.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (!this.loading()) {
+        this.reload();
+      }
+    });
+
+    inject(DestroyRef).onDestroy(() => this.#catchUpRun++);
   }
 
   protected isOnline(userId: string): boolean {
     return this.online()?.has(userId) ?? false;
   }
 
+  /** Sigue desde donde quedó, si ya había historial; si no, pide lo último. */
   protected reload(): void {
-    void this.#syncLatest();
+    const from = this.#resumeFrom ?? this.messages().at(-1)?.id;
+
+    void (from ? this.#catchUp(from) : this.#loadLatest());
+  }
+
+  /**
+   * Llegar al fondo es haber leído lo que había: sin esto, la cifra no bajaría nunca.
+   * También al volver a la pestaña: mientras estuvo oculta no se marcó nada, y el
+   * fondo se mide ahora, no con un valor de cuando se fue.
+   */
+  protected onScroll(): void {
+    if (this.#atBottom()) {
+      void this.#markLatest();
+    }
   }
 
   /** Lo que estaba leyendo la persona se queda donde estaba: el bloque crece por arriba. */
@@ -156,8 +198,7 @@ export class ProjectChat {
     try {
       const page = await this.#chat.list(projectId, { antes: oldest.id });
 
-      // Una reconexión pudo descartar el historial mientras tanto: este bloque ya no
-      // sería contiguo con lo que hay.
+      // La ruta pudo cambiar a otro proyecto mientras tanto.
       if (this.messages()[0]?.id !== oldest.id) {
         return;
       }
@@ -272,8 +313,10 @@ export class ProjectChat {
     );
   }
 
-  #open(projectId: string): void {
-    this.#realtime.openChat(projectId);
+  #open(): void {
+    this.#catchUpRun++;
+    this.#resumeFrom = null;
+    this.#lastMarkedId = null;
     this.messages.set([]);
     this.pending.set([]);
     this.draft.set('');
@@ -282,51 +325,36 @@ export class ProjectChat {
     this.historyError.set(null);
     this.loading.set(true);
 
-    void this.#syncLatest();
+    void this.#loadLatest();
   }
 
   /**
-   * Pide el bloque más reciente y lo une a lo que hay. Sirve para abrir y para
-   * reconectar.
-   *
-   * Si el bloque no comparte ningún identificador con lo que ya estaba, entre los dos
-   * se perdieron más mensajes de los que caben en un bloque, y no hay forma de saber
-   * cuáles. Pegar las dos puntas mostraría una conversación continua que no es cierta,
-   * así que lo anterior se descarta y queda el bloque nuevo, que sí es contiguo;
-   * «Cargar anteriores» recupera el resto.
-   *
-   * La comparación es contra lo que había al EMPEZAR. Un mensaje que llega por el
-   * socket mientras esta petición viaja también viene en el bloque, y contra la lista
-   * del final parecería continuidad justo cuando hay un agujero. Por lo mismo, al
-   * descartar se conserva lo llegado durante la petición: es más nuevo que el bloque.
+   * El bloque más reciente, al abrir. Es contiguo por sí mismo, y lo que llegó por el
+   * socket mientras viajaba es más nuevo. La marca de lectura da la cifra; después de
+   * eso, la vista queda al fondo y lo que se ve ya está leído.
    */
-  async #syncLatest(): Promise<void> {
+  async #loadLatest(): Promise<void> {
     const projectId = this.projectId();
-    const known = new Set(this.messages().map((message) => message.id));
 
     try {
-      const page = await this.#chat.list(projectId);
+      const [page, state] = await Promise.all([
+        this.#chat.list(projectId),
+        this.#chat.readState(projectId).catch(() => null),
+      ]);
 
       if (projectId !== this.projectId()) {
         return;
       }
 
-      const contiguous = page.messages.some((message) => known.has(message.id));
-
-      if (contiguous) {
-        this.#addMessages(page.messages);
-      } else {
-        this.messages.update((current) =>
-          mergeMessages(
-            current.filter((message) => !known.has(message.id)),
-            page.messages,
-          ),
-        );
-        this.hasOlder.set(page.nextCursor !== null);
-        this.#scrollToBottom();
+      if (state) {
+        this.#realtime.setUnread(projectId, state.unreadCount);
       }
 
+      this.messages.update((current) => mergeMessages(current, page.messages));
+      this.hasOlder.set(page.nextCursor !== null);
       this.historyError.set(null);
+      this.#scrollToBottom();
+      void this.#markLatest();
     } catch (error) {
       // El backend es quien sabe que la coordinación no participa.
       if (apiErrorCode(error) === 'FORBIDDEN') {
@@ -340,6 +368,87 @@ export class ProjectChat {
     }
   }
 
+  /**
+   * Pide lo que vino después y sigue hasta que el servidor diga que no queda nada. Lo
+   * que había no se toca, por grande que sea el hueco: se recupera entero.
+   *
+   * Lo que llega por el socket mientras tanto entra por su lado y también viene en
+   * algún bloque: `mergeMessages` une por id, así que da igual cuál llegue primero. El
+   * cursor sale de la respuesta y nunca de la lista, donde ese mensaje suelto haría
+   * saltar el agujero. Si algo falla, `#resumeFrom` guarda por dónde iba.
+   */
+  async #catchUp(from: string): Promise<void> {
+    const run = ++this.#catchUpRun;
+    const projectId = this.projectId();
+    const followed = this.#atBottom();
+    let cursor: string | null = from;
+
+    this.#resumeFrom = from;
+
+    try {
+      while (cursor) {
+        const page: MessagePage = await this.#chat.list(projectId, {
+          despues: cursor,
+          limite: CATCH_UP_BLOCK,
+        });
+
+        if (run !== this.#catchUpRun) {
+          return;
+        }
+
+        this.#addMessages(page.messages, false);
+        cursor = page.nextCursor;
+        this.#resumeFrom = cursor;
+      }
+
+      this.historyError.set(null);
+
+      // La cifra quedó vieja: lo perdido el socket nunca lo contó.
+      if (followed && isVisible()) {
+        await this.#markLatest();
+      } else {
+        const { unreadCount } = await this.#chat.readState(projectId);
+
+        this.#realtime.setUnread(projectId, unreadCount);
+      }
+    } catch (error) {
+      if (run === this.#catchUpRun) {
+        this.#showHistoryError(error);
+      }
+    }
+  }
+
+  /**
+   * La marca se fija con el id, y el servidor toma la fecha de ese mensaje. Con dos
+   * pestañas la atrasada no la hace retroceder: el backend solo la deja avanzar. Un
+   * fallo no se muestra: el mensaje sigue contando como no leído, que es lo cierto.
+   *
+   * Una pestaña oculta no marca, aunque esté al fondo: nadie lo está viendo, y una
+   * cifra que se pone en cero sola enseña a no creerle al contador.
+   */
+  async #markLatest(): Promise<void> {
+    const projectId = this.projectId();
+    const last = this.messages().at(-1);
+
+    if (!last || last.id === this.#lastMarkedId || !isVisible()) {
+      return;
+    }
+
+    const run = ++this.#markRun;
+
+    this.#lastMarkedId = last.id;
+
+    try {
+      const { unreadCount } = await this.#chat.markRead(projectId, last.id);
+
+      if (run === this.#markRun) {
+        this.#realtime.setUnread(projectId, unreadCount);
+      }
+    } catch {
+      this.#lastMarkedId = null;
+    }
+  }
+
   #showHistoryError(error: unknown): void {
     const outcome = apiErrorOutcome(error);
 
@@ -347,19 +456,32 @@ export class ProjectChat {
   }
 
   /**
-   * Inserta y, si la persona estaba abajo, la sigue; si leía historial, no la mueve.
-   * La distancia se mide aquí, antes de que el contenido nuevo cambie la altura, y no
-   * con un evento `scroll`, que en una pestaña en segundo plano no llega.
+   * Inserta y, si la persona estaba abajo, la sigue y lo da por leído; si leía
+   * historial, no la mueve y no lo ha leído. La distancia se mide aquí, antes de que
+   * el contenido nuevo cambie la altura, y no con un evento `scroll`, que en una
+   * pestaña en segundo plano no llega.
    */
-  #addMessages(messages: readonly ChatMessage[]): void {
-    const element = this.scroller()?.nativeElement;
-    const distance = element ? element.scrollHeight - element.scrollTop - element.clientHeight : 0;
+  #addMessages(messages: readonly ChatMessage[], mark = true): void {
+    const atBottom = this.#atBottom();
 
     this.messages.update((current) => mergeMessages(current, messages));
 
-    if (distance <= BOTTOM_TOLERANCE_PX) {
+    if (atBottom) {
       this.#scrollToBottom();
+
+      if (mark) {
+        void this.#markLatest();
+      }
     }
+  }
+
+  #atBottom(): boolean {
+    const element = this.scroller()?.nativeElement;
+
+    return (
+      !element ||
+      element.scrollHeight - element.scrollTop - element.clientHeight <= BOTTOM_TOLERANCE_PX
+    );
   }
 
   #scrollToBottom(): void {

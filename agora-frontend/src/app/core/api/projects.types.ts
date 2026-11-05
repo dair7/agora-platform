@@ -78,6 +78,8 @@ export interface ProjectListItem extends Project {
    */
   principalInvestigator: UserSummary | null;
   memberCount: number;
+  /** Mensajes ajenos sin leer, calculado en el servidor. */
+  unreadCount: number;
 }
 
 /** Respuesta de `GET /proyectos`. Sin sobre: llega así, no dentro de `{ project }`. */
@@ -124,14 +126,15 @@ export interface CreateProjectInput {
 }
 
 /** Cuerpo de `PATCH /proyectos/:projectId`. Al menos un campo. */
+/** `null` vacía el campo, y ausente no lo cambia. `title` no admite `null`. */
 export interface UpdateProjectInput {
   title?: string;
-  description?: string;
-  objectives?: string;
+  description?: string | null;
+  objectives?: string | null;
   status?: UpdatableProjectStatus;
-  startDate?: string;
-  endDate?: string;
-  budget?: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  budget?: number | null;
 }
 
 /** Cuerpo de `POST /proyectos/:projectId/miembros`. Se invita por correo. */

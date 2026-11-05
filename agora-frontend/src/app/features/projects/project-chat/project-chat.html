@@ -46,6 +46,7 @@
       <!-- `tabindex` para recorrer el historial con el teclado. -->
       <section
         #scroller
+        (scroll)="onScroll()"
         role="log"
         aria-label="Mensajes"
         tabindex="0"

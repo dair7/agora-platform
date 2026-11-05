@@ -16,6 +16,7 @@ import {
   type ApiErrorMessages,
   type ErrorCode,
 } from '../../../core/api/api-error';
+import { ChatApi } from '../../../core/api/chat.api';
 import { ProjectsApi } from '../../../core/api/projects.api';
 import type { Member, ProjectRole } from '../../../core/api/projects.types';
 import { formatBudget } from '../../../core/format/project-budget';
@@ -110,6 +111,7 @@ export class ProjectDetail {
   readonly #title = inject(Title);
   readonly #session = inject(SessionService);
   readonly #realtime = inject(RealtimeService);
+  readonly #chat = inject(ChatApi);
   protected readonly roleLabels = ROLE_LABELS;
 
   readonly #params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
@@ -332,6 +334,19 @@ export class ProjectDetail {
 
       if (view) {
         this.#title.setTitle(`${view.project.title} · Ágora`);
+      }
+    });
+
+    // Quien llega aquí por URL no pasó por la lista: sin esto, el enlace de la
+    // conversación diría que no hay nada sin leer. Un fallo solo deja de pintarlo.
+    effect(() => {
+      const projectId = this.#params().get('projectId') ?? '';
+
+      if (this.canChat()) {
+        this.#chat
+          .readState(projectId)
+          .then(({ unreadCount }) => this.#realtime.setUnread(projectId, unreadCount))
+          .catch(() => undefined);
       }
     });
   }

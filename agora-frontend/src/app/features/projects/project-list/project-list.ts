@@ -1,9 +1,18 @@
-import { Component, DestroyRef, computed, inject, resource } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  resource,
+  untracked,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { apiErrorOutcome } from '../../../core/api/api-error';
 import { ProjectsApi } from '../../../core/api/projects.api';
-import type { ProjectStatus } from '../../../core/api/projects.types';
+import type { ProjectListItem, ProjectStatus } from '../../../core/api/projects.types';
+import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { SessionService } from '../../../core/session/session.service';
 import { Button } from '../../../shared/ui/button/button';
 import { Empty } from '../../../shared/ui/empty/empty';
@@ -48,6 +57,7 @@ export class ProjectList {
   readonly #router = inject(Router);
   readonly #route = inject(ActivatedRoute);
   readonly #api = inject(ProjectsApi);
+  readonly #realtime = inject(RealtimeService);
   protected readonly session = inject(SessionService);
   protected readonly statusFilters = STATUS_FILTERS;
 
@@ -75,6 +85,29 @@ export class ProjectList {
         pagina: params.pagina,
       }),
   });
+
+  #applyUnread(items: readonly ProjectListItem[]): void {
+    for (const { id, unreadCount } of items) {
+      this.#realtime.setUnread(id, unreadCount);
+    }
+  }
+
+  /**
+   * Fuera del `resource` a propósito: `reload()` pasa por `isLoading`, y volver a la
+   * conexión pintaría las siluetas sobre una lista que no cambió. Si falla, se queda
+   * la cifra que había.
+   */
+  async #refreshUnread(): Promise<void> {
+    const { estado, buscar, pagina } = this.query();
+
+    try {
+      const page = await this.#api.list({ estado: estado ?? undefined, buscar, pagina });
+
+      this.#applyUnread(page.items);
+    } catch {
+      return;
+    }
+  }
 
   protected readonly isCoordinator = computed(
     () => this.session.user()?.systemRole === 'COORDINATOR',
@@ -120,6 +153,28 @@ export class ProjectList {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.#searchTimer));
+
+    // La cifra de cada tarjeta sale de esta misma petición, no de una por tarjeta.
+    effect(() => {
+      const items = this.page()?.items ?? [];
+
+      untracked(() => this.#applyUnread(items));
+    });
+
+    // Lo que llegó sin conexión el socket nunca lo entregó: solo el servidor lo sabe. La
+    // primera conexión no cuenta: la lista acaba de pedir sus cifras.
+    let lostConnection = false;
+
+    this.#realtime.disconnected.pipe(takeUntilDestroyed()).subscribe(() => {
+      lostConnection = true;
+    });
+
+    this.#realtime.connected.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (lostConnection) {
+        lostConnection = false;
+        void this.#refreshUnread();
+      }
+    });
   }
 
   /**
