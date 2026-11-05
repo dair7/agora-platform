@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { ChatMessage, ListMessagesQuery, MessagePage } from './chat.types';
+import type { ChatMessage, ListMessagesQuery, MessagePage, ReadState } from './chat.types';
 import { toQueryParams } from './query-params';
 
 /**
@@ -14,7 +14,7 @@ import { toQueryParams } from './query-params';
 export class ChatApi {
   readonly #http = inject(HttpClient);
 
-  /** Sin `antes`, el bloque más reciente. */
+  /** Sin cursor, el bloque más reciente. */
   list(projectId: string, query: ListMessagesQuery = {}): Promise<MessagePage> {
     return firstValueFrom(
       this.#http.get<MessagePage>(this.#url(projectId), { params: toQueryParams({ ...query }) }),
@@ -27,6 +27,17 @@ export class ChatApi {
     );
 
     return message;
+  }
+
+  readState(projectId: string): Promise<ReadState> {
+    return firstValueFrom(this.#http.get<ReadState>(`${this.#url(projectId)}/lectura`));
+  }
+
+  /** Manda el id, nunca una fecha: el reloj de esta máquina no es el del servidor. */
+  markRead(projectId: string, messageId: string): Promise<ReadState> {
+    return firstValueFrom(
+      this.#http.put<ReadState>(`${this.#url(projectId)}/lectura`, { messageId }),
+    );
   }
 
   #url(projectId: string): string {

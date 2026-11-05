@@ -49,6 +49,21 @@ export const findMessages = (
     select: messageSelect,
   });
 
+/** El otro sentido: lo que vino después del cursor, ya en orden cronológico. */
+export const findMessagesAfter = (
+  conversationId: string,
+  after: string,
+  take: number,
+): Promise<MessageRow[]> =>
+  prisma.message.findMany({
+    where: { conversationId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    cursor: { id: after },
+    skip: 1,
+    take,
+    select: messageSelect,
+  });
+
 export const createMessage = (
   conversationId: string,
   senderId: string,

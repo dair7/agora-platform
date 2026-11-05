@@ -93,16 +93,6 @@ const HINTS: FieldMessages = {
   budget: 'En pesos colombianos, solo números.',
 };
 
-/**
- * Lo que el contrato no deja vaciar. Descripción y objetivos no están: se vacían
- * mandando cadena vacía, que el backend acepta y el detalle trata como ausente.
- */
-const KEPT_ON_CLEAR: FieldMessages = {
-  startDate: 'Por ahora la fecha no se puede quitar. Se conservará la actual.',
-  endDate: 'Por ahora la fecha no se puede quitar. Se conservará la actual.',
-  budget: 'Por ahora el presupuesto no se puede quitar. Se conservará el actual.',
-};
-
 /** Una fecha a medias informa `value` vacío: sin esto, lo tecleado se perdería sin avisar. */
 const INCOMPLETE_DATE = 'La fecha está incompleta. Complétala o bórrala.';
 
@@ -176,16 +166,11 @@ export class ProjectForm {
       errors.principalInvestigatorId = 'Elige quién dirige el proyecto.';
     }
 
-    // Sobre el resultado y no sobre lo escrito: una fecha borrada se conserva, y así
-    // lo valida el backend. Entre fechas `YYYY-MM-DD` el orden del texto es el del
-    // calendario; el `max` de los campos asegura los cuatro dígitos del año.
-    const start = values.startDate || this.initial().startDate;
-    const end = values.endDate || this.initial().endDate;
-
-    if (start && end && start > end) {
-      errors.endDate = values.endDate
-        ? END_BEFORE_START
-        : 'La fecha de fin que se conserva es anterior a la de inicio.';
+    // Una fecha borrada se vacía, así que solo cuenta con las dos presentes. Entre
+    // fechas `YYYY-MM-DD` el orden del texto es el del calendario; el `max` de los
+    // campos asegura los cuatro dígitos del año.
+    if (values.startDate && values.endDate && values.startDate > values.endDate) {
+      errors.endDate = END_BEFORE_START;
     }
 
     for (const field of this.#incompleteDates()) {
@@ -202,7 +187,7 @@ export class ProjectForm {
     return errors;
   });
 
-  /** En edición, solo lo que cambió. Lo que no se puede vaciar no se envía. */
+  /** En edición, solo lo que cambió. Un campo vaciado va como `null`. */
   readonly #changes = computed(() => {
     const values = this.values();
     const initial = this.initial();
@@ -217,25 +202,25 @@ export class ProjectForm {
     }
 
     if (values.description.trim() !== initial.description.trim()) {
-      changes.description = values.description.trim();
+      changes.description = values.description.trim() || null;
     }
 
     if (values.objectives.trim() !== initial.objectives.trim()) {
-      changes.objectives = values.objectives.trim();
+      changes.objectives = values.objectives.trim() || null;
     }
 
-    if (values.startDate !== '' && values.startDate !== initial.startDate) {
-      changes.startDate = values.startDate;
+    if (values.startDate !== initial.startDate) {
+      changes.startDate = values.startDate || null;
     }
 
-    if (values.endDate !== '' && values.endDate !== initial.endDate) {
-      changes.endDate = values.endDate;
+    if (values.endDate !== initial.endDate) {
+      changes.endDate = values.endDate || null;
     }
 
     const budget = values.budget.trim();
 
-    if (budget !== '' && budget !== initial.budget) {
-      changes.budget = Number(budget);
+    if (budget !== initial.budget) {
+      changes.budget = budget === '' ? null : Number(budget);
     }
 
     return changes;
@@ -311,9 +296,7 @@ export class ProjectForm {
   }
 
   protected hint(field: FieldName): string | undefined {
-    const cleared = this.values()[field] === '' && this.initial()[field] !== '';
-
-    return (cleared ? KEPT_ON_CLEAR[field] : undefined) ?? HINTS[field];
+    return HINTS[field];
   }
 
   /** El `id` de lo que `app-field` pinta debajo: el error tiene prioridad sobre la ayuda. */

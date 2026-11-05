@@ -43,13 +43,12 @@ export class RealtimeService {
   readonly #unread = signal<ReadonlyMap<string, number>>(new Map());
   readonly #chatMessages = new Subject<ChatMessage>();
   readonly #connected = new Subject<void>();
+  readonly #disconnected = new Subject<void>();
 
   #socket: AppSocket | null = null;
   #retryTimer: ReturnType<typeof setTimeout> | undefined;
   /** Ya se renovó para este intento: un segundo `TOKEN_EXPIRED` no renueva otra vez. */
   #renewedForHandshake = false;
-  /** El chat que la persona tiene abierto ahora: lo que llega ahí ya está leído. */
-  #openChatId: string | null = null;
 
   readonly status = this.#status.asReadonly();
 
@@ -66,6 +65,12 @@ export class RealtimeService {
    */
   readonly connected = this.#connected.asObservable();
 
+  /**
+   * Cada caída de la conexión. Síncrono como `connected`: lo que hay en la lista en
+   * ese momento es hasta donde el historial es continuo.
+   */
+  readonly disconnected = this.#disconnected.asObservable();
+
   constructor() {
     effect(() => {
       const userId = this.#session.user()?.id;
@@ -75,30 +80,24 @@ export class RealtimeService {
   }
 
   /**
-   * Quién está en línea en un proyecto, o `null` si no se sabe: sin conexión, en un
-   * proyecto sin sala para esta persona, o en uno al que la sumaron ya conectada.
+   * Quién está en línea en un proyecto, o `null` si no se sabe: sin conexión, o en un
+   * proyecto sin sala para esta persona.
    */
   presenceIn(projectId: string): ReadonlySet<string> | null {
     return this.#presence().get(projectId) ?? null;
   }
 
-  /**
-   * Los mensajes sin leer de un proyecto. Viven en memoria y no sobreviven a una
-   * recarga: `last_read_at` existe en la base, pero ningún endpoint lo expone. Es un
-   * hueco de la fase 11.
-   */
+  /** Los mensajes sin leer de un proyecto, según la última cifra del servidor. */
   unreadIn(projectId: string): number {
     return this.#unread().get(projectId) ?? 0;
   }
 
-  /** La persona está mirando este chat: lo que había queda leído, y lo que llegue también. */
-  openChat(projectId: string): void {
-    this.#openChatId = projectId;
-    this.#setUnread(projectId, 0);
-  }
-
-  closeChat(): void {
-    this.#openChatId = null;
+  /**
+   * La cifra del servidor. Es la única fuente: la entregan `GET /proyectos` y la marca
+   * de lectura, y aquí solo se guarda para que el socket pueda sumar sobre ella.
+   */
+  setUnread(projectId: string, count: number): void {
+    this.#unread.set(new Map(this.#unread()).set(projectId, count));
   }
 
   #connect(): void {
@@ -126,6 +125,7 @@ export class RealtimeService {
       // sería mentir; al reconectar, `presencia:inicial` los vuelve a llenar. Los no
       // leídos no se tocan: esos siguen siendo ciertos aunque se caiga la conexión.
       this.#presence.set(NO_PRESENCE);
+      this.#disconnected.next();
 
       if (reason === 'io client disconnect') {
         return;
@@ -139,11 +139,14 @@ export class RealtimeService {
 
     socket.on('chat:mensaje', (message) => {
       const mine = message.sender.id === this.#session.user()?.id;
+      const known = this.#unread().get(message.projectId);
 
-      // El propio no cuenta: el evento también llega a las otras pestañas de quien lo
-      // escribió.
-      if (!mine && message.projectId !== this.#openChatId) {
-        this.#setUnread(message.projectId, this.unreadIn(message.projectId) + 1);
+      // El socket solo suma sobre lo que ya hay: nunca es la fuente de la cifra, porque
+      // una pestaña recién abierta no sabe nada de lo anterior. El propio no cuenta: el
+      // evento también llega a las otras pestañas de quien lo escribió. Lo que llega al
+      // chat abierto también suma, y la marca de lectura lo baja si de verdad se leyó.
+      if (!mine && known !== undefined) {
+        this.setUnread(message.projectId, known + 1);
       }
 
       this.#chatMessages.next(message);
@@ -245,10 +248,6 @@ export class RealtimeService {
 
     clearTimeout(this.#retryTimer);
     this.#retryTimer = setTimeout(() => socket.connect(), RETRY_DELAY_MS);
-  }
-
-  #setUnread(projectId: string, count: number): void {
-    this.#unread.set(new Map(this.#unread()).set(projectId, count));
   }
 
   /** Solo sobre proyectos conocidos: una entrada suelta contaría a medias. */

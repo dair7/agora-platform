@@ -299,12 +299,12 @@ None of them takes one request per project.
 
 | Method | Route | Who | Body / query | Response |
 | --- | --- | --- | --- | --- |
-| `GET` | `/` | Project member | `?antes=<messageId>&limite=50` (1–100) | `200 { messages, nextCursor }` |
+| `GET` | `/` | Project member | `?antes=<messageId>` or `?despues=<messageId>`, `&limite=50` (1–100) | `200 { messages, nextCursor }` |
 | `POST` | `/` | Project member | `{ content }` (1–2000 characters, trimmed) | `201 { message }`, then emits `chat:mensaje` |
 | `GET` | `/lectura` | Project member | — | `200 { lastReadAt, unreadCount }` |
 | `PUT` | `/lectura` | Project member | `{ messageId }` | `200 { lastReadAt, unreadCount }` |
 
-The history uses cursor pagination. Each page comes back in chronological order. To load older messages, pass the page's `nextCursor` as `antes`; `nextCursor` is `null` when there is no more history. The coordinator can see projects but does not take part in their chats (`403`). Sending to a `COMPLETED` project returns `409`.
+The history uses cursor pagination, in both directions. Each page comes back in chronological order. To load older messages, pass the page's `nextCursor` as `antes`; `nextCursor` is `null` when there is no more history. To catch up after a reconnection, pass the id of the last message you have as `despues`, and keep passing `nextCursor` until it is `null`: that is what tells you nothing is missing. `antes` and `despues` cannot go together (`400`), and a `despues` from another conversation returns `404`. The coordinator can see projects but does not take part in their chats (`403`). Sending to a `COMPLETED` project returns `409`.
 
 The read mark is computed on the server, so it survives a reload. The client sends the id of the last message it saw, and the server takes the date of that message: it never accepts a date, because the client's clock is not the server's. The mark only moves forward. A message from another conversation returns `404`. `unreadCount` counts messages from others after the mark, or all of them if there is no mark.
 

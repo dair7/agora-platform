@@ -15,7 +15,11 @@ export interface ReadState {
 export interface MessagePage {
   /** En orden cronológico, listos para pintar de arriba abajo. */
   messages: ChatMessagePayload[];
-  /** Id para pedir el bloque anterior, o `null` si ya no queda historial. */
+  /**
+   * Id para pedir el bloque siguiente en el mismo sentido, o `null` si no queda nada.
+   * Con `despues` es lo que le dice al cliente si se puso al día o si le falta un
+   * trozo: un historial con un agujero invisible es peor que uno corto.
+   */
   nextCursor: string | null;
 }
 
@@ -46,12 +50,35 @@ const getConversationId = async (projectId: string, userId: string): Promise<str
   return conversationId;
 };
 
+const listMessagesAfter = async (
+  projectId: string,
+  conversationId: string,
+  after: string,
+  limit: number,
+): Promise<MessagePage> => {
+  if (!(await repository.findMessageDate(conversationId, after))) {
+    throw new AppError(404, 'NOT_FOUND', 'El mensaje no existe en esta conversación');
+  }
+
+  const rows = await repository.findMessagesAfter(conversationId, after, limit + 1);
+  const page = rows.slice(0, limit);
+
+  return {
+    messages: page.map((row) => toChatMessage(projectId, row)),
+    nextCursor: rows.length > limit ? page[page.length - 1].id : null,
+  };
+};
+
 export const listMessages = async (
   access: ProjectAccess,
   userId: string,
   query: ListMessagesQuery,
 ): Promise<MessagePage> => {
   const conversationId = await getConversationId(access.project.id, userId);
+
+  if (query.after) {
+    return listMessagesAfter(access.project.id, conversationId, query.after, query.limit);
+  }
 
   const rows = await repository.findMessages(conversationId, query.before, query.limit + 1);
 
