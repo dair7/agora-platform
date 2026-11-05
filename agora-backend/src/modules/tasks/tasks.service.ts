@@ -3,9 +3,10 @@ import type { Project, Task } from '@prisma/client';
 import { AppError } from '../../middlewares/error-handler.js';
 import type { ProjectAccess } from '../../middlewares/project-access.js';
 import { emitToProject } from '../../sockets/emitter.js';
+import { announce } from '../notifications/notifications.service.js';
 import type { UserSummary } from '../users/users.repository.js';
 import * as repository from './tasks.repository.js';
-import type { MissingReference, TaskRow } from './tasks.repository.js';
+import type { MissingReference, TaskRow, WrittenTask } from './tasks.repository.js';
 import type { CreateTaskInput, UpdateTaskInput } from './tasks.schema.js';
 
 /**
@@ -44,7 +45,7 @@ const getTask = async (projectId: string, taskId: string): Promise<TaskRow> => {
 };
 
 /** Traduce lo que el repositorio comprobó dentro de la transacción. */
-const toWrittenTask = (result: TaskRow | MissingReference): TaskRow => {
+const toWrittenTask = (result: WrittenTask | MissingReference): WrittenTask => {
   if (result === 'phase-not-found') {
     throw new AppError(404, 'NOT_FOUND', 'La fase no existe en este proyecto');
   }
@@ -93,8 +94,9 @@ const assertCanEdit = (
  * solo una de las dos fechas, y la otra es la que ya está guardada.
  */
 const assertDateRange = (task: Task, input: UpdateTaskInput): void => {
-  const startDate = input.startDate ?? task.startDate;
-  const dueDate = input.dueDate ?? task.dueDate;
+  // `undefined` y no `??`: `null` vacía la fecha, no es «la que ya estaba».
+  const startDate = input.startDate === undefined ? task.startDate : input.startDate;
+  const dueDate = input.dueDate === undefined ? task.dueDate : input.dueDate;
 
   if (startDate && dueDate && startDate > dueDate) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Los datos enviados no son válidos', [
@@ -137,7 +139,7 @@ export const createTask = async (
 ): Promise<TaskItem> => {
   assertProjectOpen(access.project);
 
-  const row = toWrittenTask(
+  const { task, notification } = toWrittenTask(
     await repository.createTask(access.project.id, {
       ...input,
       ...completionFor(input.status, null),
@@ -147,7 +149,11 @@ export const createTask = async (
 
   notifyTaskChanged(access.project.id);
 
-  return toTaskItem(row);
+  if (notification) {
+    await announce(notification);
+  }
+
+  return toTaskItem(task);
 };
 
 /**
@@ -167,8 +173,8 @@ export const updateTask = async (
   assertProjectOpen(access.project);
   assertDateRange(current, input);
 
-  const row = toWrittenTask(
-    await repository.updateTask(access.project.id, taskId, {
+  const { task, notification } = toWrittenTask(
+    await repository.updateTask(access.project.id, taskId, userId, {
       ...input,
       ...completionFor(input.status, current),
     }),
@@ -176,7 +182,11 @@ export const updateTask = async (
 
   notifyTaskChanged(access.project.id);
 
-  return toTaskItem(row);
+  if (notification) {
+    await announce(notification);
+  }
+
+  return toTaskItem(task);
 };
 
 export const deleteTask = async (access: ProjectAccess, taskId: string): Promise<void> => {
