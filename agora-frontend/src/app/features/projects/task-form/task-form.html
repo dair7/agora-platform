@@ -1,0 +1,146 @@
+<form
+  class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5 grid gap-espacio-4"
+  novalidate
+  [attr.aria-label]="editing() ? 'Editar tarea' : 'Crear tarea'"
+  (submit)="submit($event)"
+>
+  <app-field for="task-title" label="Título" [error]="error('title')">
+    <input
+      appInput
+      id="task-title"
+      type="text"
+      maxlength="200"
+      [invalid]="error('title') !== null"
+      [describedBy]="describedBy('title', 'task-title')"
+      [value]="initial().title"
+      (input)="update('title', $event)"
+    />
+  </app-field>
+
+  <app-field for="task-description" label="Descripción" [error]="error('description')">
+    <textarea
+      appTextarea
+      id="task-description"
+      rows="3"
+      [invalid]="error('description') !== null"
+      [describedBy]="describedBy('description', 'task-description')"
+      [value]="initial().description"
+      (input)="update('description', $event)"
+    ></textarea>
+  </app-field>
+
+  <app-field for="task-phase" label="Fase" [error]="error('phaseId')">
+    <select
+      appSelect
+      id="task-phase"
+      [invalid]="error('phaseId') !== null"
+      [describedBy]="describedBy('phaseId', 'task-phase')"
+      (input)="update('phaseId', $event)"
+    >
+      @for (phase of phases(); track phase.id) {
+        <option [value]="phase.id" [selected]="phase.id === initial().phaseId">
+          {{ phase.name }}
+        </option>
+      }
+    </select>
+  </app-field>
+
+  <app-field for="task-assignee" label="Responsable" [error]="error('assigneeId')">
+    <select
+      appSelect
+      id="task-assignee"
+      [invalid]="error('assigneeId') !== null"
+      [describedBy]="describedBy('assigneeId', 'task-assignee')"
+      (input)="update('assigneeId', $event)"
+    >
+      <option value="" [selected]="initial().assigneeId === ''">Sin responsable</option>
+      @for (person of assignees(); track person.id) {
+        <option [value]="person.id" [selected]="person.id === initial().assigneeId">
+          {{ person.label }}
+        </option>
+      }
+    </select>
+  </app-field>
+
+  <app-field for="task-status" label="Estado" [error]="error('status')">
+    <select
+      appSelect
+      id="task-status"
+      [invalid]="error('status') !== null"
+      [describedBy]="describedBy('status', 'task-status')"
+      (input)="update('status', $event)"
+    >
+      @for (option of statusOptions; track option.value) {
+        <option [value]="option.value" [selected]="option.value === initial().status">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+  </app-field>
+
+  <app-field for="task-priority" label="Prioridad" [error]="error('priority')">
+    <select
+      appSelect
+      id="task-priority"
+      [invalid]="error('priority') !== null"
+      [describedBy]="describedBy('priority', 'task-priority')"
+      (input)="update('priority', $event)"
+    >
+      @for (option of priorityOptions; track option.value) {
+        <option [value]="option.value" [selected]="option.value === initial().priority">
+          {{ option.label }}
+        </option>
+      }
+    </select>
+  </app-field>
+
+  <!-- `max` limita el año a cuatro dígitos: el navegador admite seis, y el backend no. -->
+  <app-field for="task-start" label="Fecha de inicio" [error]="error('startDate')">
+    <input
+      appInput
+      id="task-start"
+      name="startDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('startDate') !== null"
+      [describedBy]="describedBy('startDate', 'task-start')"
+      [value]="initial().startDate"
+      (input)="update('startDate', $event)"
+    />
+  </app-field>
+
+  <app-field for="task-due" label="Fecha límite" [error]="error('dueDate')">
+    <input
+      appInput
+      id="task-due"
+      name="dueDate"
+      type="date"
+      max="9999-12-31"
+      [invalid]="error('dueDate') !== null"
+      [describedBy]="describedBy('dueDate', 'task-due')"
+      [value]="initial().dueDate"
+      (input)="update('dueDate', $event)"
+    />
+  </app-field>
+
+  @if (notice(); as failure) {
+    <app-notice
+      [tone]="failure.kind === 'message' && failure.code === 'CONFLICT' ? 'block' : 'error'"
+    >
+      {{ failure.message }}
+    </app-notice>
+  }
+
+  <div class="flex flex-wrap gap-espacio-3">
+    <button appButton type="submit" [disabled]="!canSubmit()">{{ submitLabel() }}</button>
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      [disabled]="busy()"
+      (click)="cancelled.emit()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>
