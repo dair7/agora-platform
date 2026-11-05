@@ -316,11 +316,11 @@ The read mark is computed on the server, so it survives a reload. The client sen
 | `POST` | `/` | Principal investigator | `{ name, description?, status?, startDate?, endDate? }` | `201 { phase }`, placed last |
 | `PATCH` | `/:phaseId` | Principal investigator | At least one of `name`, `description`, `status`, `startDate`, `endDate` | `200 { phase }` |
 | `DELETE` | `/:phaseId` | Principal investigator | — | `204`. The remaining phases close the gap. `409` if the phase has tasks: move or delete them first. |
-| `PUT` | `/orden` | Principal investigator | `{ phaseIds }`: every phase of the project, in the new order | `200 { phases }` |
+| `PUT` | `/orden` | Principal investigator | `{ phaseIds, expectedPhaseIds? }`: every phase of the project in the new order, and the order the client saw before moving | `200 { phases }` |
 
 A phase is `{ id, projectId, name, description, position, status, startDate, endDate, createdAt, updatedAt }`. `status` is `PENDING` (the default), `IN_PROGRESS` or `COMPLETED`. `name` takes 3–150 characters. Dates use `YYYY-MM-DD`, and the end date cannot be before the start date; `PATCH` compares against the stored value when the body brings only one of them.
 
-`position` is managed by the server: positions always run from 1 to the number of phases. Sending `position` to `POST` or `PATCH` returns `400`; the only way to change it is `PUT /orden`. That endpoint takes the whole order on purpose: moving phases one at a time leaves gaps and ties if two people reorder at once, while a complete list cannot end up half applied. It returns `400` unless the list holds exactly the phases of the project, with none missing, extra or repeated.
+`position` is managed by the server: positions always run from 1 to the number of phases. Sending `position` to `POST` or `PATCH` returns `400`; the only way to change it is `PUT /orden`. That endpoint takes the whole order on purpose: moving phases one at a time leaves gaps and ties if two people reorder at once, while a complete list cannot end up half applied. It returns `400` unless the list holds exactly the phases of the project, with none missing, extra or repeated. With `expectedPhaseIds`, it returns `409` and writes nothing if the real order is no longer that one: otherwise, when two people reorder at once, the last one wins and the other never finds out.
 
 Every write returns `409` on a `COMPLETED` project and emits `cronograma:modificado` after it is saved. A phase that belongs to another project returns `404`.
 
@@ -335,7 +335,7 @@ Every write returns `409` on a `COMPLETED` project and emits `cronograma:modific
 | `POST` | `/:taskId/dependencias` | Principal investigator | `{ dependsOnTaskId }` | `201 { task }` |
 | `DELETE` | `/:taskId/dependencias/:dependsOnId` | Principal investigator | — | `204` |
 
-A task is `{ id, phaseId, title, description, status, priority, assigneeId, assignee, createdById, startDate, dueDate, completedAt, createdAt, updatedAt, dependsOnTaskIds }`. `assignee` has the same shape as `user` in a member, or `null`. `status` is `TODO` (the default), `IN_PROGRESS`, `IN_REVIEW`, `DONE` or `BLOCKED`; `priority` is `LOW`, `MEDIUM` (the default) or `HIGH`. `title` takes 3–200 characters. Dates use `YYYY-MM-DD`, and `dueDate` cannot be before `startDate`.
+A task is `{ id, phaseId, title, description, status, priority, assigneeId, assignee, createdById, startDate, dueDate, completedAt, createdAt, updatedAt, dependsOnTaskIds, progressCount, documentCount }`. The two counts are what would lose its link if the task were deleted; `documentCount` counts every version. `assignee` has the same shape as `user` in a member, or `null`. `status` is `TODO` (the default), `IN_PROGRESS`, `IN_REVIEW`, `DONE` or `BLOCKED`; `priority` is `LOW`, `MEDIUM` (the default) or `HIGH`. `title` takes 3–200 characters. Dates use `YYYY-MM-DD`, and `dueDate` cannot be before `startDate`.
 
 **Who can edit.** The principal investigator changes any field. The assignee changes `status` and nothing else: sending any other field returns `403`, it is not ignored. Any other member gets `403`, and so does the coordinator. A task with no assignee can only be edited by the principal investigator. Nobody assigns a task to themselves.
 
@@ -485,7 +485,7 @@ Presence is tracked per person, not per tab: opening a second tab does not annou
 
 `presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected sends a new snapshot of all the person's projects, not only the new one, since a client replaces what it had.
 
-`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it. `tarea:actualizada` and the progress and document events work the same way: fetch the list again.
+`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, on purpose: presence would announce them in projects they are not a member of. Their view is a snapshot, and they reload to see what is new. `tarea:actualizada` and the progress and document events work the same way: fetch the list again.
 
 ## Connectivity demo
 

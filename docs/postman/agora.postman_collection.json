@@ -4632,6 +4632,106 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "37. 409 el orden visto ya no es el real",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: alguien lo cambió, y no se escribió nada', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{originalPhaseIds}}, \"expectedPhaseIds\": {{reorderedPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "38. Con el orden visto correcto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y el orden es el enviado', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.phases.map((phase) => phase.id)).to.eql(JSON.parse(pm.environment.get('originalPhaseIds')));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{originalPhaseIds}}, \"expectedPhaseIds\": {{originalPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -4851,7 +4951,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const body = pm.response.json();\r\n\r\npm.test('200 y cada tarea trae sus dependencias', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.tasks[0]).to.have.property('dependsOnTaskIds');\r\n});"
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y cada tarea trae sus dependencias', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.tasks[0]).to.have.property('dependsOnTaskIds');\r\n  pm.expect(body.tasks[0]).to.have.property('progressCount');\r\n  pm.expect(body.tasks[0]).to.have.property('documentCount');\r\n});"
                 ]
               }
             }
