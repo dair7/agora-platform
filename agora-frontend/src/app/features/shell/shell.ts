@@ -7,6 +7,7 @@ import { SessionService } from '../../core/session/session.service';
 import type { SystemRole } from '../../core/session/session.types';
 import { Button } from '../../shared/ui/button/button';
 import { Notice } from '../../shared/ui/notice/notice';
+import { NotificationInbox } from '../notifications/notification-inbox/notification-inbox';
 
 /**
  * El rol en palabras, nunca el valor del enum. Son nombres de área y no de
@@ -25,7 +26,7 @@ const ROLE_LABELS: Record<SystemRole, string> = {
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterOutlet, Button, Notice],
+  imports: [RouterLink, RouterOutlet, Button, Notice, NotificationInbox],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })

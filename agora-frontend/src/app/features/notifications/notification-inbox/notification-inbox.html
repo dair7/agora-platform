@@ -1,0 +1,115 @@
+<button
+  #opener
+  appButton
+  variant="subtle"
+  type="button"
+  aria-controls="bandeja"
+  [attr.aria-expanded]="open()"
+  (click)="toggle()"
+>
+  Notificaciones
+  @if (unread() > 0) {
+    <app-unread-badge class="ml-espacio-1" [count]="unread()" [label]="unreadLabel()" />
+  }
+</button>
+
+<!-- Justo después del botón: el foco entra con Tab, sin mover nada a mano. Se posiciona
+     contra la barra del armazón y no contra el botón, para no salirse a 360px. -->
+@if (open()) {
+  <section
+    id="bandeja"
+    aria-label="Notificaciones"
+    class="absolute top-full right-espacio-5 left-espacio-5 sm:left-auto sm:w-full sm:max-w-ancho-formulario z-10 mt-espacio-1 grid gap-espacio-3 bg-superficie-00 border border-borde rounded-radio-md p-espacio-4 shadow-sombra-flotante"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-espacio-2">
+      <h2 class="titulo-tarjeta text-tinta">Notificaciones</h2>
+      @if (unread() > 0) {
+        <button
+          appButton
+          variant="subtle"
+          type="button"
+          class="-mr-espacio-4"
+          [disabled]="marking()"
+          (click)="markAllRead()"
+        >
+          Marcar todas como leídas
+        </button>
+      }
+    </div>
+
+    @if (failure(); as message) {
+      <app-notice tone="error">
+        {{ message }}
+        <button appButton variant="secondary" type="button" noticeAction (click)="refresh()">
+          Reintentar
+        </button>
+      </app-notice>
+    }
+
+    @if (loading()) {
+      <div class="grid gap-espacio-3" aria-busy="true">
+        @for (row of [1, 2]; track row) {
+          <div class="grid gap-espacio-1">
+            <app-skeleton class="cuerpo-fuerte" />
+            <app-skeleton class="secundario" />
+          </div>
+        }
+      </div>
+    } @else if (isEmpty()) {
+      <app-empty
+        title="No tienes notificaciones"
+        description="Aquí llegan los proyectos a los que te suman y las tareas que te asignan."
+      />
+    } @else {
+      <ul class="bandeja-lista divide-y divide-borde">
+        @for (row of rows(); track row.notification.id) {
+          <li class="grid gap-espacio-1 py-espacio-3 wrap-anywhere">
+            <!-- Sin leer se distingue por el peso, el punto y el texto para el lector, no
+                 solo por un color. -->
+            <p
+              class="flex items-baseline gap-espacio-2 text-tinta"
+              [class.cuerpo-fuerte]="!row.notification.isRead"
+              [class.cuerpo]="row.notification.isRead"
+            >
+              @if (!row.notification.isRead) {
+                <span
+                  class="size-espacio-2 shrink-0 rounded-radio-pildora bg-veril"
+                  aria-hidden="true"
+                ></span>
+                <span class="sr-only">Sin leer:</span>
+              }
+              {{ row.notification.title }}
+            </p>
+            @if (row.notification.body; as body) {
+              <p class="secundario text-tinta">{{ body }}</p>
+            }
+            <p class="secundario text-tinta-media tabular-nums">{{ row.moment }}</p>
+            @if (row.link || !row.notification.isRead) {
+              <div class="flex flex-wrap gap-x-espacio-4 gap-y-espacio-1">
+                @if (row.link; as link) {
+                  <a
+                    class="secundario text-veril underline"
+                    [routerLink]="link"
+                    (click)="follow(row.notification)"
+                  >
+                    Ver<span class="sr-only">: {{ row.notification.title }}</span>
+                  </a>
+                }
+                @if (!row.notification.isRead) {
+                  <button
+                    class="secundario text-veril underline cursor-pointer disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado"
+                    type="button"
+                    [disabled]="marking()"
+                    (click)="markRead(row.notification)"
+                  >
+                    Marcar como leída<span class="sr-only">: {{ row.notification.title }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

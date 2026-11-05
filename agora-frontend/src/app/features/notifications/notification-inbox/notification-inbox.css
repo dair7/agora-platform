@@ -1,0 +1,7 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin token». */
+
+/* Una bandeja larga se desplaza por dentro, sin empujar la página. */
+.bandeja-lista {
+  max-height: min(60vh, 480px); /* sin token */
+  overflow-y: auto;
+}
