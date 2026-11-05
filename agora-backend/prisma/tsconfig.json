@@ -1,8 +1,9 @@
 {
   "extends": "../tsconfig.json",
   // Fuera del build: solo da un proyecto de TypeScript al seed, para el editor
-  // y para el linting con tipos. rootDir anula el ./src heredado y "types"
-  // declara los globales de Node, que no se autodetectan desde esta carpeta.
-  "compilerOptions": { "noEmit": true, "rootDir": ".", "types": ["node"] },
+  // y para el linting con tipos. rootDir anula el ./src heredado, y es ".." porque
+  // el seed importa el almacén de src/. "types" declara los globales de Node, que
+  // no se autodetectan desde esta carpeta.
+  "compilerOptions": { "noEmit": true, "rootDir": "..", "types": ["node"] },
   "include": ["**/*.ts"]
 }

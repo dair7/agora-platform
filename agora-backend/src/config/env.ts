@@ -4,18 +4,41 @@ import { z } from 'zod';
 // Formato aceptado para las vigencias: un número seguido de s, m, h o d.
 const DURATION = /^\d+[smhd]$/;
 
-const envSchema = z.object({
-  PORT: z.coerce.number().int().positive().default(3000),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  DATABASE_URL: z.string().min(1, 'es obligatoria'),
-  JWT_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
-  JWT_EXPIRES_IN: z.string().regex(DURATION, 'debe tener el formato 15m, 1h, 7d…').default('15m'),
-  REFRESH_TOKEN_EXPIRES_IN: z
-    .string()
-    .regex(DURATION, 'debe tener el formato 15m, 1h, 7d…')
-    .default('7d'),
-  CORS_ORIGIN: z.string().min(1, 'es obligatoria').default('http://localhost:4200'),
-});
+// Una línea `SUPABASE_URL=` deja una cadena vacía, no una variable ausente.
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+
+const envSchema = z
+  .object({
+    PORT: z.coerce.number().int().positive().default(3000),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    DATABASE_URL: z.string().min(1, 'es obligatoria'),
+    JWT_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
+    JWT_EXPIRES_IN: z.string().regex(DURATION, 'debe tener el formato 15m, 1h, 7d…').default('15m'),
+    REFRESH_TOKEN_EXPIRES_IN: z
+      .string()
+      .regex(DURATION, 'debe tener el formato 15m, 1h, 7d…')
+      .default('7d'),
+    CORS_ORIGIN: z.string().min(1, 'es obligatoria').default('http://localhost:4200'),
+    // Opcionales a propósito: si fueran obligatorias, quien clone el repositorio no
+    // podría ni levantar el backend sin crearse una cuenta en Supabase. Sin ellas,
+    // los archivos van al disco local y todo funciona.
+    // Solo el origen: el panel de Supabase ofrece la URL con `/rest/v1/`, y con esa
+    // ruta la librería responde «Invalid path specified in request URL».
+    SUPABASE_URL: optional(z.url('debe ser una URL').transform((url) => new URL(url).origin)),
+    SUPABASE_SECRET_KEY: optional(z.string()),
+    SUPABASE_BUCKET: optional(z.string()),
+  })
+  // Las tres o ninguna. Con una a medias, los archivos acabarían en el disco sin
+  // que nadie lo haya decidido, y en producción ese disco no sobrevive a un reinicio.
+  .refine(
+    ({ SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_BUCKET }) =>
+      [SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_BUCKET].filter(Boolean).length % 3 === 0,
+    {
+      message: 'hay que definir SUPABASE_URL, SUPABASE_SECRET_KEY y SUPABASE_BUCKET, o ninguna',
+      path: ['SUPABASE_URL'],
+    },
+  );
 
 const parsed = envSchema.safeParse(process.env);
 

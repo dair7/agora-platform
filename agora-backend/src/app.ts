@@ -7,7 +7,9 @@ import v1Routes from './routes/v1.js';
 
 const app = express();
 
-app.use(cors({ origin: env.CORS_ORIGIN }));
+// `exposedHeaders`: sin él, el cliente, que vive en otro dominio, no puede leer el
+// nombre original del archivo en una descarga.
+app.use(cors({ origin: env.CORS_ORIGIN, exposedHeaders: ['Content-Disposition'] }));
 app.use(express.json());
 
 // Ruta de infraestructura: queda fuera de /api/v1 a propósito.

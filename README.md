@@ -58,9 +58,10 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, phases, tasks, chat (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
+│       ├── storage/         # file storage: one port, Supabase and local disk behind it
 │       ├── app.ts           # Express application
 │       └── server.ts        # HTTP server + Socket.io
 ├── agora-frontend/
@@ -171,6 +172,13 @@ The server validates these values at startup with Zod. If any value is missing o
 | `JWT_EXPIRES_IN` | `15m` | Access token lifetime. Format: a number followed by `s`, `m`, `h` or `d` |
 | `REFRESH_TOKEN_EXPIRES_IN` | `7d` | Refresh token lifetime, same format |
 | `CORS_ORIGIN` | `http://localhost:4200` | Allowed origin for both REST and Socket.io (the Angular dev server) |
+| `SUPABASE_URL` | — (optional) | Supabase project URL |
+| `SUPABASE_SECRET_KEY` | — (optional) | Secret key (`sb_secret_...`). Backend only |
+| `SUPABASE_BUCKET` | — (optional) | Private bucket for the files |
+
+**The three `SUPABASE_*` variables are optional, and they go together: all three or none.** Without them, files are stored on local disk under `agora-backend/uploads/` (ignored by git), so you can clone the repository and run everything without a Supabase account, including the documents of the seed. With them, files go to Supabase Storage. The server logs which one it uses at startup. Setting only some of them stops the server at startup. Use Supabase in production: a host such as Render does not keep its local disk across restarts.
+
+Run the seed after changing the storage: it uploads its four documents to whichever one is active.
 
 ## Running the backend
 
@@ -329,6 +337,36 @@ Every write returns `409` on a `COMPLETED` project and emits `tarea:actualizada`
 
 Removing a member from a project unassigns their tasks there in the same transaction, and emits `tarea:actualizada` if there were any. Having tasks does not block the removal. Deleting a task is allowed: progress entries and documents linked to it stay on the project and only lose that link.
 
+**Project progress** — `/api/v1/proyectos/:projectId/avances`
+
+| Method | Route | Who | Body | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Member or coordinator | — | `200 { progress }`, newest first |
+| `POST` | `/` | Any member | `{ description, taskId? }` | `201 { progress }`, then emits `avance:creado` |
+| `PATCH` | `/:progressId` | Its author only | At least one of `description`, `taskId` | `200 { progress }`, then emits `avance:modificado` |
+| `DELETE` | `/:progressId` | Its author or the principal investigator | — | `204`, then emits `avance:modificado` |
+
+A progress entry is `{ id, projectId, taskId, authorId, author, description, createdAt, updatedAt }`. It belongs to the project: `taskId` is optional, and a task from another project returns `404`. On `PATCH`, `taskId` accepts `null`. Nobody rewrites somebody else's words, so not even the principal investigator can edit an entry they did not write; they can delete it, since they answer for the project's record. The coordinator reads but does not write. Writes return `409` on a `COMPLETED` project.
+
+**Project documents** — `/api/v1/proyectos/:projectId/documentos`
+
+| Method | Route | Who | Body | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Member or coordinator | — | `200 { documents }`, only the latest version of each chain |
+| `GET` | `/:documentId/versiones` | Member or coordinator | — | `200 { documents }`, the whole chain, newest first |
+| `GET` | `/:documentId/descarga` | Member or coordinator | — | `200` with the bytes and the original name in `Content-Disposition` |
+| `POST` | `/` | Any member | `multipart/form-data`: `file`, `taskId?` | `201 { document }`, then emits `documento:subido` |
+| `POST` | `/:documentId/versiones` | Any member | `multipart/form-data`: `file` | `201 { document }`, then emits `documento:subido` |
+| `DELETE` | `/:documentId` | Whoever uploaded it, or the principal investigator | — | `204`, then emits `documento:modificado` |
+
+A document is `{ id, projectId, taskId, uploadedById, uploadedBy, name, mimeType, sizeBytes, version, previousVersionId, createdAt }`. Files go up to 20 MB: anything larger returns `400` from the backend. A task from another project returns `404`. The coordinator reads and downloads but does not write. Writes return `409` on a `COMPLETED` project.
+
+A new version is a new row linked to the previous one, which stays in place with its file. It inherits the task of the previous version. A chain is a line, not a tree: uploading on top of a version that is not the latest returns `409`.
+
+`DELETE` removes that version and its file, not the chain. Deleting a version in the middle links its neighbours, so the chain stays whole. Deleting the latest makes the previous one the latest again.
+
+Downloads always go through the backend. There are no signed URLs: access is checked on every download, and both storage implementations follow the same path.
+
 ### Access rules
 
 - A user who is not a member gets **`404`**, not `403`. A `403` would confirm that the project exists.
@@ -413,6 +451,10 @@ There are no client → server events: all changes go through REST.
 | `presencia:inicial` | Only the socket that just connected | `[{ projectId, userIds }]` | Right after that socket joins its rooms |
 | `cronograma:modificado` | `proyecto:{id}` | `{ projectId }` | After a phase is created, edited, deleted or reordered |
 | `tarea:actualizada` | `proyecto:{id}` | `{ projectId }` | After a task or one of its dependencies is created, edited or deleted, or a member with tasks is removed |
+| `avance:creado` | `proyecto:{id}` | `{ projectId }` | After a progress entry is created |
+| `avance:modificado` | `proyecto:{id}` | `{ projectId }` | After a progress entry is edited or deleted |
+| `documento:subido` | `proyecto:{id}` | `{ projectId }` | After a document or a new version is uploaded |
+| `documento:modificado` | `proyecto:{id}` | `{ projectId }` | After a document version is deleted |
 
 `chat:mensaje` has the same shape as the `message` returned by the REST call. The event also goes back to the sender. The tab that sent the message already has it from the REST response and discards the duplicate by `id`, while the sender's other tabs display it.
 
@@ -420,9 +462,7 @@ Presence is tracked per person, not per tab: opening a second tab does not annou
 
 `presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected does not send a new snapshot.
 
-`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it. `tarea:actualizada` works the same way: fetch `GET /proyectos/:projectId/tareas` again.
-
-Planned for Deliveries 3 and 4: `avance:creado`, `documento:subido`.
+`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it. `tarea:actualizada` and the progress and document events work the same way: fetch the list again.
 
 ## Connectivity demo
 

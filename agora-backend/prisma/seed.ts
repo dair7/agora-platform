@@ -20,6 +20,7 @@
 // principal y coinvestigador viven en `project_members.role`.
 
 import 'dotenv/config';
+import { readFile } from 'node:fs/promises';
 import {
   ConversationType,
   NotificationType,
@@ -32,6 +33,7 @@ import {
   TaskStatus,
 } from '@prisma/client';
 import { hash } from 'bcryptjs';
+import { fileStorage } from '../src/storage/index.js';
 
 const prisma = new PrismaClient();
 
@@ -639,6 +641,9 @@ async function seedProgress() {
 
 async function seedDocuments() {
   // El orden importa: la versión 2 referencia a la 1 por previousVersionId.
+  //
+  // `file` es el archivo de `prisma/seed-files/`, y `storagePath`, su clave en el
+  // almacén. El tamaño sale del archivo, para que la metadata no pueda mentir.
   const documents = [
     {
       id: ids.documents.protocoloV1,
@@ -646,9 +651,9 @@ async function seedDocuments() {
       taskId: ids.tasks.protocoloMuestreo,
       uploadedById: ids.users.laura,
       name: 'protocolo-muestreo.pdf',
-      storagePath: 'uploads/projects/cienaga/protocolo-muestreo-v1.pdf',
+      file: 'protocolo-muestreo-v1.pdf',
+      storagePath: 'projects/cienaga/protocolo-muestreo-v1.pdf',
       mimeType: 'application/pdf',
-      sizeBytes: 428_314,
       version: 1,
       previousVersionId: null,
       createdAt: at('2026-03-25T17:05:00.000Z'),
@@ -659,9 +664,9 @@ async function seedDocuments() {
       taskId: ids.tasks.protocoloMuestreo,
       uploadedById: ids.users.laura,
       name: 'protocolo-muestreo.pdf',
-      storagePath: 'uploads/projects/cienaga/protocolo-muestreo-v2.pdf',
+      file: 'protocolo-muestreo-v2.pdf',
+      storagePath: 'projects/cienaga/protocolo-muestreo-v2.pdf',
       mimeType: 'application/pdf',
-      sizeBytes: 451_902,
       version: 2,
       previousVersionId: ids.documents.protocoloV1,
       createdAt: at('2026-04-08T15:40:00.000Z'),
@@ -672,9 +677,9 @@ async function seedDocuments() {
       taskId: ids.tasks.analisisLaboratorio,
       uploadedById: ids.users.sofia,
       name: 'resultados-laboratorio-parcial.xlsx',
-      storagePath: 'uploads/projects/cienaga/resultados-laboratorio-parcial-v1.xlsx',
+      file: 'resultados-laboratorio-parcial-v1.xlsx',
+      storagePath: 'projects/cienaga/resultados-laboratorio-parcial-v1.xlsx',
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      sizeBytes: 96_755,
       version: 1,
       previousVersionId: null,
       createdAt: at('2026-08-21T14:40:00.000Z'),
@@ -685,21 +690,33 @@ async function seedDocuments() {
       taskId: ids.tasks.propuestaConvocatoria,
       uploadedById: ids.users.carlos,
       name: 'propuesta-movilidad-borrador.docx',
-      storagePath: 'uploads/projects/movilidad/propuesta-movilidad-borrador-v1.docx',
+      file: 'propuesta-movilidad-borrador-v1.docx',
+      storagePath: 'projects/movilidad/propuesta-movilidad-borrador-v1.docx',
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      sizeBytes: 132_480,
       version: 1,
       previousVersionId: null,
       createdAt: at('2026-09-04T20:20:00.000Z'),
     },
   ];
 
-  for (const document of documents) {
-    await prisma.document.upsert({
-      where: { id: document.id },
-      create: document,
-      update: document,
-    });
+  // Una versión subida por la API puede haber tomado el enlace de una del seed, y
+  // `previous_version_id` es único: el `upsert` chocaría, como en las fases.
+  const seededIds = documents.map((document) => document.id);
+
+  await prisma.document.updateMany({
+    where: { previousVersionId: { in: seededIds }, id: { notIn: seededIds } },
+    data: { previousVersionId: null },
+  });
+
+  for (const { file, ...document } of documents) {
+    const content = await readFile(new URL(`./seed-files/${file}`, import.meta.url));
+    const data = { ...document, sizeBytes: content.length };
+
+    // En el almacén activo, sea cual sea: si no, con Supabase configurado la base
+    // apuntaría a archivos que solo están en el disco.
+    await fileStorage.save(document.storagePath, content, document.mimeType);
+
+    await prisma.document.upsert({ where: { id: document.id }, create: data, update: data });
   }
 
   return documents.length;
