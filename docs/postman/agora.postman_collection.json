@@ -1481,7 +1481,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  ""
+                  "const body = pm.response.json();\r\npm.environment.set('messageId', body.message.id);\r\n\r\npm.test('201 y devuelve el mensaje', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.message.id).to.be.a('string');\r\n});"
                 ]
               }
             }
@@ -2021,6 +2021,982 @@
               ],
               "path": [
                 "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Incluir cuentas inactivas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\nconst byEmail = (email) => body.users.find((user) => user.email === email);\r\npm.environment.set('coordinatorUserId', byEmail('coordinacion@example.com').id);\r\npm.environment.set('principalUserId', byEmail('laura.mendoza@example.com').id);\r\npm.environment.set('managedUserId', byEmail('andres.pardo@example.com').id);\r\npm.environment.set('managedUserName', byEmail('andres.pardo@example.com').fullName);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?incluirInactivas=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "incluirInactivas",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. 400 incluirInactivas inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: debe ser true o false', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?incluirInactivas=tal-vez",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "incluirInactivas",
+                  "value": "tal-vez"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. Cambiar el nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y el nombre cambió', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.user.fullName).to.eql('Andrés Felipe Pardo');\r\n  pm.expect(body.user).to.not.have.property('passwordHash');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fullName\": \"Andrés Felipe Pardo\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. Devolver el nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fullName\": \"{{managedUserName}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. 400 cambiar el rol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: una coordinación no fabrica otra', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fullName\": \"Andrés Pardo\", \"systemRole\": \"COORDINATOR\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. 400 cambiar el correo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: el correo es la identidad', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"otro@example.com\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. 400 cambiar isActive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: para eso están la baja y reactivar', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"isActive\": false }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. 403 investigadora editando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: es de la coordinación', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"fullName\": \"No debería cambiar\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17. 403 investigadora desactivando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: es de la coordinación', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. 403 investigadora reactivando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: es de la coordinación', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}/reactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}",
+                "reactivar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19. 409 autobaja",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: se dejaría fuera del sistema', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{coordinatorUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{coordinatorUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. 409 baja de investigadora principal con proyecto abierto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: dejaría un proyecto sin quien lo gestione', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{principalUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{principalUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. 404 cuenta inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/a1000000-0000-4000-8000-00000000ffff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "a1000000-0000-4000-8000-00000000ffff"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. 409 reactivar una cuenta activa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: ya está activa', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}/reactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}",
+                "reactivar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. Sesión de la persona a desactivar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('managedRefreshToken', body.refreshToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. Desactivar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sin cuerpo', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. 409 desactivar dos veces",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: ya está desactivada', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26. 401 ya no renueva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('401: la baja revocó sus refresh tokens', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('INVALID_TOKEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"refreshToken\": \"{{managedRefreshToken}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refrescar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refrescar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27. 403 ya no entra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: la cuenta está desactivada', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('ACCOUNT_DISABLED');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28. No aparece por defecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y no está', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.users.map((user) => user.id)).to.not.include(pm.environment.get('managedUserId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29. Aparece con incluirInactivas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y aparece inactiva', () => {\r\n  pm.response.to.have.status(200);\r\n  const user = body.users.find((item) => item.id === pm.environment.get('managedUserId'));\r\n  pm.expect(user.isActive).to.eql(false);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?incluirInactivas=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "incluirInactivas",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30. Reactivar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y activa', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.user.isActive).to.eql(true);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{managedUserId}}/reactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{managedUserId}}",
+                "reactivar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31. Vuelve a entrar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
               ]
             }
           },
@@ -3652,6 +4628,2275 @@
                 "proyectos",
                 "{{scheduleProjectId}}",
                 "fases"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "tareas",
+      "item": [
+        {
+          "name": "1. Sesión coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coordinatorToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"coordinacion@example.com\", \"password\": \"Coordinador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Sesión investigadora de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('researcherToken', body.accessToken);\r\n// Los identificadores salen del seed, que los fija.\r\npm.environment.set('scheduleProjectId', 'b1000000-0000-4000-8000-000000000001');\r\npm.environment.set('closedProjectId', 'b1000000-0000-4000-8000-000000000003');\r\npm.environment.set('fieldPhaseId', 'c1000000-0000-4000-8000-000000000002');\r\npm.environment.set('planningPhaseId', 'c1000000-0000-4000-8000-000000000001');\r\npm.environment.set('otherProjectPhaseId', 'c1000000-0000-4000-8000-000000000004');\r\npm.environment.set('closedPhaseId', 'c1000000-0000-4000-8000-000000000006');\r\npm.environment.set('firstTaskId', 'd1000000-0000-4000-8000-000000000001');\r\npm.environment.set('fourthTaskId', 'd1000000-0000-4000-8000-000000000004');\r\npm.environment.set('otherAssigneeTaskId', 'd1000000-0000-4000-8000-000000000005');\r\npm.environment.set('blockedTaskId', 'd1000000-0000-4000-8000-000000000006');\r\npm.environment.set('otherProjectTaskId', 'd1000000-0000-4000-8000-000000000008');\r\npm.environment.set('closedTaskId', 'd1000000-0000-4000-8000-00000000000b');\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"laura.mendoza@example.com\", \"password\": \"Investigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Sesión coinvestigador de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coInvestigatorToken', body.accessToken);\r\npm.environment.set('coInvestigatorId', body.user.id);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Sesión no miembro de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('nonMemberToken', body.accessToken);\r\npm.environment.set('nonMemberUserId', body.user.id);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"daniel.osorio@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Sesión investigador de P3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('closedProjectLeadToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"carlos.beltran@example.com\", \"password\": \"Investigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Leer tareas como coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y cada tarea trae sus dependencias', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.tasks[0]).to.have.property('dependsOnTaskIds');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Leer tareas como coinvestigador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. 404 leer sin ser miembro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: para quien no es miembro el proyecto no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{nonMemberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. 401 leer sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('401 sin token', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('UNAUTHENTICATED');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. Crear tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('taskId', body.task.id);\r\n\r\npm.test('201, en TODO y con responsable', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.task.status).to.eql('TODO');\r\n  pm.expect(body.task.assignee.id).to.eql(pm.environment.get('coInvestigatorId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"phaseId\": \"{{fieldPhaseId}}\",\r\n  \"title\": \"Calibrar la sonda multiparamétrica\",\r\n  \"priority\": \"HIGH\",\r\n  \"assigneeId\": \"{{coInvestigatorId}}\",\r\n  \"startDate\": \"2026-12-01\",\r\n  \"dueDate\": \"2026-12-05\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. 400 campo no declarado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: completedAt lo pone el servidor', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{fieldPhaseId}}\", \"title\": \"Tarea con fecha de cierre\", \"completedAt\": \"2026-01-01\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. 404 fase de otro proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: esa fase no es de este proyecto', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{otherProjectPhaseId}}\", \"title\": \"Tarea en fase ajena\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. 404 responsable que no es miembro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: no es miembro del proyecto', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{fieldPhaseId}}\", \"title\": \"Tarea para un externo\", \"assigneeId\": \"{{nonMemberUserId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Quien tiene la tarea cambia su estado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y el estado cambió', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.task.status).to.eql('IN_PROGRESS');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"IN_PROGRESS\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. 403 quien tiene la tarea cambia el título",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: solo cambia el estado', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Otro título\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. 403 estado junto a otro campo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no un 200 que ignore lo demás', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\", \"priority\": \"LOW\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17. 403 quien no tiene la tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: esa tarea es de otra persona', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{otherAssigneeTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{otherAssigneeTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. 403 autoasignarse",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: asignar es del investigador principal', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"assigneeId\": \"{{coInvestigatorId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{otherAssigneeTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{otherAssigneeTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19. 403 coinvestigador creando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: crear es del investigador principal', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{fieldPhaseId}}\", \"title\": \"No debería crearse\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. 403 coinvestigador borrando su tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: borrar es del investigador principal', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. 403 coinvestigador agregando dependencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: las dependencias son del investigador principal', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{firstTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. El principal cambia cualquier campo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200, renombrada y movida de fase', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.task.title).to.eql('Calibrar y verificar la sonda');\r\n  pm.expect(body.task.phaseId).to.eql(pm.environment.get('planningPhaseId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Calibrar y verificar la sonda\", \"priority\": \"MEDIUM\", \"phaseId\": \"{{planningPhaseId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. 403 coordinadora creando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: ver no es gestionar', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{fieldPhaseId}}\", \"title\": \"No debería crearse\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. 403 coordinadora editando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: ver no es gestionar', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. 403 coordinadora borrando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: ver no es gestionar', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26. 403 coordinadora agregando dependencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: ver no es gestionar', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{firstTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27. 404 no miembro editando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: tampoco al escribir se confirma que existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{nonMemberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28. Agregar dependencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('201 y aparece en la tarea', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.task.dependsOnTaskIds).to.include(pm.environment.get('blockedTaskId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{blockedTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29. 409 dependencia repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: esa dependencia ya existe', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{blockedTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30. 400 depender de sí misma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: una tarea no depende de sí misma', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{taskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31. 404 dependencia de otro proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: la tarea de otro proyecto no existe aquí', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{otherProjectTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "32. 409 ciclo directo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: cerraría un ciclo', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{taskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{blockedTaskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{blockedTaskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "33. 409 ciclo de tres saltos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: cerraría un ciclo', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{fourthTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{firstTaskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{firstTaskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "34. Terminar con la dependencia sin terminar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200: las dependencias informan, no gobiernan', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.task.status).to.eql('DONE');\r\n  pm.expect(body.task.completedAt).to.be.a('string');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "35. Quitar dependencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sin cuerpo', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias/{{blockedTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias",
+                "{{blockedTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "36. 404 quitar una dependencia inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: esa dependencia no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}/dependencias/{{blockedTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}",
+                "dependencias",
+                "{{blockedTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "37. 409 crear en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{closedPhaseId}}\", \"title\": \"Tarea tardía\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "38. 409 editar en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Otro título\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/tareas/{{closedTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "tareas",
+                "{{closedTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "39. 409 borrar en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/tareas/{{closedTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "tareas",
+                "{{closedTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "40. 409 agregar dependencia en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"dependsOnTaskId\": \"{{firstTaskId}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/tareas/{{closedTaskId}}/dependencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "tareas",
+                "{{closedTaskId}}",
+                "dependencias"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "41. 409 quitar dependencia en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/tareas/{{closedTaskId}}/dependencias/{{firstTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "tareas",
+                "{{closedTaskId}}",
+                "dependencias",
+                "{{firstTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "42. Borrar tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sin cuerpo', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "43. 404 tarea ya borrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: ya no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{taskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{taskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "44. Invitar a Daniel a P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"daniel.osorio@example.com\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/miembros",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "miembros"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "45. Crear una tarea para Daniel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('memberTaskId', body.task.id);\r\n\r\npm.test('201 y asignada', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.task.assigneeId).to.eql(pm.environment.get('nonMemberUserId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseId\": \"{{fieldPhaseId}}\", \"title\": \"Tarea de quien va a salir\", \"priority\": \"HIGH\", \"assigneeId\": \"{{nonMemberUserId}}\", \"dueDate\": \"2026-12-20\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "46. Retirar a Daniel, que tiene una tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204: tener tareas no bloquea el retiro', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/miembros/{{nonMemberUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "miembros",
+                "{{nonMemberUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "47. La tarea queda sin asignar y lo demás igual",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200, sin responsable y con sus campos', () => {\r\n  pm.response.to.have.status(200);\r\n  const task = body.tasks.find((item) => item.id === pm.environment.get('memberTaskId'));\r\n  pm.expect(task.assigneeId).to.eql(null);\r\n  pm.expect(task.assignee).to.eql(null);\r\n  pm.expect(task.title).to.eql('Tarea de quien va a salir');\r\n  pm.expect(task.priority).to.eql('HIGH');\r\n  pm.expect(task.phaseId).to.eql(pm.environment.get('fieldPhaseId'));\r\n  pm.expect(task.dueDate).to.include('2026-12-20');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "48. 404 quien salió ya no llega",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: ya no es miembro', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{nonMemberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"status\": \"DONE\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{memberTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{memberTaskId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "49. Borrar la tarea de la prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sin cuerpo', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/tareas/{{memberTaskId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "tareas",
+                "{{memberTaskId}}"
               ]
             }
           },

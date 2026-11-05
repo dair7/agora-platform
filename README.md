@@ -58,7 +58,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, phases, chat (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, tasks, chat (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── app.ts           # Express application
@@ -248,11 +248,16 @@ Reusing a refresh token that was already revoked revokes **every** session of th
 
 **Users** — `/api/v1/usuarios`
 
-| Method | Route | Who | Query | Response |
+| Method | Route | Who | Query / body | Response |
 | --- | --- | --- | --- | --- |
-| `GET` | `/` | Coordinator | `?rol=COORDINATOR\|RESEARCHER&buscar=` | `200 { users }`, each `{ id, email, fullName, systemRole, isActive }` |
+| `GET` | `/` | Coordinator | `?rol=COORDINATOR\|RESEARCHER&buscar=&incluirInactivas=true` | `200 { users }`, each `{ id, email, fullName, systemRole, isActive }` |
+| `PATCH` | `/:userId` | Coordinator | `{ fullName }` | `200 { user }` |
+| `DELETE` | `/:userId` | Coordinator | — | `204`. Logical deactivation; revokes every refresh token of the account. |
+| `POST` | `/:userId/reactivar` | Coordinator | — | `200 { user }` |
 
-Only active accounts, ordered by `fullName`. `buscar` matches name or email, case-insensitive; an empty `buscar` is ignored rather than rejected. There is no pagination: the system holds dozens of accounts, not thousands. A researcher gets `403`, since only the coordinator appoints principal investigators; principal investigators invite members by email.
+Only active accounts unless `incluirInactivas=true`, ordered by `fullName`. `buscar` matches name or email, case-insensitive; an empty `buscar` is ignored rather than rejected. There is no pagination: the system holds dozens of accounts, not thousands. A researcher gets `403`, since only the coordinator appoints principal investigators; principal investigators invite members by email.
+
+`PATCH` changes the name and nothing else: the role, the email and `isActive` return `400`. Deactivating is logical, since accounts with authorship cannot be deleted. It closes the open sockets of the account, and `/auth/refrescar` and `/auth/iniciar-sesion` stop working for it; an access token that was already issued lives on for up to 15 minutes. Deactivating returns `409` for your own account, for an account that is already inactive, and for someone who leads a project that is neither `COMPLETED` nor `CANCELLED`: those projects have to be closed first. `POST /reactivar` returns `409` if the account is already active; the person signs in again.
 
 **Projects** — `/api/v1/proyectos`
 
@@ -265,7 +270,7 @@ Only active accounts, ordered by `fullName`. `buscar` matches name or email, cas
 | `POST` | `/:projectId/cerrar` | Principal investigator | — | `200 { project }`. Sets `COMPLETED`; the project becomes read-only. |
 | `GET` | `/:projectId/miembros` | Member or coordinator | — | `200 { members }` |
 | `POST` | `/:projectId/miembros` | Principal investigator | `{ email }` | `201 { members }` |
-| `DELETE` | `/:projectId/miembros/:userId` | Principal investigator | — | `204` |
+| `DELETE` | `/:projectId/miembros/:userId` | Principal investigator | — | `204`. Their tasks in this project become unassigned. |
 
 Dates use the `YYYY-MM-DD` format.
 
@@ -300,6 +305,29 @@ A phase is `{ id, projectId, name, description, position, status, startDate, end
 `position` is managed by the server: positions always run from 1 to the number of phases. Sending `position` to `POST` or `PATCH` returns `400`; the only way to change it is `PUT /orden`. That endpoint takes the whole order on purpose: moving phases one at a time leaves gaps and ties if two people reorder at once, while a complete list cannot end up half applied. It returns `400` unless the list holds exactly the phases of the project, with none missing, extra or repeated.
 
 Every write returns `409` on a `COMPLETED` project and emits `cronograma:modificado` after it is saved. A phase that belongs to another project returns `404`.
+
+**Project tasks** — `/api/v1/proyectos/:projectId/tareas`
+
+| Method | Route | Who | Body | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Member or coordinator | — | `200 { tasks }`, by phase position and then age |
+| `POST` | `/` | Principal investigator | `{ phaseId, title, description?, status?, priority?, assigneeId?, startDate?, dueDate? }` | `201 { task }` |
+| `PATCH` | `/:taskId` | Principal investigator, or the assignee (`status` only) | At least one of `phaseId`, `title`, `description`, `status`, `priority`, `assigneeId`, `startDate`, `dueDate` | `200 { task }` |
+| `DELETE` | `/:taskId` | Principal investigator | — | `204` |
+| `POST` | `/:taskId/dependencias` | Principal investigator | `{ dependsOnTaskId }` | `201 { task }` |
+| `DELETE` | `/:taskId/dependencias/:dependsOnId` | Principal investigator | — | `204` |
+
+A task is `{ id, phaseId, title, description, status, priority, assigneeId, assignee, createdById, startDate, dueDate, completedAt, createdAt, updatedAt, dependsOnTaskIds }`. `assignee` has the same shape as `user` in a member, or `null`. `status` is `TODO` (the default), `IN_PROGRESS`, `IN_REVIEW`, `DONE` or `BLOCKED`; `priority` is `LOW`, `MEDIUM` (the default) or `HIGH`. `title` takes 3–200 characters. Dates use `YYYY-MM-DD`, and `dueDate` cannot be before `startDate`.
+
+**Who can edit.** The principal investigator changes any field. The assignee changes `status` and nothing else: sending any other field returns `403`, it is not ignored. Any other member gets `403`, and so does the coordinator. A task with no assignee can only be edited by the principal investigator. Nobody assigns a task to themselves.
+
+`completedAt` belongs to the server: it is set when the task moves to `DONE` and cleared when it leaves. Fields that are not in the table return `400`. `assigneeId` accepts `null` on `PATCH` to leave a task unassigned; the assignee must be an active member of the project, or the request returns `404`. Sending `phaseId` on `PATCH` moves the task to another phase of the same project, which is how a phase with tasks can be emptied before deleting it.
+
+**Dependencies.** Both tasks must belong to the project: otherwise `404`. A task cannot depend on itself (`400`). A repeated dependency returns `409`, and so does one that would close a cycle of any length. Dependencies inform, they do not govern: a task can be marked `DONE` while the tasks it depends on are not, and `BLOCKED` is a status set by hand.
+
+Every write returns `409` on a `COMPLETED` project and emits `tarea:actualizada` after it is saved. A task that belongs to another project returns `404`.
+
+Removing a member from a project unassigns their tasks there in the same transaction, and emits `tarea:actualizada` if there were any. Having tasks does not block the removal. Deleting a task is allowed: progress entries and documents linked to it stay on the project and only lose that link.
 
 ### Access rules
 
@@ -384,6 +412,7 @@ There are no client → server events: all changes go through REST.
 | `usuario:desconectado` | The person's project rooms | `{ userId, projectId }` | The person's **last** socket disconnects |
 | `presencia:inicial` | Only the socket that just connected | `[{ projectId, userIds }]` | Right after that socket joins its rooms |
 | `cronograma:modificado` | `proyecto:{id}` | `{ projectId }` | After a phase is created, edited, deleted or reordered |
+| `tarea:actualizada` | `proyecto:{id}` | `{ projectId }` | After a task or one of its dependencies is created, edited or deleted, or a member with tasks is removed |
 
 `chat:mensaje` has the same shape as the `message` returned by the REST call. The event also goes back to the sender. The tab that sent the message already has it from the REST response and discards the duplicate by `id`, while the sender's other tabs display it.
 
@@ -391,9 +420,9 @@ Presence is tracked per person, not per tab: opening a second tab does not annou
 
 `presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected does not send a new snapshot.
 
-`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it.
+`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it. `tarea:actualizada` works the same way: fetch `GET /proyectos/:projectId/tareas` again.
 
-Planned for Deliveries 3 and 4: `avance:creado`, `tarea:actualizada`, `documento:subido`.
+Planned for Deliveries 3 and 4: `avance:creado`, `documento:subido`.
 
 ## Connectivity demo
 
