@@ -8,6 +8,8 @@ const DURATION = /^\d+[smhd]$/;
 const optional = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
 
+const isOrigin = (value: string): boolean => URL.canParse(value) && new URL(value).pathname === '/';
+
 const envSchema = z
   .object({
     PORT: z.coerce.number().int().positive().default(3000),
@@ -19,7 +21,14 @@ const envSchema = z
       .string()
       .regex(DURATION, 'debe tener el formato 15m, 1h, 7d…')
       .default('7d'),
-    CORS_ORIGIN: z.string().min(1, 'es obligatoria').default('http://localhost:4200'),
+    // Reducido al origen: el navegador compara este valor letra por letra con la cabecera
+    // Origin, y una barra final bastaría para rechazar todas las peticiones. Lo usan
+    // Express y Socket.io.
+    CORS_ORIGIN: z
+      .string()
+      .refine(isOrigin, 'debe ser un solo origen, con su esquema y sin ruta')
+      .transform((url) => new URL(url).origin)
+      .default('http://localhost:4200'),
     // Opcionales a propósito: si fueran obligatorias, quien clone el repositorio no
     // podría ni levantar el backend sin crearse una cuenta en Supabase. Sin ellas,
     // los archivos van al disco local y todo funciona.
@@ -38,7 +47,18 @@ const envSchema = z
       message: 'hay que definir SUPABASE_URL, SUPABASE_SECRET_KEY y SUPABASE_BUCKET, o ninguna',
       path: ['SUPABASE_URL'],
     },
-  );
+  )
+  // El valor por defecto es el de desarrollo: en producción dejaría fuera al cliente.
+  .refine(({ NODE_ENV }) => NODE_ENV !== 'production' || Boolean(process.env.CORS_ORIGIN), {
+    message: 'es obligatoria en producción: es el dominio del cliente',
+    path: ['CORS_ORIGIN'],
+  })
+  // Sin esto el servidor arrancaría, y los archivos se perderían en el siguiente reinicio.
+  .refine(({ NODE_ENV, SUPABASE_URL }) => NODE_ENV !== 'production' || Boolean(SUPABASE_URL), {
+    message:
+      'en producción hay que definir SUPABASE_URL, SUPABASE_SECRET_KEY y SUPABASE_BUCKET: el disco local no sobrevive a un reinicio',
+    path: ['SUPABASE_URL'],
+  });
 
 const parsed = envSchema.safeParse(process.env);
 
