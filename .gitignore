@@ -10,6 +10,9 @@ build/
 .env
 .env.local
 
+# Archivos del almacén local
+agora-backend/uploads/
+
 # Logs
 *.log
 npm-debug.log*

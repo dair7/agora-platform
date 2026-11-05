@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import app from './app.js';
 import { env } from './config/env.js';
 import { initSocketServer } from './sockets/index.js';
+import { fileStorage } from './storage/index.js';
 
 // `env.ts` carga dotenv y valida el entorno al importarse.
 //
@@ -13,4 +14,6 @@ initSocketServer(httpServer);
 
 httpServer.listen(env.PORT, () => {
   console.log(`Servidor escuchando en el puerto http://localhost:${env.PORT}`);
+  // Para que nadie se pregunte dónde quedó un archivo.
+  console.log(`Almacén de archivos: ${fileStorage.label}`);
 });
