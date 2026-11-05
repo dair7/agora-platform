@@ -73,6 +73,22 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-tasks/project-tasks').then((m) => m.ProjectTasks),
       },
+      {
+        path: 'proyectos/:projectId/avances',
+        title: 'Avances · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-progress/project-progress').then(
+            (m) => m.ProjectProgress,
+          ),
+      },
+      {
+        path: 'proyectos/:projectId/documentos',
+        title: 'Documentos · Ágora',
+        loadComponent: () =>
+          import('./features/projects/project-documents/project-documents').then(
+            (m) => m.ProjectDocuments,
+          ),
+      },
       // Sin guard, como editar: que la persona participe lo decide el backend.
       {
         path: 'proyectos/:projectId/conversacion',

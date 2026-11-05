@@ -26,14 +26,15 @@ const INACTIVE = `${BASE}cuerpo text-tinta-media border-transparent hover:bg-sup
  * borde en `veril`: la distinguen tres cosas, y ninguna es solo el color del fondo. No
  * lleva relleno `veril`, que es de la única acción primaria de la pantalla.
  *
- * Se desplaza en horizontal si no cabe.
+ * Se desplaza en horizontal si no cabe. `relative` no sobra: el texto `sr-only` de la cifra es
+ * absoluto, y sin eso escapa del `overflow` y ensancha la página.
  */
 @Component({
   selector: 'app-tabs',
   imports: [RouterLink, RouterLinkActive, UnreadBadge],
   template: `
     <nav
-      class="flex gap-espacio-1 overflow-x-auto bg-superficie-00 border border-borde rounded-radio-md p-espacio-1"
+      class="relative flex gap-espacio-1 overflow-x-auto bg-superficie-00 border border-borde rounded-radio-md p-espacio-1"
       [attr.aria-label]="label()"
     >
       @for (tab of items(); track tab.label) {
