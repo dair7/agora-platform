@@ -2027,6 +2027,1637 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "fases",
+      "item": [
+        {
+          "name": "1. Sesión coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coordinatorToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"coordinacion@example.com\", \"password\": \"Coordinador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Sesión investigadora de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('researcherToken', body.accessToken);\r\n// Los identificadores salen del seed, que los fija.\r\npm.environment.set('scheduleProjectId', 'b1000000-0000-4000-8000-000000000001');\r\npm.environment.set('closedProjectId', 'b1000000-0000-4000-8000-000000000003');\r\npm.environment.set('closedPhaseId', 'c1000000-0000-4000-8000-000000000006');\r\npm.environment.set('phaseWithTasksId', 'c1000000-0000-4000-8000-000000000002');\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"laura.mendoza@example.com\", \"password\": \"Investigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Sesión coinvestigador de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coInvestigatorToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Sesión no miembro de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('nonMemberToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"daniel.osorio@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Sesión investigador de P3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('closedProjectLeadToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"carlos.beltran@example.com\", \"password\": \"Investigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Leer cronograma como coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('originalPhaseIds', JSON.stringify(body.phases.map((phase) => phase.id)));\r\npm.environment.set('lastPosition', body.phases[body.phases.length - 1].position);\r\n\r\npm.test('200 y ordenadas por position', () => {\r\n  pm.response.to.have.status(200);\r\n  const positions = body.phases.map((phase) => phase.position);\r\n  pm.expect(positions).to.eql([...positions].sort((a, b) => a - b));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Leer cronograma como coinvestigador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. 404 leer sin ser miembro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: para quien no es miembro el proyecto no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{nonMemberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. 401 leer sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('401 sin token', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('UNAUTHENTICATED');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. 400 con uuid malformado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400 antes de llegar a Prisma', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/no-es-un-uuid/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "no-es-un-uuid",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. Crear fase",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('phaseId', body.phase.id);\r\npm.environment.set('reorderedPhaseIds', JSON.stringify([body.phase.id, ...JSON.parse(pm.environment.get('originalPhaseIds'))]));\r\n\r\npm.test('201, queda la última y nace en PENDING', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(body.phase.position).to.eql(Number(pm.environment.get('lastPosition')) + 1);\r\n  pm.expect(body.phase.status).to.eql('PENDING');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Socialización con la comunidad\",\r\n  \"description\": \"Devolución de resultados a los pescadores de la ciénaga.\",\r\n  \"startDate\": \"2026-12-01\",\r\n  \"endDate\": \"2026-12-18\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. 400 mandar position al crear",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: position la pone el servidor', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});\r\n\r\npm.test('El error apunta a position', () => pm.expect(body.error.details[0].field).to.eql('position'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Fase con posición\", \"position\": 1 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. 400 fin anterior al inicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: el fin no puede ser anterior al inicio', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Fase imposible\", \"startDate\": \"2026-12-10\", \"endDate\": \"2026-12-01\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Editar fase",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y refleja los cambios', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.phase.name).to.eql('Socialización de resultados');\r\n  pm.expect(body.phase.status).to.eql('IN_PROGRESS');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Socialización de resultados\", \"status\": \"IN_PROGRESS\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. 400 mandar position al editar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: position solo cambia con PUT /orden', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"position\": 1 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. 400 fin anterior al inicio guardado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: compara contra la fecha guardada', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"endDate\": \"2026-11-01\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17. 404 fase de otro proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: esa fase no es de este proyecto', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Fase ajena\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{closedPhaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{closedPhaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. Reordenar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y la fase nueva pasa a ser la primera', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.phases[0].id).to.eql(pm.environment.get('phaseId'));\r\n  pm.expect(body.phases[0].position).to.eql(1);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{reorderedPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19. El orden persiste",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200 y el orden es el enviado', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.phases.map((phase) => phase.id)).to.eql(JSON.parse(pm.environment.get('reorderedPhaseIds')));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. 400 orden incompleto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: falta la fase recién creada', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});\r\n\r\npm.test('El error apunta a phaseIds', () => pm.expect(body.error.details[0].field).to.eql('phaseIds'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{originalPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. 403 coinvestigador creando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"No debería crearse\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. 403 coinvestigador editando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"No debería cambiar\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. 403 coinvestigador borrando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. 403 coinvestigador reordenando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coInvestigatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{reorderedPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. 403 coordinadora creando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"No debería crearse\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26. 403 coordinadora editando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"No debería cambiar\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27. 403 coordinadora borrando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28. 403 coordinadora reordenando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no gestiona el cronograma', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": {{reorderedPhaseIds}} }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29. 404 no miembro creando",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: tampoco al escribir se confirma que existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{nonMemberToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"No debería crearse\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30. 409 crear en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Fase tardía\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31. 409 editar en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Otro nombre\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/fases/{{closedPhaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "fases",
+                "{{closedPhaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "32. 409 borrar en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/fases/{{closedPhaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "fases",
+                "{{closedPhaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "33. 409 reordenar en proyecto cerrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: el proyecto está cerrado', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{closedProjectLeadToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"phaseIds\": [\"{{closedPhaseId}}\"] }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{closedProjectId}}/fases/orden",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{closedProjectId}}",
+                "fases",
+                "orden"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "34. 409 borrar una fase con tareas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: primero hay que mover o borrar sus tareas', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseWithTasksId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseWithTasksId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "35. Borrar fase",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sin cuerpo', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases/{{phaseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases",
+                "{{phaseId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "36. El cronograma vuelve a como estaba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200, mismo orden y posiciones sin huecos', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.phases.map((phase) => phase.id)).to.eql(JSON.parse(pm.environment.get('originalPhaseIds')));\r\n  pm.expect(body.phases.map((phase) => phase.position)).to.eql(body.phases.map((_, index) => index + 1));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{researcherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{scheduleProjectId}}/fases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{scheduleProjectId}}",
+                "fases"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {

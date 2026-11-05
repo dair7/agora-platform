@@ -14,6 +14,7 @@ export interface ServerToClientEvents {
   'usuario:conectado': (payload: PresencePayload) => void;
   'usuario:desconectado': (payload: PresencePayload) => void;
   'presencia:inicial': (payload: InitialPresencePayload) => void;
+  'cronograma:modificado': (payload: ScheduleChangedPayload) => void;
 }
 
 /**
@@ -59,6 +60,16 @@ export interface ProjectPresence {
 
 /** Una entrada por cada sala de proyecto a la que el socket acaba de entrar. */
 export type InitialPresencePayload = ProjectPresence[];
+
+/**
+ * Solo el identificador, y el cliente vuelve a pedir el cronograma entero. Un
+ * cronograma son unas pocas filas, y así crear, editar, borrar y reordenar emiten
+ * exactamente lo mismo, en vez de cuatro formas distintas que el cliente tendría
+ * que fusionar.
+ */
+export interface ScheduleChangedPayload {
+  projectId: string;
+}
 
 export type AppServer = Server<
   ClientToServerEvents,
