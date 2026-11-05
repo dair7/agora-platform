@@ -1,0 +1,213 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="loading() || null">
+  @if (ctx.notFound()) {
+    <app-empty title="Este proyecto no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
+    </app-empty>
+  } @else if (ctx.errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button
+        appButton
+        variant="secondary"
+        type="button"
+        noticeAction
+        (click)="ctx.project.reload()"
+      >
+        Reintentar
+      </button>
+    </app-notice>
+  } @else if (ctx.view(); as project) {
+    <app-project-header [project]="project" />
+    <app-project-tabs [projectId]="project.id" [isMember]="ctx.isMember()" />
+
+    <section aria-labelledby="documentos-titulo" class="grid gap-espacio-4">
+      <div class="flex flex-wrap items-center justify-between gap-espacio-3">
+        <h2 id="documentos-titulo" class="titulo-seccion text-tinta">Documentos</h2>
+        <!-- Con el formulario abierto, la acción primaria es la suya. -->
+        @if (ctx.canContribute() && !form()) {
+          <button appButton type="button" (click)="openUpload(null)">Subir documento</button>
+        }
+      </div>
+
+      @if (notice(); as notice) {
+        <app-notice [tone]="notice.tone">{{ notice.message }}</app-notice>
+      }
+
+      @if (form(); as form) {
+        <app-document-upload
+          [target]="form.target"
+          [tasks]="taskOptions()"
+          [busy]="uploading()"
+          [failure]="failure()"
+          (submitted)="upload($event)"
+          (cancelled)="closeForm()"
+        />
+      }
+
+      @if (listError(); as message) {
+        <!-- Lo que ya estaba cargado se queda: un fallo de red no borra la pantalla. -->
+        <app-notice tone="error">
+          {{ message }}
+          <button
+            appButton
+            variant="secondary"
+            type="button"
+            noticeAction
+            (click)="documents.refresh()"
+          >
+            Reintentar
+          </button>
+        </app-notice>
+      }
+
+      @if (documents.loading()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2, 3]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      } @else if (documents.items()?.length === 0) {
+        <app-empty
+          title="Este proyecto todavía no tiene documentos"
+          [description]="
+            ctx.canContribute() ? 'Sube el primero para que el equipo lo tenga a mano.' : undefined
+          "
+        />
+      } @else if (documents.items()) {
+        <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of rows(); track row.document.id) {
+            <li class="grid gap-espacio-2 px-espacio-4 py-espacio-3">
+              <div class="flex flex-wrap items-start justify-between gap-espacio-3">
+                <div class="grid gap-espacio-1 wrap-anywhere">
+                  <h3 class="cuerpo-fuerte text-tinta">{{ row.document.name }}</h3>
+                  <p class="secundario text-tinta-media tabular-nums">{{ row.details }}</p>
+                  @if (row.task; as task) {
+                    <p class="secundario text-tinta-media">Tarea: {{ task }}</p>
+                  }
+                </div>
+
+                <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                  <button
+                    appButton
+                    variant="subtle"
+                    type="button"
+                    [disabled]="downloading().has(row.document.id)"
+                    (click)="download(row.document)"
+                  >
+                    {{ downloading().has(row.document.id) ? 'Descargando…' : 'Descargar'
+                    }}<span class="sr-only">: {{ row.document.name }}</span>
+                  </button>
+                  <!-- Una sola versión no es una cadena: no hay nada que abrir. -->
+                  @if (row.document.previousVersionId) {
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      [attr.aria-expanded]="row.chainOpen"
+                      (click)="toggleChain(row.document)"
+                    >
+                      Versiones<span class="sr-only">: {{ row.document.name }}</span>
+                    </button>
+                  }
+                  @if (ctx.canContribute()) {
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      [disabled]="uploading()"
+                      (click)="openUpload(row.document)"
+                    >
+                      Subir versión<span class="sr-only">: {{ row.document.name }}</span>
+                    </button>
+                  }
+                  @if (canDelete(row.document)) {
+                    <button
+                      appButton
+                      variant="subtle-destructive"
+                      type="button"
+                      (click)="askToDelete(row.document, deleteDialog)"
+                    >
+                      Borrar<span class="sr-only">: {{ row.document.name }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              @if (row.chainOpen) {
+                <ul
+                  class="grid gap-espacio-2 border-t border-borde pt-espacio-3"
+                  [attr.aria-label]="'Versiones de ' + row.document.name"
+                >
+                  @for (version of chain.items(); track version.id) {
+                    <li class="flex flex-wrap items-center justify-between gap-espacio-2">
+                      <div class="grid gap-espacio-1 wrap-anywhere">
+                        <p class="secundario text-tinta">{{ version.name }}</p>
+                        <p class="secundario text-tinta-media tabular-nums">
+                          {{ details(version) }}{{ $first ? ' · La última' : '' }}
+                        </p>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                        <button
+                          appButton
+                          variant="subtle"
+                          type="button"
+                          [disabled]="downloading().has(version.id)"
+                          (click)="download(version)"
+                        >
+                          {{ downloading().has(version.id) ? 'Descargando…' : 'Descargar'
+                          }}<span class="sr-only">: versión {{ version.version }}</span>
+                        </button>
+                        @if (canDelete(version)) {
+                          <button
+                            appButton
+                            variant="subtle-destructive"
+                            type="button"
+                            (click)="askToDelete(version, deleteDialog)"
+                          >
+                            Borrar<span class="sr-only">: versión {{ version.version }}</span>
+                          </button>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  } @else {
+    <div class="grid gap-espacio-2">
+      <app-skeleton width="espacio-8" class="cuerpo-fuerte" />
+      <app-skeleton class="titulo-pagina" />
+    </div>
+  }
+</main>
+
+<app-dialog
+  #deleteDialog
+  [title]="
+    '¿Borrar la versión ' +
+    (documentToDelete()?.version ?? '') +
+    ' de ' +
+    (documentToDelete()?.name ?? '') +
+    '?'
+  "
+  confirmLabel="Borrar versión"
+  busyLabel="Borrando versión…"
+  confirmVariant="destructive"
+  [busy]="deleting()"
+  (confirmed)="delete(deleteDialog)"
+>
+  @for (line of deleteWarning(); track line) {
+    <p class="mt-espacio-2">{{ line }}</p>
+  }
+</app-dialog>
