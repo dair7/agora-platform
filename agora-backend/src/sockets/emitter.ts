@@ -43,3 +43,12 @@ export const joinProjectRoom = (userId: string, projectId: string): void => {
 export const leaveProjectRoom = (userId: string, projectId: string): void => {
   io?.in(userRoom(userId)).socketsLeave(projectRoom(projectId));
 };
+
+/**
+ * Cierra todos los sockets de la persona. El JWT solo se valida al conectar, así
+ * que sin esto una cuenta desactivada seguiría recibiendo eventos mientras tenga
+ * una pestaña abierta.
+ */
+export const disconnectUser = (userId: string): void => {
+  io?.in(userRoom(userId)).disconnectSockets(true);
+};

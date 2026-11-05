@@ -18,16 +18,20 @@ export interface UpdatePhaseData {
 }
 
 /**
- * Serializa las escrituras que tocan posiciones dentro de un mismo proyecto: la
- * segunda espera a que termine la primera y ve lo que dejó. Sin esto, dos altas
- * a la vez calcularían la misma posición, y un reordenamiento podría validar una
- * lista que otra escritura acaba de dejar vieja.
+ * Serializa las escrituras del cronograma dentro de un mismo proyecto: la segunda
+ * espera a que termine la primera y ve lo que dejó. Sin esto, dos altas a la vez
+ * calcularían la misma posición, y un reordenamiento podría validar una lista que
+ * otra escritura acaba de dejar vieja. Las tareas toman el mismo bloqueo: ver
+ * `createTask` y `addDependency`.
  *
  * `FOR NO KEY UPDATE` y no `FOR UPDATE`: el segundo bloquearía también las
  * comprobaciones de clave foránea de lo que cuelga del proyecto, como agregar un
- * miembro, que no tienen nada que ver con el orden de las fases.
+ * miembro, que no tienen nada que ver con el cronograma.
  */
-const lockSchedule = async (tx: Prisma.TransactionClient, projectId: string): Promise<void> => {
+export const lockSchedule = async (
+  tx: Prisma.TransactionClient,
+  projectId: string,
+): Promise<void> => {
   await tx.$queryRaw`SELECT 1 FROM projects WHERE id = ${projectId}::uuid FOR NO KEY UPDATE`;
 };
 
