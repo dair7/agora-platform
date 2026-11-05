@@ -15,6 +15,7 @@ export interface ServerToClientEvents {
   'usuario:desconectado': (payload: PresencePayload) => void;
   'presencia:inicial': (payload: InitialPresencePayload) => void;
   'cronograma:modificado': (payload: ScheduleChangedPayload) => void;
+  'tarea:actualizada': (payload: TaskChangedPayload) => void;
 }
 
 /**
@@ -68,6 +69,15 @@ export type InitialPresencePayload = ProjectPresence[];
  * que fusionar.
  */
 export interface ScheduleChangedPayload {
+  projectId: string;
+}
+
+/**
+ * Solo el identificador, por la misma razón que `ScheduleChangedPayload`, y así
+ * el cliente trata los dos eventos igual: crear, editar, borrar y las
+ * dependencias emiten exactamente lo mismo, y el cliente vuelve a pedir las tareas.
+ */
+export interface TaskChangedPayload {
   projectId: string;
 }
 
