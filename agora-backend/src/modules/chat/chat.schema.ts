@@ -6,10 +6,12 @@ import { z } from 'zod';
 // Paginación por cursor y no por página: en un chat llegan mensajes mientras se
 // lee el historial, y con `pagina` cada mensaje nuevo desplazaría los bloques y
 // repetiría uno al pedir el siguiente. `antes` es el id del mensaje más antiguo
-// que el cliente ya tiene.
+// que el cliente ya tiene, para subir en el historial. `despues` es el del más
+// nuevo, para ponerse al día tras una reconexión. Son dos sentidos: no van juntos.
 export const listMessagesQuerySchema = z
   .object({
     antes: z.uuid('El cursor debe ser el identificador de un mensaje').optional(),
+    despues: z.uuid('El cursor debe ser el identificador de un mensaje').optional(),
     limite: z.coerce
       .number()
       .int()
@@ -17,8 +19,13 @@ export const listMessagesQuerySchema = z
       .max(100, 'El límite no puede superar 100')
       .default(50),
   })
+  .refine((query) => !query.antes || !query.despues, {
+    message: 'Se pide en un solo sentido: antes o despues, no los dos',
+    path: ['despues'],
+  })
   .transform((query) => ({
     before: query.antes,
+    after: query.despues,
     limit: query.limite,
   }));
 
