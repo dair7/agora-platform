@@ -16,7 +16,6 @@ import {
   type ApiErrorMessages,
   type ErrorCode,
 } from '../../../core/api/api-error';
-import { ChatApi } from '../../../core/api/chat.api';
 import { ProjectsApi } from '../../../core/api/projects.api';
 import type { Member, ProjectRole } from '../../../core/api/projects.types';
 import { formatBudget } from '../../../core/format/project-budget';
@@ -33,8 +32,8 @@ import { Notice } from '../../../shared/ui/notice/notice';
 import { PresencePill } from '../../../shared/ui/presence/presence';
 import { ProjectStatusPill } from '../../../shared/ui/project-status/project-status';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
-import { UnreadBadge } from '../../../shared/ui/unread-badge/unread-badge';
 import { canManageProject } from '../project-permissions';
+import { ProjectTabs } from '../project-tabs/project-tabs';
 
 /** Un error de una acción, para el aviso de la página. `CONFLICT` va en el tono de bloqueo. */
 interface ActionError {
@@ -85,7 +84,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
 /**
  * El detalle de un proyecto: cabecera, resumen y miembros, con las acciones del
  * investigador principal —editar y cerrar el proyecto, agregar y retirar
- * miembros—. Las fases no se pintan: son del cronograma de la fase 12.
+ * miembros—. Las fases no se pintan: tienen su pestaña.
  */
 @Component({
   selector: 'app-project-detail',
@@ -101,8 +100,8 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
     PresencePill,
     ProjectStatusPill,
     RouterLink,
+    ProjectTabs,
     Skeleton,
-    UnreadBadge,
   ],
   templateUrl: './project-detail.html',
 })
@@ -111,7 +110,6 @@ export class ProjectDetail {
   readonly #title = inject(Title);
   readonly #session = inject(SessionService);
   readonly #realtime = inject(RealtimeService);
-  readonly #chat = inject(ChatApi);
   protected readonly roleLabels = ROLE_LABELS;
 
   readonly #params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
@@ -209,10 +207,6 @@ export class ProjectDetail {
 
     return this.view()?.members.some((m) => m.user.id === me) ?? false;
   });
-
-  protected readonly unread = computed(() =>
-    this.#realtime.unreadIn(this.#params().get('projectId') ?? ''),
-  );
 
   /** El error de la última acción de cerrar o retirar; se limpia al empezar otra. */
   protected readonly actionError = signal<ActionError | null>(null);
@@ -334,19 +328,6 @@ export class ProjectDetail {
 
       if (view) {
         this.#title.setTitle(`${view.project.title} · Ágora`);
-      }
-    });
-
-    // Quien llega aquí por URL no pasó por la lista: sin esto, el enlace de la
-    // conversación diría que no hay nada sin leer. Un fallo solo deja de pintarlo.
-    effect(() => {
-      const projectId = this.#params().get('projectId') ?? '';
-
-      if (this.canChat()) {
-        this.#chat
-          .readState(projectId)
-          .then(({ unreadCount }) => this.#realtime.setUnread(projectId, unreadCount))
-          .catch(() => undefined);
       }
     });
   }

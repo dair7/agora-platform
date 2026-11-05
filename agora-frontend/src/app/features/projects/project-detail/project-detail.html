@@ -56,18 +56,6 @@
         <!-- Las dos en secundario: esta pantalla es para leer y editar es ocasional, así
              que se queda sin acción primaria. Cerrar tampoco es destructivo: no es borrar. -->
         <div class="flex flex-wrap gap-espacio-3">
-          @if (canChat()) {
-            <a
-              appButton
-              variant="secondary"
-              [routerLink]="['/proyectos', view.project.id, 'conversacion']"
-            >
-              Conversación
-              @if (unread(); as unread) {
-                <app-unread-badge class="ml-espacio-2" [count]="unread" />
-              }
-            </a>
-          }
           @if (canManage()) {
             <a
               appButton
@@ -108,6 +96,8 @@
         }
       </div>
     </header>
+
+    <app-project-tabs [projectId]="view.project.id" [isMember]="canChat()" />
 
     @if (actionError(); as error) {
       <app-notice [tone]="error.code === 'CONFLICT' ? 'block' : 'error'">{{
