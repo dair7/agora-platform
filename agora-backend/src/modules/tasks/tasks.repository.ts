@@ -1,5 +1,7 @@
-import type { Prisma, TaskPriority, TaskStatus } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
+import type { Notification, Prisma, TaskPriority, TaskStatus } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
+import { createNotification } from '../notifications/notifications.repository.js';
 import { lockSchedule } from '../phases/phases.repository.js';
 import { userSummarySelect } from '../users/users.repository.js';
 
@@ -19,12 +21,12 @@ interface CreateTaskData {
 export interface UpdateTaskData {
   phaseId?: string;
   title?: string;
-  description?: string;
+  description?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
   assigneeId?: string | null;
-  startDate?: Date;
-  dueDate?: Date;
+  startDate?: Date | null;
+  dueDate?: Date | null;
   completedAt?: Date | null;
 }
 
@@ -43,6 +45,12 @@ const taskInclude = {
 } satisfies Prisma.TaskInclude;
 
 export type TaskRow = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
+
+/** La tarea escrita y, si se la asignaron a alguien, su notificación. */
+export interface WrittenTask {
+  task: TaskRow;
+  notification: Notification | null;
+}
 
 /**
  * Sigue las dependencias desde `dependsOnId`. Si por algún camino se llega a
@@ -131,33 +139,71 @@ const findMissingReference = async (
   return null;
 };
 
+/**
+ * Asignarse una tarea a uno mismo no avisa: nadie necesita saber lo que acaba de
+ * hacer. Va en la transacción de la tarea, y solo si el responsable cambió.
+ */
+const notifyAssignment = async (
+  tx: Prisma.TransactionClient,
+  task: TaskRow,
+  previousAssigneeId: string | null,
+  actorId: string,
+): Promise<Notification | null> => {
+  if (!task.assigneeId || task.assigneeId === previousAssigneeId || task.assigneeId === actorId) {
+    return null;
+  }
+
+  return createNotification(tx, {
+    userId: task.assigneeId,
+    type: NotificationType.TASK_ASSIGNED,
+    title: 'Se te asignó una tarea',
+    body: task.title,
+    resourceId: task.id,
+  });
+};
+
 /** Toma el mismo bloqueo que las fases: ver `findMissingReference`. */
 export const createTask = (
   projectId: string,
   data: CreateTaskData,
-): Promise<TaskRow | MissingReference> =>
+): Promise<WrittenTask | MissingReference> =>
   prisma.$transaction(async (tx) => {
     await lockSchedule(tx, projectId);
 
-    return (
-      (await findMissingReference(tx, projectId, data)) ??
-      tx.task.create({ data, include: taskInclude })
-    );
+    const missing = await findMissingReference(tx, projectId, data);
+
+    if (missing) {
+      return missing;
+    }
+
+    const task = await tx.task.create({ data, include: taskInclude });
+
+    return { task, notification: await notifyAssignment(tx, task, null, data.createdById) };
   });
 
 /** Mover o asignar una tarea necesita el bloqueo por la misma razón que crearla. */
 export const updateTask = (
   projectId: string,
   taskId: string,
+  actorId: string,
   data: UpdateTaskData,
-): Promise<TaskRow | MissingReference> =>
+): Promise<WrittenTask | MissingReference> =>
   prisma.$transaction(async (tx) => {
     await lockSchedule(tx, projectId);
 
-    return (
-      (await findMissingReference(tx, projectId, data)) ??
-      tx.task.update({ where: { id: taskId }, data, include: taskInclude })
-    );
+    const missing = await findMissingReference(tx, projectId, data);
+
+    if (missing) {
+      return missing;
+    }
+
+    const { assigneeId } = await tx.task.findUniqueOrThrow({
+      where: { id: taskId },
+      select: { assigneeId: true },
+    });
+    const task = await tx.task.update({ where: { id: taskId }, data, include: taskInclude });
+
+    return { task, notification: await notifyAssignment(tx, task, assigneeId, actorId) };
   });
 
 /** Con el bloqueo, para no cruzarse con una dependencia que se esté agregando. */

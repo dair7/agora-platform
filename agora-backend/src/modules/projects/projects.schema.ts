@@ -92,16 +92,23 @@ const updatableStatus = z.enum([
 // Actualización parcial: todo opcional. La coherencia entre fechas no se puede
 // resolver aquí, porque el cuerpo puede traer solo una de las dos y la otra
 // está en la base; de eso se encarga el servicio, que sí tiene el proyecto.
+//
+// `null` vacía el campo y ausente no lo cambia, y solo en lo que la columna admite
+// `null` y la creación no exige. `title` no está: es obligatorio al crear, y
+// vaciarlo después dejaría al modelo diciendo dos cosas sobre el mismo dato.
 export const updateProjectSchema = z
-  .object({
-    title: title.optional(),
-    description: optionalText,
-    objectives: optionalText,
-    status: updatableStatus.optional(),
-    startDate: date.optional(),
-    endDate: date.optional(),
-    budget: budget.optional(),
-  })
+  .strictObject(
+    {
+      title: title.optional(),
+      description: optionalText.nullable(),
+      objectives: optionalText.nullable(),
+      status: updatableStatus.optional(),
+      startDate: date.nullable().optional(),
+      endDate: date.nullable().optional(),
+      budget: budget.nullable().optional(),
+    },
+    'El cuerpo debe ser un objeto JSON y traer solo campos del proyecto',
+  )
   .refine((input) => Object.keys(input).length > 0, {
     message: 'Hay que enviar al menos un campo para actualizar',
   });
@@ -120,9 +127,17 @@ export const addMemberSchema = z.object({
     ),
 });
 
+// El relevo va por su propio endpoint y no por dos ediciones de rol: entre la
+// primera y la segunda, el proyecto tendría cero o dos investigadores principales.
+export const transferLeadSchema = z.strictObject(
+  { userId: z.uuid('El identificador de la persona no es válido') },
+  'El cuerpo debe ser un objeto JSON con userId',
+);
+
 export type ListProjectsQuery = z.infer<typeof listProjectsQuerySchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type AddMemberInput = z.infer<typeof addMemberSchema>;
+export type TransferLeadInput = z.infer<typeof transferLeadSchema>;
 export type ProjectIdParams = z.infer<typeof projectIdParamsSchema>;
 export type MemberParams = z.infer<typeof memberParamsSchema>;

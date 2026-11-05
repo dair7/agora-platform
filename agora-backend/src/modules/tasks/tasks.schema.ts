@@ -69,19 +69,19 @@ export const createTaskSchema = z
 
 // Actualización parcial: la coherencia entre fechas la resuelve el servicio.
 // `phaseId` es mover la tarea de fase, la salida del 409 al borrar una fase.
-// `assigneeId` admite `null`: sin eso no habría forma de dejar una tarea sin
-// responsable.
+// `null` vacía el campo y ausente no lo cambia, en lo que la creación no exige:
+// `title` y `phaseId` no lo admiten.
 export const updateTaskSchema = z
   .strictObject(
     {
       phaseId: phaseId.optional(),
       title: title.optional(),
-      description: optionalText,
+      description: optionalText.nullable(),
       status: status.optional(),
       priority: priority.optional(),
       assigneeId: assigneeId.nullable().optional(),
-      startDate: date.optional(),
-      dueDate: date.optional(),
+      startDate: date.nullable().optional(),
+      dueDate: date.nullable().optional(),
     },
     invalidBody,
   )

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes.js';
 import chatRoutes from '../modules/chat/chat.routes.js';
 import documentRoutes from '../modules/documents/documents.routes.js';
+import notificationRoutes from '../modules/notifications/notifications.routes.js';
 import phaseRoutes from '../modules/phases/phases.routes.js';
 import progressRoutes from '../modules/progress/progress.routes.js';
 import projectRoutes from '../modules/projects/projects.routes.js';
@@ -22,5 +23,6 @@ router.use('/proyectos/:projectId/avances', progressRoutes);
 router.use('/proyectos/:projectId/documentos', documentRoutes);
 router.use('/proyectos', projectRoutes);
 router.use('/usuarios', userRoutes);
+router.use('/notificaciones', notificationRoutes);
 
 export default router;

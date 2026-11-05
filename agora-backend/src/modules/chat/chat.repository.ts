@@ -58,3 +58,83 @@ export const createMessage = (
     data: { conversationId, senderId, content },
     select: messageSelect,
   });
+
+export const findLastReadAt = async (
+  conversationId: string,
+  userId: string,
+): Promise<Date | null> => {
+  const participant = await prisma.conversationParticipant.findUnique({
+    where: { conversationId_userId: { conversationId, userId } },
+    select: { lastReadAt: true },
+  });
+
+  return participant?.lastReadAt ?? null;
+};
+
+/** Filtra por conversación: un mensaje de otra aquí no existe. */
+export const findMessageDate = async (
+  conversationId: string,
+  messageId: string,
+): Promise<Date | null> => {
+  const message = await prisma.message.findFirst({
+    where: { id: messageId, conversationId },
+    select: { createdAt: true },
+  });
+
+  return message?.createdAt ?? null;
+};
+
+/**
+ * Solo avanza. Con dos pestañas, la que va atrasada mandaría un mensaje más viejo, y
+ * la marca no debe retroceder.
+ */
+export const advanceLastRead = async (
+  conversationId: string,
+  userId: string,
+  readAt: Date,
+): Promise<void> => {
+  await prisma.conversationParticipant.updateMany({
+    where: {
+      conversationId,
+      userId,
+      OR: [{ lastReadAt: null }, { lastReadAt: { lt: readAt } }],
+    },
+    data: { lastReadAt: readAt },
+  });
+};
+
+/** Los propios no cuentan. Sin marca, cuenta todo lo ajeno. */
+export const countUnread = (
+  conversationId: string,
+  userId: string,
+  lastReadAt: Date | null,
+): Promise<number> =>
+  prisma.message.count({
+    where: {
+      conversationId,
+      senderId: { not: userId },
+      ...(lastReadAt && { createdAt: { gt: lastReadAt } }),
+    },
+  });
+
+/**
+ * El mismo conteo para una página de proyectos, en una sola consulta. En SQL porque
+ * Prisma no compara una columna con la de otra tabla. Quien no participa no sale.
+ */
+export const countUnreadByProject = async (
+  userId: string,
+  projectIds: string[],
+): Promise<Map<string, number>> => {
+  const rows = await prisma.$queryRaw<{ project_id: string; unread: bigint }[]>`
+    SELECT c.project_id, COUNT(m.id) AS unread
+    FROM conversation_participants p
+    JOIN conversations c ON c.id = p.conversation_id
+    JOIN messages m ON m.conversation_id = c.id
+      AND m.sender_id <> p.user_id
+      AND (p.last_read_at IS NULL OR m.created_at > p.last_read_at)
+    WHERE p.user_id = ${userId}::uuid AND c.project_id = ANY(${projectIds}::uuid[])
+    GROUP BY c.project_id
+  `;
+
+  return new Map(rows.map((row) => [row.project_id, Number(row.unread)]));
+};

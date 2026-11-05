@@ -3,6 +3,8 @@ import type { Project } from '@prisma/client';
 import { AppError } from '../../middlewares/error-handler.js';
 import type { ProjectAccess } from '../../middlewares/project-access.js';
 import { emitToProject, joinProjectRoom, leaveProjectRoom } from '../../sockets/emitter.js';
+import { countUnreadByProject } from '../chat/chat.repository.js';
+import { announce } from '../notifications/notifications.service.js';
 import { findUserByEmail, findUserById } from '../users/users.repository.js';
 import type { UserSummary } from '../users/users.repository.js';
 import * as repository from './projects.repository.js';
@@ -11,6 +13,7 @@ import type {
   AddMemberInput,
   CreateProjectInput,
   ListProjectsQuery,
+  TransferLeadInput,
   UpdateProjectInput,
 } from './projects.schema.js';
 
@@ -31,6 +34,8 @@ interface ScopedUser {
 export type ProjectListItem = Project & {
   principalInvestigator: UserSummary | null;
   memberCount: number;
+  /** Mensajes ajenos sin leer. Cero para quien no participa, como la coordinación. */
+  unreadCount: number;
 };
 
 export interface ProjectPage {
@@ -41,10 +46,14 @@ export interface ProjectPage {
 }
 
 // `_count` es un detalle de Prisma: sale traducido, no tal cual.
-const toListItem = ({ members, _count, ...project }: ProjectListRow): ProjectListItem => ({
+const toListItem = (
+  { members, _count, ...project }: ProjectListRow,
+  unreadCount: number,
+): ProjectListItem => ({
   ...project,
   principalInvestigator: members[0]?.user ?? null,
   memberCount: _count.members,
+  unreadCount,
 });
 
 /**
@@ -61,7 +70,18 @@ export const listProjects = async (
     { page: query.page, perPage: query.perPage },
   );
 
-  return { items: rows.map(toListItem), total, page: query.page, perPage: query.perPage };
+  // Una consulta para toda la página, no una por tarjeta.
+  const unread = await countUnreadByProject(
+    user.id,
+    rows.map((row) => row.id),
+  );
+
+  return {
+    items: rows.map((row) => toListItem(row, unread.get(row.id) ?? 0)),
+    total,
+    page: query.page,
+    perPage: query.perPage,
+  };
 };
 
 /** El acceso ya lo resolvió el middleware; aquí solo se cargan las relaciones. */
@@ -95,7 +115,7 @@ export const createProject = async (
 
   const { principalInvestigatorId, ...data } = input;
 
-  const project = await repository.createProject({
+  const { project, notification } = await repository.createProject({
     ...data,
     createdById: creatorId,
     principalInvestigatorId,
@@ -103,7 +123,11 @@ export const createProject = async (
 
   // El investigador principal puede estar conectado mientras la coordinadora
   // crea el proyecto: entra a la sala ya, no en su próxima conexión.
-  joinProjectRoom(principalInvestigatorId, project.id);
+  await joinProjectRoom(principalInvestigatorId, project.id);
+
+  if (notification) {
+    await announce(notification);
+  }
 
   return project;
 };
@@ -114,8 +138,9 @@ export const createProject = async (
  * guardada es lo único que evita dejar el proyecto con un rango imposible.
  */
 const assertDateRange = (project: Project, input: UpdateProjectInput): void => {
-  const startDate = input.startDate ?? project.startDate;
-  const endDate = input.endDate ?? project.endDate;
+  // `undefined` y no `??`: `null` vacía la fecha, no es «la que ya estaba».
+  const startDate = input.startDate === undefined ? project.startDate : input.startDate;
+  const endDate = input.endDate === undefined ? project.endDate : input.endDate;
 
   if (startDate && endDate && startDate > endDate) {
     throw new AppError(400, 'VALIDATION_ERROR', 'Los datos enviados no son válidos', [
@@ -124,16 +149,22 @@ const assertDateRange = (project: Project, input: UpdateProjectInput): void => {
   }
 };
 
+/**
+ * Un proyecto cerrado es un expediente: no se reabre por esta vía, porque el cierre
+ * estampa closed_at y volver atrás dejaría la marca sin sentido, y sus miembros
+ * tampoco cambian.
+ */
+const assertProjectOpen = (project: Project): void => {
+  if (project.status === ProjectStatus.COMPLETED) {
+    throw new AppError(409, 'CONFLICT', 'El proyecto está cerrado y no admite cambios');
+  }
+};
+
 export const updateProject = async (
   access: ProjectAccess,
   input: UpdateProjectInput,
 ): Promise<Project> => {
-  // Un proyecto cerrado no se reabre por esta vía: el cierre estampa closed_at
-  // y volver atrás dejaría la marca sin sentido.
-  if (access.project.status === ProjectStatus.COMPLETED) {
-    throw new AppError(409, 'CONFLICT', 'El proyecto está cerrado y no admite cambios');
-  }
-
+  assertProjectOpen(access.project);
   assertDateRange(access.project, input);
 
   return repository.updateProject(access.project.id, input);
@@ -150,6 +181,8 @@ export const closeProject = async (access: ProjectAccess): Promise<Project> => {
 export const listMembers = (projectId: string) => repository.findMembers(projectId);
 
 export const addMember = async (access: ProjectAccess, input: AddMemberInput) => {
+  assertProjectOpen(access.project);
+
   const user = await findUserByEmail(input.email);
 
   // Una cuenta desactivada se trata como inexistente: distinguirlas revelaría
@@ -172,13 +205,17 @@ export const addMember = async (access: ProjectAccess, input: AddMemberInput) =>
     throw new AppError(409, 'CONFLICT', 'La persona ya es miembro del proyecto');
   }
 
-  await repository.addMember(access.project.id, user.id);
-  joinProjectRoom(user.id, access.project.id);
+  const notification = await repository.addMember(access.project, user.id);
+
+  await joinProjectRoom(user.id, access.project.id);
+  await announce(notification);
 
   return repository.findMembers(access.project.id);
 };
 
 export const removeMember = async (access: ProjectAccess, userId: string): Promise<void> => {
+  assertProjectOpen(access.project);
+
   const membership = await repository.findMember(access.project.id, userId);
 
   if (!membership) {
@@ -186,7 +223,7 @@ export const removeMember = async (access: ProjectAccess, userId: string): Promi
   }
 
   // Quitar al investigador principal dejaría el proyecto sin nadie que pueda
-  // gestionarlo. Reasignarlo es competencia del coordinador y no existe todavía.
+  // gestionarlo. Primero tiene que traspasarlo: ver `transferLead`.
   if (membership.role === ProjectRole.PRINCIPAL_INVESTIGATOR) {
     throw new AppError(409, 'CONFLICT', 'No se puede quitar al investigador principal');
   }
@@ -196,9 +233,38 @@ export const removeMember = async (access: ProjectAccess, userId: string): Promi
   // con el 409 de borrar una fase con tareas.
   const unassignedTasks = await repository.removeMember(access.project.id, userId);
 
-  leaveProjectRoom(userId, access.project.id);
+  await leaveProjectRoom(userId, access.project.id);
 
   if (unassignedTasks > 0) {
     emitToProject(access.project.id, 'tarea:actualizada', { projectId: access.project.id });
   }
+};
+
+/**
+ * El relevo completo, en una transacción: el actual pasa a coinvestigador y el
+ * nuevo a principal. La puerta de la ruta ya exigió el rol, pero se vuelve a mirar
+ * con el bloqueo puesto: dos relevos a la vez pasarían los dos esa puerta.
+ */
+export const transferLead = async (
+  access: ProjectAccess,
+  userId: string,
+  input: TransferLeadInput,
+) => {
+  assertProjectOpen(access.project);
+
+  if (input.userId === userId) {
+    throw new AppError(409, 'CONFLICT', 'Esa persona ya es el investigador principal');
+  }
+
+  const result = await repository.transferLead(access.project.id, userId, input.userId);
+
+  if (result === 'not-lead') {
+    throw new AppError(403, 'FORBIDDEN', 'No tienes permiso para realizar esta acción');
+  }
+
+  if (result === 'not-member') {
+    throw new AppError(404, 'NOT_FOUND', 'La persona no es miembro activo del proyecto');
+  }
+
+  return repository.findMembers(access.project.id);
 };

@@ -30,5 +30,13 @@ export const sendMessageSchema = z.object({
     .max(2000, 'El mensaje no puede superar 2000 caracteres'),
 });
 
+// El id del último mensaje visto, nunca una fecha: el reloj del cliente no es el
+// del servidor, y uno adelantado marcaría como leídos mensajes que no han llegado.
+export const markReadSchema = z.strictObject(
+  { messageId: z.uuid('El identificador del mensaje no es válido') },
+  'El cuerpo debe ser un objeto JSON con messageId',
+);
+
 export type ListMessagesQuery = z.infer<typeof listMessagesQuerySchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type MarkReadInput = z.infer<typeof markReadSchema>;

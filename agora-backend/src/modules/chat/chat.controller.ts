@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express';
 import { getAuthUser } from '../../middlewares/authenticate.js';
 import { getProjectAccess } from '../../middlewares/project-access.js';
 import * as service from './chat.service.js';
-import type { ListMessagesQuery, SendMessageInput } from './chat.schema.js';
+import type { ListMessagesQuery, MarkReadInput, SendMessageInput } from './chat.schema.js';
 
 // Las aserciones son seguras porque `validate` ya sustituyó `req.query` y
 // `req.body`. La de `req.query` pasa por `unknown` por lo mismo que en
@@ -25,4 +25,18 @@ export const send: RequestHandler = async (req, res) => {
   );
 
   res.status(201).json({ message });
+};
+
+export const readState: RequestHandler = async (req, res) => {
+  res.json(await service.getReadState(getProjectAccess(req), getAuthUser(req).id));
+};
+
+export const markRead: RequestHandler = async (req, res) => {
+  const state = await service.markRead(
+    getProjectAccess(req),
+    getAuthUser(req).id,
+    req.body as MarkReadInput,
+  );
+
+  res.json(state);
 };

@@ -11,6 +11,7 @@ import {
   listProjectsQuerySchema,
   memberParamsSchema,
   projectIdParamsSchema,
+  transferLeadSchema,
   updateProjectSchema,
 } from './projects.schema.js';
 
@@ -46,6 +47,14 @@ router.patch(
   controller.update,
 );
 router.post('/:projectId/cerrar', withProject, principalInvestigatorOnly, controller.close);
+
+router.put(
+  '/:projectId/investigador-principal',
+  withProject,
+  principalInvestigatorOnly,
+  validate(transferLeadSchema),
+  controller.transferLead,
+);
 
 router.get('/:projectId/miembros', withProject, controller.listMembers);
 router.post(

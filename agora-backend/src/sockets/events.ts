@@ -1,3 +1,4 @@
+import type { NotificationType } from '@prisma/client';
 import type { Server, Socket } from 'socket.io';
 import type { AuthUser } from '../middlewares/authenticate.js';
 
@@ -20,6 +21,7 @@ export interface ServerToClientEvents {
   'avance:modificado': (payload: ProgressChangedPayload) => void;
   'documento:subido': (payload: DocumentUploadedPayload) => void;
   'documento:modificado': (payload: DocumentChangedPayload) => void;
+  'notificacion:nueva': (payload: NotificationPayload) => void;
 }
 
 /**
@@ -63,7 +65,11 @@ export interface ProjectPresence {
   userIds: string[];
 }
 
-/** Una entrada por cada sala de proyecto a la que el socket acaba de entrar. */
+/**
+ * Una entrada por cada sala de proyecto de la persona. Es siempre la foto completa,
+ * también al sumarla a un proyecto estando conectada: el cliente reemplaza lo que
+ * tenía, y una foto de un solo proyecto borraría la presencia de los demás.
+ */
 export type InitialPresencePayload = ProjectPresence[];
 
 /**
@@ -107,6 +113,24 @@ export interface ProgressChangedPayload {
 /** Al borrar una versión, por la misma razón. Los documentos no se editan. */
 export interface DocumentChangedPayload {
   projectId: string;
+}
+
+/**
+ * Va a la sala personal, no a la del proyecto, y es la única que no se reduce a
+ * `{ projectId }`: es un hecho dirigido a una persona. Mismo objeto que devuelve
+ * `GET /notificaciones`, con las fechas como texto ISO.
+ */
+export interface NotificationPayload {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  resourceId: string | null;
+  /** A qué proyecto lleva. `null` si ya no se puede llegar: la pantalla no enlaza. */
+  projectId: string | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export type AppServer = Server<

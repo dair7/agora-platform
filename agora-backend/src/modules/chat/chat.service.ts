@@ -5,7 +5,12 @@ import { emitToProject } from '../../sockets/emitter.js';
 import type { ChatMessagePayload } from '../../sockets/events.js';
 import * as repository from './chat.repository.js';
 import type { MessageRow } from './chat.repository.js';
-import type { ListMessagesQuery, SendMessageInput } from './chat.schema.js';
+import type { ListMessagesQuery, MarkReadInput, SendMessageInput } from './chat.schema.js';
+
+export interface ReadState {
+  lastReadAt: string | null;
+  unreadCount: number;
+}
 
 export interface MessagePage {
   /** En orden cronológico, listos para pintar de arriba abajo. */
@@ -81,4 +86,38 @@ export const sendMessage = async (
   emitToProject(access.project.id, 'chat:mensaje', message);
 
   return message;
+};
+
+const readStateOf = async (conversationId: string, userId: string): Promise<ReadState> => {
+  const lastReadAt = await repository.findLastReadAt(conversationId, userId);
+
+  return {
+    lastReadAt: lastReadAt?.toISOString() ?? null,
+    unreadCount: await repository.countUnread(conversationId, userId, lastReadAt),
+  };
+};
+
+/** Calculado en el servidor: un contador que vive en la pestaña no sobrevive a nada. */
+export const getReadState = async (access: ProjectAccess, userId: string): Promise<ReadState> =>
+  readStateOf(await getConversationId(access.project.id, userId), userId);
+
+/**
+ * La fecha sale del mensaje, nunca del cliente. Un proyecto cerrado también acepta
+ * la marca: es de quien lee, no toca el expediente.
+ */
+export const markRead = async (
+  access: ProjectAccess,
+  userId: string,
+  input: MarkReadInput,
+): Promise<ReadState> => {
+  const conversationId = await getConversationId(access.project.id, userId);
+  const createdAt = await repository.findMessageDate(conversationId, input.messageId);
+
+  if (!createdAt) {
+    throw new AppError(404, 'NOT_FOUND', 'El mensaje no existe en esta conversación');
+  }
+
+  await repository.advanceLastRead(conversationId, userId, createdAt);
+
+  return readStateOf(conversationId, userId);
 };
