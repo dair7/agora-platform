@@ -11802,6 +11802,504 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "historial hacia adelante",
+      "item": [
+        {
+          "name": "1. Sesión coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('coordinatorToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"coordinacion@example.com\", \"password\": \"Coordinador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Sesión de un miembro de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('readerToken', body.accessToken);\r\npm.environment.set('readProjectId', 'b1000000-0000-4000-8000-000000000001');\r\n// Un mensaje de la conversación privada del seed.\r\npm.environment.set('foreignMessageId', '0b000000-0000-4000-8000-000000000006');\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Sesión no miembro de P1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('outsiderToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"daniel.osorio@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('firstMessageId', body.messages[0].id);\r\npm.environment.set('secondMessageId', body.messages[1].id);\r\npm.environment.set('lastMessageId', body.messages[body.messages.length - 1].id);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Un bloque hacia adelante, con más después",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200: el siguiente, y nextCursor dice que queda más', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.messages.map((message) => message.id)).to.eql([pm.environment.get('secondMessageId')]);\r\n  pm.expect(body.nextCursor).to.eql(pm.environment.get('secondMessageId'));\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues={{firstMessageId}}&limite=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "{{firstMessageId}}"
+                },
+                {
+                  "key": "limite",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Al día: después del último no hay nada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200, vacío y nextCursor null', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.messages).to.have.lengthOf(0);\r\n  pm.expect(body.nextCursor).to.eql(null);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues={{lastMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "{{lastMessageId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. 404 mensaje de otra conversación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: aquí no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues={{foreignMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "{{foreignMessageId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. 400 antes y despues juntos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: se pide en un solo sentido', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?antes={{lastMessageId}}&despues={{firstMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "antes",
+                  "value": "{{lastMessageId}}"
+                },
+                {
+                  "key": "despues",
+                  "value": "{{firstMessageId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. 400 cursor malformado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{readerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "abc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. 403 coordinadora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('403: no participa del chat', () => {\r\n  pm.response.to.have.status(403);\r\n  pm.expect(body.error.code).to.eql('FORBIDDEN');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{coordinatorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues={{firstMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "{{firstMessageId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. 404 quien no es miembro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: el proyecto no existe para esa persona', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{outsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/{{readProjectId}}/mensajes?despues={{firstMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "{{readProjectId}}",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "{{firstMessageId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {
