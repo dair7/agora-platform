@@ -16,6 +16,10 @@ export interface ServerToClientEvents {
   'presencia:inicial': (payload: InitialPresencePayload) => void;
   'cronograma:modificado': (payload: ScheduleChangedPayload) => void;
   'tarea:actualizada': (payload: TaskChangedPayload) => void;
+  'avance:creado': (payload: ProgressCreatedPayload) => void;
+  'avance:modificado': (payload: ProgressChangedPayload) => void;
+  'documento:subido': (payload: DocumentUploadedPayload) => void;
+  'documento:modificado': (payload: DocumentChangedPayload) => void;
 }
 
 /**
@@ -78,6 +82,30 @@ export interface ScheduleChangedPayload {
  * dependencias emiten exactamente lo mismo, y el cliente vuelve a pedir las tareas.
  */
 export interface TaskChangedPayload {
+  projectId: string;
+}
+
+/** Solo el identificador, por la misma razón: el cliente trata los cuatro igual. */
+export interface ProgressCreatedPayload {
+  projectId: string;
+}
+
+/** También al subir una versión nueva: una lista que ya estaba abierta cambia igual. */
+export interface DocumentUploadedPayload {
+  projectId: string;
+}
+
+/**
+ * Al editar o borrar un avance. Evento aparte y no `avance:creado`: un evento cuyo
+ * nombre dice lo contrario de lo que pasó es peor que no tenerlo, porque quien lo
+ * lea en el futuro confiará en el nombre.
+ */
+export interface ProgressChangedPayload {
+  projectId: string;
+}
+
+/** Al borrar una versión, por la misma razón. Los documentos no se editan. */
+export interface DocumentChangedPayload {
   projectId: string;
 }
 
