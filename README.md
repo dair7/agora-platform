@@ -58,7 +58,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, chat (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, chat (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── app.ts           # Express application
@@ -285,6 +285,22 @@ Both come from the same list query, not from one request per project.
 
 The history uses cursor pagination. Each page comes back in chronological order. To load older messages, pass the page's `nextCursor` as `antes`; `nextCursor` is `null` when there is no more history. The coordinator can see projects but does not take part in their chats (`403`). Sending to a `COMPLETED` project returns `409`.
 
+**Project phases** — `/api/v1/proyectos/:projectId/fases`
+
+| Method | Route | Who | Body | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Member or coordinator | — | `200 { phases }`, ordered by `position` |
+| `POST` | `/` | Principal investigator | `{ name, description?, status?, startDate?, endDate? }` | `201 { phase }`, placed last |
+| `PATCH` | `/:phaseId` | Principal investigator | At least one of `name`, `description`, `status`, `startDate`, `endDate` | `200 { phase }` |
+| `DELETE` | `/:phaseId` | Principal investigator | — | `204`. The remaining phases close the gap. `409` if the phase has tasks: move or delete them first. |
+| `PUT` | `/orden` | Principal investigator | `{ phaseIds }`: every phase of the project, in the new order | `200 { phases }` |
+
+A phase is `{ id, projectId, name, description, position, status, startDate, endDate, createdAt, updatedAt }`. `status` is `PENDING` (the default), `IN_PROGRESS` or `COMPLETED`. `name` takes 3–150 characters. Dates use `YYYY-MM-DD`, and the end date cannot be before the start date; `PATCH` compares against the stored value when the body brings only one of them.
+
+`position` is managed by the server: positions always run from 1 to the number of phases. Sending `position` to `POST` or `PATCH` returns `400`; the only way to change it is `PUT /orden`. That endpoint takes the whole order on purpose: moving phases one at a time leaves gaps and ties if two people reorder at once, while a complete list cannot end up half applied. It returns `400` unless the list holds exactly the phases of the project, with none missing, extra or repeated.
+
+Every write returns `409` on a `COMPLETED` project and emits `cronograma:modificado` after it is saved. A phase that belongs to another project returns `404`.
+
 ### Access rules
 
 - A user who is not a member gets **`404`**, not `403`. A `403` would confirm that the project exists.
@@ -367,6 +383,7 @@ There are no client → server events: all changes go through REST.
 | `usuario:conectado` | The person's project rooms | `{ userId, projectId }` | The person's **first** socket connects |
 | `usuario:desconectado` | The person's project rooms | `{ userId, projectId }` | The person's **last** socket disconnects |
 | `presencia:inicial` | Only the socket that just connected | `[{ projectId, userIds }]` | Right after that socket joins its rooms |
+| `cronograma:modificado` | `proyecto:{id}` | `{ projectId }` | After a phase is created, edited, deleted or reordered |
 
 `chat:mensaje` has the same shape as the `message` returned by the REST call. The event also goes back to the sender. The tab that sent the message already has it from the REST response and discards the duplicate by `id`, while the sender's other tabs display it.
 
@@ -374,7 +391,9 @@ Presence is tracked per person, not per tab: opening a second tab does not annou
 
 `presencia:inicial` tells a new socket who was already online. It has one entry per project room the socket joined, with no repeated ids. `userIds` includes the person connecting, and a project with nobody online comes with an empty list, so "nobody is online" and "nothing is known about that project yet" stay different. The coordinator joins no project rooms and receives an empty array. Being added to a project while connected does not send a new snapshot.
 
-Planned for Deliveries 3 and 4: `avance:creado`, `tarea:actualizada`, `documento:subido`, `cronograma:modificado`.
+`cronograma:modificado` carries only the project id, and the client fetches the schedule again with `GET /proyectos/:projectId/fases`. A schedule is a handful of rows, and this way the four writes emit exactly the same thing instead of four shapes the client would have to merge. The coordinator joins no project rooms, so they do not receive it.
+
+Planned for Deliveries 3 and 4: `avance:creado`, `tarea:actualizada`, `documento:subido`.
 
 ## Connectivity demo
 
