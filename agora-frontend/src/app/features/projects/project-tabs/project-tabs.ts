@@ -32,6 +32,8 @@ export class ProjectTabs {
       { label: 'Resumen', link: base, exact: true },
       { label: 'Cronograma', link: [...base, 'cronograma'] },
       { label: 'Tareas', link: [...base, 'tareas'] },
+      { label: 'Avances', link: [...base, 'avances'] },
+      { label: 'Documentos', link: [...base, 'documentos'] },
       ...(this.isMember()
         ? [
             {

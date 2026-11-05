@@ -1,15 +1,16 @@
 import { Component, input } from '@angular/core';
 
 /**
- * El contador de mensajes sin leer, del componente TarjetaProyecto del sistema. Un
- * cero no se dibuja: quien lo usa no lo pinta si no hay ninguno.
+ * El contador de lo que está sin leer, del componente TarjetaProyecto del sistema. Un
+ * cero no se dibuja: quien lo usa no lo pinta si no hay ninguno. Por defecto cuenta
+ * mensajes; `label` dice otra cosa al lector de pantalla.
  */
 @Component({
   selector: 'app-unread-badge',
   template: `
     <span aria-hidden="true">{{ count() }}</span>
     <span class="sr-only">{{
-      count() === 1 ? '1 mensaje sin leer' : count() + ' mensajes sin leer'
+      label() ?? (count() === 1 ? '1 mensaje sin leer' : count() + ' mensajes sin leer')
     }}</span>
   `,
   styleUrl: './unread-badge.css',
@@ -19,4 +20,5 @@ import { Component, input } from '@angular/core';
 })
 export class UnreadBadge {
   readonly count = input.required<number>();
+  readonly label = input<string>();
 }

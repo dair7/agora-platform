@@ -225,6 +225,20 @@
             <app-notice tone="error">{{ message }}</app-notice>
           }
         </form>
+
+        <!-- Sin nadie a quien traspasarlo, el botón no lleva a ningún sitio. -->
+        @if (leadCandidates().length > 0) {
+          <div>
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              (click)="askToTransfer(transferDialog)"
+            >
+              Traspasar la investigación principal
+            </button>
+          </div>
+        }
       }
     </section>
   }
@@ -239,6 +253,40 @@
   (confirmed)="closeProject(closeDialog)"
 >
   Es definitivo: un proyecto cerrado no se puede reabrir y queda de solo lectura.
+</app-dialog>
+
+<app-dialog
+  #transferDialog
+  title="¿Traspasar la investigación principal?"
+  confirmLabel="Traspasar"
+  busyLabel="Traspasando…"
+  confirmVariant="destructive"
+  [busy]="transferring()"
+  [confirmDisabled]="newLeadId() === ''"
+  (confirmed)="transferLead(transferDialog)"
+>
+  <p>
+    Pasarás a coinvestigación y dejarás de poder gestionar este proyecto: editarlo, cerrarlo, y
+    ocuparte de sus miembros, fases y tareas.
+  </p>
+  <p class="mt-espacio-2">
+    Si te equivocas de persona no podrás deshacerlo: solo ella podría devolverte el cargo.
+  </p>
+  <app-field class="mt-espacio-4" for="nuevo-principal" label="Quién asume">
+    <select
+      appSelect
+      id="nuevo-principal"
+      [disabled]="transferring()"
+      (input)="newLeadId.set($any($event.target).value)"
+    >
+      <option value="" [selected]="newLeadId() === ''">Elige a una persona</option>
+      @for (member of leadCandidates(); track member.id) {
+        <option [value]="member.user.id" [selected]="member.user.id === newLeadId()">
+          {{ member.user.fullName }}
+        </option>
+      }
+    </select>
+  </app-field>
 </app-dialog>
 
 <app-dialog

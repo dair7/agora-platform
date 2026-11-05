@@ -27,3 +27,7 @@ export const formatMessageTime = (createdAt: string): string => {
 
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
+
+/** «Ayer, 16:42», o con la fecha: para las listas, donde no hay separador de día. */
+export const formatMoment = (createdAt: string): string =>
+  `${formatMessageDay(createdAt)}, ${formatMessageTime(createdAt)}`;

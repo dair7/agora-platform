@@ -39,7 +39,7 @@ let nextId = 0;
           appButton
           type="button"
           [variant]="confirmVariant()"
-          [disabled]="busy()"
+          [disabled]="busy() || confirmDisabled()"
           (click)="confirmed.emit()"
         >
           {{ busy() ? busyLabel() : confirmLabel() }}
@@ -54,6 +54,8 @@ export class Dialog {
   readonly busyLabel = input.required<string>();
   readonly confirmVariant = input<ButtonVariant>('primary');
   readonly busy = input(false);
+  /** Falta algo dentro del diálogo, como elegir una persona. */
+  readonly confirmDisabled = input(false);
 
   /** Se pulsó confirmar. Quien lo usa ejecuta la acción y llama a `close()` al terminar. */
   readonly confirmed = output<void>();

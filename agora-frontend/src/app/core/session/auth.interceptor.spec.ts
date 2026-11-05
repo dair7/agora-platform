@@ -49,6 +49,46 @@ describe('authInterceptor', () => {
   let session: SessionService;
   let navigate: ReturnType<typeof vi.spyOn>;
 
+  describe('una descarga, cuyo error llega como Blob', () => {
+    const blobError = (code: string) =>
+      new Blob([JSON.stringify({ error: { code, message: code } })], {
+        type: 'application/json',
+      });
+
+    it('lee el code del cuerpo', async () => {
+      const download = firstValueFrom(http.get('/archivo', { responseType: 'blob' }));
+
+      backend.expectOne('/archivo').flush(blobError('NOT_FOUND'), {
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      const result = await settle(download, 200);
+
+      expect(result.status).toBe('rejected');
+      expect(apiErrorCode((result as { reason: unknown }).reason)).toBe('NOT_FOUND');
+    });
+
+    it('con el token vencido, renueva y repite', async () => {
+      const renew = vi.spyOn(session, 'renew').mockResolvedValue('nuevo');
+      const download = firstValueFrom(http.get('/archivo', { responseType: 'blob' }));
+
+      backend.expectOne('/archivo').flush(blobError('TOKEN_EXPIRED'), {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const again = backend.expectOne('/archivo');
+
+      expect(again.request.headers.get('Authorization')).toBe('Bearer nuevo');
+      again.flush(new Blob(['ok']));
+
+      expect((await settle(download, 200)).status).toBe('fulfilled');
+      expect(renew).toHaveBeenCalledTimes(1);
+    });
+  });
+
   const isRefresh = (req: TestRequest) => req.request.url.endsWith('/auth/refrescar');
   const refreshRequests = () => backend.match((req) => req.url.endsWith('/auth/refrescar'));
   const projectRequests = () => backend.match((req) => req.url === '/api/v1/proyectos');

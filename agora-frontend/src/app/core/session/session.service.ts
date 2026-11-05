@@ -168,7 +168,12 @@ export class SessionService {
     } catch (error) {
       // Un rechazo del backend es definitivo: el token no sirve. Una caída de red
       // o un 500 no: el refresh token puede seguir valiendo, así que se conserva.
-      if (apiErrorCode(error) === 'INVALID_TOKEN' || isUnauthorized(error)) {
+      // `ACCOUNT_DISABLED` es un 403, pero tampoco tiene vuelta.
+      if (
+        apiErrorCode(error) === 'INVALID_TOKEN' ||
+        apiErrorCode(error) === 'ACCOUNT_DISABLED' ||
+        isUnauthorized(error)
+      ) {
         this.end();
         throw new SessionEndedError({ cause: error });
       }

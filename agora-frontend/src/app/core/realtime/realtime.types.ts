@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../api/chat.types';
+import type { AppNotification } from '../api/notifications.types';
 
 // Copia de lo que este cliente escucha del contrato de `sockets/events.ts`. Crece
 // con él: los eventos se declaran primero en el backend.
@@ -19,20 +20,6 @@ export interface ProjectEvent {
   projectId: string;
 }
 
-/** La sala personal lleva el objeto entero, con la misma forma que `GET /notificaciones`. */
-export interface NotificationEvent {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  resourceId: string | null;
-  /** A qué proyecto lleva. `null` si ya no se puede llegar: no se ofrece el enlace. */
-  projectId: string | null;
-  isRead: boolean;
-  readAt: string | null;
-  createdAt: string;
-}
-
 export interface ServerToClientEvents {
   'chat:mensaje': (payload: ChatMessage) => void;
   'presencia:inicial': (payload: ProjectPresence[]) => void;
@@ -44,7 +31,8 @@ export interface ServerToClientEvents {
   'avance:modificado': (payload: ProjectEvent) => void;
   'documento:subido': (payload: ProjectEvent) => void;
   'documento:modificado': (payload: ProjectEvent) => void;
-  'notificacion:nueva': (payload: NotificationEvent) => void;
+  /** A la sala personal, con el objeto entero: la misma forma que `GET /notificaciones`. */
+  'notificacion:nueva': (payload: AppNotification) => void;
 }
 
 /** Vacío a propósito: toda modificación entra por REST, y el socket solo escucha. */

@@ -1,0 +1,60 @@
+<form
+  class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5 grid gap-espacio-4"
+  novalidate
+  [attr.aria-label]="editing() ? 'Editar avance' : 'Registrar avance'"
+  (submit)="submit($event)"
+>
+  <app-field for="progress-description" label="Qué avanzó" [error]="error('description')">
+    <textarea
+      appTextarea
+      id="progress-description"
+      rows="4"
+      maxlength="5000"
+      [invalid]="error('description') !== null"
+      [describedBy]="error('description') !== null ? 'progress-description-error' : null"
+      [value]="initial().description"
+      (input)="update('description', $event)"
+    ></textarea>
+  </app-field>
+
+  <app-field
+    for="progress-task"
+    label="Tarea"
+    hint="Es opcional: una reunión o un imprevisto no tienen por qué ser de una tarea."
+    [error]="error('taskId')"
+  >
+    <select
+      appSelect
+      id="progress-task"
+      [invalid]="error('taskId') !== null"
+      [describedBy]="error('taskId') !== null ? 'progress-task-error' : 'progress-task-hint'"
+      (input)="update('taskId', $event)"
+    >
+      <option value="" [selected]="values().taskId === ''">Sin tarea</option>
+      @for (task of tasks(); track task.id) {
+        <option [value]="task.id" [selected]="task.id === values().taskId">{{ task.title }}</option>
+      }
+    </select>
+  </app-field>
+
+  @if (notice(); as failure) {
+    <app-notice
+      [tone]="failure.kind === 'message' && failure.code === 'CONFLICT' ? 'block' : 'error'"
+    >
+      {{ failure.message }}
+    </app-notice>
+  }
+
+  <div class="flex flex-wrap gap-espacio-3">
+    <button appButton type="submit" [disabled]="!canSubmit()">{{ submitLabel() }}</button>
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      [disabled]="busy()"
+      (click)="cancelled.emit()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>

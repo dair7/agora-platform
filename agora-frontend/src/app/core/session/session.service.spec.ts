@@ -105,6 +105,35 @@ describe('SessionService', () => {
       await expect(next).resolves.toBe('access-9');
     });
 
+    it('una cuenta desactivada también termina la sesión, aunque sea un 403', async () => {
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, 'refresh-revocado');
+
+      const calls = [session.renew(), session.renew(), session.renew()];
+
+      const requests = refreshRequests();
+      expect(requests).toHaveLength(1);
+      requests[0].flush(
+        { error: { code: 'ACCOUNT_DISABLED', message: 'La cuenta está desactivada' } },
+        { status: 403, statusText: 'Forbidden' },
+      );
+
+      // Las tres que esperaban fallan juntas; ninguna se queda colgada.
+      for (const call of calls) {
+        await expect(call).rejects.toBeInstanceOf(SessionEndedError);
+      }
+      expect(session.accessToken).toBeNull();
+      expect(sessionStorage.getItem(REFRESH_TOKEN_KEY)).toBeNull();
+      expect(session.isAuthenticated()).toBe(false);
+
+      // La marca quedó libre: con una sesión nueva, la siguiente renovación sale.
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, 'refresh-nuevo');
+      const next = session.renew();
+      const retry = refreshRequests();
+      expect(retry).toHaveLength(1);
+      retry[0].flush({ accessToken: 'access-9', refreshToken: 'refresh-9' });
+      await expect(next).resolves.toBe('access-9');
+    });
+
     it('una caída de red libera la marca pero conserva el refresh token', async () => {
       sessionStorage.setItem(REFRESH_TOKEN_KEY, 'refresh-1');
 

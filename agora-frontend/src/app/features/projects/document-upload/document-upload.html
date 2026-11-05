@@ -1,0 +1,70 @@
+<form
+  class="bg-superficie-00 border border-borde rounded-radio-md p-espacio-5 grid gap-espacio-4"
+  novalidate
+  [attr.aria-label]="title()"
+  (submit)="submit($event)"
+>
+  <h3 class="titulo-tarjeta text-tinta wrap-anywhere">{{ title() }}</h3>
+
+  <app-field for="document-file" label="Archivo" [hint]="hint" [error]="fileError()">
+    <app-file-picker
+      controlId="document-file"
+      [file]="file()"
+      [disabled]="busy()"
+      [invalid]="fileError() !== null"
+      [describedBy]="fileError() !== null ? 'document-file-error' : 'document-file-hint'"
+      (selected)="choose($event)"
+    />
+  </app-field>
+
+  <!-- Una versión nueva hereda la tarea de la anterior: el backend no acepta otra. -->
+  @if (!target()) {
+    <app-field for="document-task" label="Tarea" hint="Es opcional.">
+      <select
+        appSelect
+        id="document-task"
+        describedBy="document-task-hint"
+        [disabled]="busy()"
+        (input)="taskId.set($any($event.target).value)"
+      >
+        <option value="" [selected]="taskId() === ''">Sin tarea</option>
+        @for (task of tasks(); track task.id) {
+          <option [value]="task.id" [selected]="task.id === taskId()">{{ task.title }}</option>
+        }
+      </select>
+    </app-field>
+  }
+
+  <!-- Siempre en la plantilla: una región viva solo anuncia los cambios de su texto. -->
+  <p class="secundario text-tinta wrap-anywhere empty:hidden" role="status">
+    @if (busy()) {
+      Subiendo {{ file()?.name }}.
+    }
+  </p>
+  @if (busy()) {
+    <p class="secundario text-tinta-media tabular-nums" aria-hidden="true">
+      Lleva {{ elapsed() }} s. No cierres esta pestaña.
+    </p>
+  }
+
+  @if (notice(); as failure) {
+    <app-notice
+      [tone]="failure.kind === 'message' && failure.code === 'CONFLICT' ? 'block' : 'error'"
+    >
+      {{ failure.message }}
+    </app-notice>
+  }
+
+  <div class="flex flex-wrap gap-espacio-3">
+    <button appButton type="submit" [disabled]="!canSubmit()">{{ submitLabel() }}</button>
+    <button
+      appButton
+      variant="secondary"
+      type="button"
+      [disabled]="busy()"
+      (click)="cancelled.emit()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>

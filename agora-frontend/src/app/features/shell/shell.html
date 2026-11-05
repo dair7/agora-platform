@@ -1,11 +1,12 @@
 <header class="bg-superficie-00 border-b border-borde">
   <div
-    class="armazon-ancho mx-auto flex items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
+    class="armazon-ancho relative mx-auto flex flex-wrap items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
   >
     <a routerLink="/proyectos" class="titulo-seccion text-tinta">Ágora</a>
 
     @if (session.user(); as user) {
-      <div class="flex items-center gap-espacio-4">
+      <div class="flex flex-wrap items-center justify-end gap-x-espacio-4 gap-y-espacio-1">
+        <app-notification-inbox />
         <div class="text-right">
           <p class="cuerpo-fuerte text-tinta">{{ user.fullName }}</p>
           <p class="secundario text-tinta-media">{{ roleLabels[user.systemRole] }}</p>
