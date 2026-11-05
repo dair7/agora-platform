@@ -2,7 +2,8 @@ import { ProjectRole, ProjectStatus, SystemRole } from '@prisma/client';
 import type { Project } from '@prisma/client';
 import { AppError } from '../../middlewares/error-handler.js';
 import type { ProjectAccess } from '../../middlewares/project-access.js';
-import { joinProjectRoom, leaveProjectRoom } from '../../sockets/emitter.js';
+import { emitToProject, joinProjectRoom, leaveProjectRoom } from '../../sockets/emitter.js';
+import { findUserByEmail, findUserById } from '../users/users.repository.js';
 import type { UserSummary } from '../users/users.repository.js';
 import * as repository from './projects.repository.js';
 import type { ProjectListRow } from './projects.repository.js';
@@ -78,7 +79,7 @@ export const createProject = async (
   creatorId: string,
   input: CreateProjectInput,
 ): Promise<Project> => {
-  const principalInvestigator = await repository.findUserById(input.principalInvestigatorId);
+  const principalInvestigator = await findUserById(input.principalInvestigatorId);
 
   if (!principalInvestigator || !principalInvestigator.isActive) {
     throw new AppError(404, 'NOT_FOUND', 'El investigador principal indicado no existe');
@@ -149,7 +150,7 @@ export const closeProject = async (access: ProjectAccess): Promise<Project> => {
 export const listMembers = (projectId: string) => repository.findMembers(projectId);
 
 export const addMember = async (access: ProjectAccess, input: AddMemberInput) => {
-  const user = await repository.findUserByEmail(input.email);
+  const user = await findUserByEmail(input.email);
 
   // Una cuenta desactivada se trata como inexistente: distinguirlas revelaría
   // qué correos están registrados, igual que en el inicio de sesión.
@@ -190,6 +191,14 @@ export const removeMember = async (access: ProjectAccess, userId: string): Promi
     throw new AppError(409, 'CONFLICT', 'No se puede quitar al investigador principal');
   }
 
-  await repository.removeMember(access.project.id, userId);
+  // Sus tareas se desasignan, pero el retiro no se bloquea: que alguien salga de
+  // un proyecto es normal, y aquí no se destruye ninguna fila. Esa es la diferencia
+  // con el 409 de borrar una fase con tareas.
+  const unassignedTasks = await repository.removeMember(access.project.id, userId);
+
   leaveProjectRoom(userId, access.project.id);
+
+  if (unassignedTasks > 0) {
+    emitToProject(access.project.id, 'tarea:actualizada', { projectId: access.project.id });
+  }
 };

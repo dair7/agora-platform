@@ -1,10 +1,11 @@
-import { Prisma } from '@prisma/client';
-import type { SystemRole } from '@prisma/client';
+import { Prisma, ProjectRole, ProjectStatus } from '@prisma/client';
+import type { SystemRole, User } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
 
 interface ListFilters {
   role?: SystemRole;
   search?: string;
+  includeInactive: boolean;
 }
 
 /**
@@ -27,15 +28,16 @@ export const userSummarySelect = {
 export type UserSummary = Prisma.UserGetPayload<{ select: typeof userSummarySelect }>;
 
 /**
- * Solo cuentas activas: una desactivada no puede ser investigador principal, y
- * `createProject` la rechazaría igual.
+ * Por defecto solo cuentas activas: una desactivada no puede ser investigador
+ * principal, y `createProject` la rechazaría igual. Las inactivas se piden aparte,
+ * porque la coordinación no puede reactivar a quien no ve.
  *
  * Sin paginación, a propósito: son decenas de cuentas, no miles.
  */
-export const findActiveUsers = (filters: ListFilters): Promise<UserSummary[]> =>
+export const findUsers = (filters: ListFilters): Promise<UserSummary[]> =>
   prisma.user.findMany({
     where: {
-      isActive: true,
+      ...(filters.includeInactive ? {} : { isActive: true }),
       ...(filters.role ? { systemRole: filters.role } : {}),
       ...(filters.search
         ? {
@@ -49,3 +51,42 @@ export const findActiveUsers = (filters: ListFilters): Promise<UserSummary[]> =>
     select: userSummarySelect,
     orderBy: { fullName: 'asc' },
   });
+
+export const findUserByEmail = (email: string): Promise<User | null> =>
+  prisma.user.findUnique({ where: { email } });
+
+export const findUserById = (id: string): Promise<User | null> =>
+  prisma.user.findUnique({ where: { id } });
+
+export const updateUserName = (id: string, fullName: string): Promise<UserSummary> =>
+  prisma.user.update({ where: { id }, data: { fullName }, select: userSummarySelect });
+
+/**
+ * Proyectos que dirige y siguen vivos. Uno cancelado no cuenta: ya nadie trabaja
+ * en él, aunque el backend solo lo trate como cerrado si está `COMPLETED`.
+ */
+export const countLedOpenProjects = (userId: string): Promise<number> =>
+  prisma.projectMember.count({
+    where: {
+      userId,
+      role: ProjectRole.PRINCIPAL_INVESTIGATOR,
+      project: { status: { notIn: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED] } },
+    },
+  });
+
+/**
+ * La baja y la revocación van en la misma transacción: una cuenta desactivada
+ * que sigue pudiendo renovar su token no está desactivada.
+ */
+export const deactivateUser = async (id: string): Promise<void> => {
+  await prisma.$transaction([
+    prisma.user.update({ where: { id }, data: { isActive: false } }),
+    prisma.refreshToken.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+};
+
+export const reactivateUser = (id: string): Promise<UserSummary> =>
+  prisma.user.update({ where: { id }, data: { isActive: true }, select: userSummarySelect });

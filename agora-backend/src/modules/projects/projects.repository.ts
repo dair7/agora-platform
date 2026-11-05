@@ -1,6 +1,7 @@
 import { ConversationType, Prisma, ProjectRole, SystemRole } from '@prisma/client';
-import type { Project, ProjectMember, ProjectStatus, User } from '@prisma/client';
+import type { Project, ProjectMember, ProjectStatus } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
+import { lockSchedule } from '../phases/phases.repository.js';
 import { userSummarySelect } from '../users/users.repository.js';
 
 /** Lo mínimo que hace falta para decidir el alcance. Encaja con `AuthUser`. */
@@ -192,14 +193,6 @@ export const findMemberProjectIds = async (userId: string): Promise<string[]> =>
   return memberships.map((membership) => membership.projectId);
 };
 
-// Pertenece al módulo de usuarios, que todavía no existe. Cuando llegue, esta
-// función se va con él y aquí queda la importación.
-export const findUserByEmail = (email: string): Promise<User | null> =>
-  prisma.user.findUnique({ where: { email } });
-
-export const findUserById = (id: string): Promise<User | null> =>
-  prisma.user.findUnique({ where: { id } });
-
 /**
  * Alta de miembro y de participante del chat en la misma transacción: la
  * conversación del proyecto tiene que reflejar exactamente quién es miembro, o
@@ -229,9 +222,26 @@ export const addMember = (projectId: string, userId: string): Promise<ProjectMem
     return member;
   });
 
-export const removeMember = async (projectId: string, userId: string): Promise<void> => {
-  await prisma.$transaction([
-    prisma.projectMember.delete({ where: { projectId_userId: { projectId, userId } } }),
-    prisma.conversationParticipant.deleteMany({ where: { conversation: { projectId }, userId } }),
-  ]);
-};
+/**
+ * Membresía, participación en el chat y tareas asignadas, en la misma transacción.
+ * Una tarea a nombre de quien ya no es miembro es algo que la pantalla mostraría
+ * como cierto; desasignarla no destruye nada, y se reasigna. Solo las de este
+ * proyecto. Devuelve cuántas tareas quedaron sin responsable.
+ *
+ * Toma el bloqueo del cronograma: sin él, una tarea asignada justo mientras se
+ * retira a esa persona quedaría a su nombre.
+ */
+export const removeMember = (projectId: string, userId: string): Promise<number> =>
+  prisma.$transaction(async (tx) => {
+    await lockSchedule(tx, projectId);
+
+    await tx.projectMember.delete({ where: { projectId_userId: { projectId, userId } } });
+    await tx.conversationParticipant.deleteMany({ where: { conversation: { projectId }, userId } });
+
+    const { count } = await tx.task.updateMany({
+      where: { assigneeId: userId, phase: { projectId } },
+      data: { assigneeId: null },
+    });
+
+    return count;
+  });

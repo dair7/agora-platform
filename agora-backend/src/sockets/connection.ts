@@ -1,4 +1,5 @@
 import { findMemberProjectIds } from '../modules/projects/projects.repository.js';
+import { findUserById } from '../modules/users/users.repository.js';
 import { projectRoom, userRoom } from './events.js';
 import type { AppSocket, SocketData } from './events.js';
 
@@ -64,6 +65,16 @@ export const handleConnection = async (socket: AppSocket): Promise<void> => {
   // es por donde se alcanzan todos los sockets de una persona para sumarla o
   // sacarla de un proyecto sin que se reconecte.
   await socket.join(userRoom(userId));
+
+  // El handshake no consulta la base: una cuenta recién desactivada conserva un
+  // access token válido hasta quince minutos, y el cliente reconecta solo. Sin
+  // esto, volvería a entrar a sus salas y ya nada la sacaría.
+  const user = await findUserById(userId);
+
+  if (!user?.isActive) {
+    socket.disconnect(true);
+    return;
+  }
 
   const projectIds = await findMemberProjectIds(userId);
 
