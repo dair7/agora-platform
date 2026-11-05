@@ -119,8 +119,8 @@ const ids = {
   },
   notifications: {
     tareaAsignada: '0c000000-0000-4000-8000-000000000001',
-    avanceCreado: '0c000000-0000-4000-8000-000000000002',
-    documentoSubido: '0c000000-0000-4000-8000-000000000003',
+    invitacionProyecto: '0c000000-0000-4000-8000-000000000002',
+    tareaEtica: '0c000000-0000-4000-8000-000000000003',
   },
 } as const;
 
@@ -875,6 +875,8 @@ async function seedConversations() {
 // Notificaciones
 // ---------------------------------------------------------------------------
 
+// Solo los dos tipos que el backend genera, con la misma forma que él: `body` es
+// el título del recurso, y `resourceId` apunta a lo que este mismo seed crea antes.
 async function seedNotifications() {
   const notifications = [
     {
@@ -882,30 +884,30 @@ async function seedNotifications() {
       userId: ids.users.andres,
       type: NotificationType.TASK_ASSIGNED,
       title: 'Se te asignó una tarea',
-      body: 'Campaña de muestreo — temporada de lluvias, con fecha límite del 30 de septiembre.',
+      body: 'Campaña de muestreo — temporada de lluvias',
       resourceId: ids.tasks.muestreoLluvias,
       isRead: false,
       readAt: null,
       createdAt: at('2026-08-24T13:00:00.000Z'),
     },
     {
-      id: ids.notifications.avanceCreado,
+      id: ids.notifications.invitacionProyecto,
       userId: ids.users.laura,
-      type: NotificationType.PROGRESS_CREATED,
-      title: 'Nuevo avance registrado',
-      body: 'Sofía Navarro Cabarcas registró un avance en el análisis de laboratorio.',
-      resourceId: ids.progress.laboratorio,
+      type: NotificationType.PROJECT_INVITATION,
+      title: 'Te sumaron a un proyecto',
+      body: 'Metales pesados y bioindicadores en la Ciénaga de la Virgen',
+      resourceId: ids.projects.cienaga,
       isRead: true,
-      readAt: at('2026-08-21T18:02:00.000Z'),
-      createdAt: at('2026-08-21T14:35:00.000Z'),
+      readAt: at('2026-01-20T15:10:00.000Z'),
+      createdAt: at('2026-01-20T14:00:00.000Z'),
     },
     {
-      id: ids.notifications.documentoSubido,
+      id: ids.notifications.tareaEtica,
       userId: ids.users.daniel,
-      type: NotificationType.DOCUMENT_UPLOADED,
-      title: 'Nuevo documento en el proyecto',
-      body: 'Carlos Beltrán Padilla subió propuesta-movilidad-borrador.docx.',
-      resourceId: ids.documents.propuestaMovilidad,
+      type: NotificationType.TASK_ASSIGNED,
+      title: 'Se te asignó una tarea',
+      body: 'Radicar el aval del comité de ética',
+      resourceId: ids.tasks.avalEtica,
       isRead: false,
       readAt: null,
       createdAt: at('2026-09-04T20:20:00.000Z'),
