@@ -369,6 +369,21 @@ async function seedSchedule() {
     },
   ];
 
+  // Libera las posiciones antes de escribirlas: tras un PUT /orden, una fase del
+  // seed puede ocupar el sitio de otra, y el índice único (project_id, position)
+  // no es diferible, así que el upsert chocaría. Desplazar por el máximo no choca
+  // con nada, y una fase creada a mano queda detrás de las del seed.
+  const seededProjects = { projectId: { in: Object.values(ids.projects) } };
+  const { _max } = await prisma.phase.aggregate({
+    where: seededProjects,
+    _max: { position: true },
+  });
+
+  await prisma.phase.updateMany({
+    where: seededProjects,
+    data: { position: { increment: _max.position ?? 0 } },
+  });
+
   for (const phase of phases) {
     await prisma.phase.upsert({
       where: { id: phase.id },
