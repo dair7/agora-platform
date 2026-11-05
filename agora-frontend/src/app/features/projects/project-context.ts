@@ -1,6 +1,7 @@
 import { DestroyRef, computed, inject, resource } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import type { Observable } from 'rxjs';
 import { apiErrorCode, apiErrorOutcome } from '../../core/api/api-error';
 import { ProjectsApi } from '../../core/api/projects.api';
 import { RealtimeService } from '../../core/realtime/realtime.service';
@@ -57,10 +58,31 @@ export const injectProjectContext = () => {
     () => view()?.members.some((member) => member.user.id === userId()) ?? false,
   );
 
-  return { projectId, userId, project, view, notFound, errorMessage, canManage, isMember };
+  /** Escribir lo propio: registrar avances y subir documentos. En un cierre, nadie. */
+  const canContribute = computed(() => isMember() && view()?.status !== 'COMPLETED');
+
+  return {
+    projectId,
+    userId,
+    project,
+    view,
+    notFound,
+    errorMessage,
+    canManage,
+    isMember,
+    canContribute,
+  };
 };
 
 export type ProjectContext = ReturnType<typeof injectProjectContext>;
+
+/** Lo que una pantalla vuelve a pedir. Solo dice lo que muestra. */
+export interface LiveRefresh {
+  schedule?: () => void;
+  tasks?: () => void;
+  progress?: () => void;
+  documents?: () => void;
+}
 
 /**
  * Vuelve a pedir lo que muestra la pantalla cuando llega un evento de este proyecto, y
@@ -69,25 +91,23 @@ export type ProjectContext = ReturnType<typeof injectProjectContext>;
  * A la coordinación no le llega ninguno, y es una decisión: en las salas de proyecto, la
  * presencia la anunciaría en proyectos de los que no es miembro. Su vista es una foto.
  */
-export const refreshOnLiveEvents = (
-  context: ProjectContext,
-  refresh: { schedule: () => void; tasks: () => void },
-): void => {
+export const refreshOnLiveEvents = (context: ProjectContext, refresh: LiveRefresh): void => {
   const realtime = inject(RealtimeService);
   const destroyRef = inject(DestroyRef);
   let lostConnection = false;
 
-  realtime.scheduleChanged.pipe(takeUntilDestroyed(destroyRef)).subscribe((projectId) => {
-    if (projectId === context.projectId()) {
-      refresh.schedule();
-    }
-  });
+  const follow = (changes: Observable<string>, run?: () => void): void => {
+    changes.pipe(takeUntilDestroyed(destroyRef)).subscribe((projectId) => {
+      if (projectId === context.projectId()) {
+        run?.();
+      }
+    });
+  };
 
-  realtime.tasksChanged.pipe(takeUntilDestroyed(destroyRef)).subscribe((projectId) => {
-    if (projectId === context.projectId()) {
-      refresh.tasks();
-    }
-  });
+  follow(realtime.scheduleChanged, refresh.schedule);
+  follow(realtime.tasksChanged, refresh.tasks);
+  follow(realtime.progressChanged, refresh.progress);
+  follow(realtime.documentsChanged, refresh.documents);
 
   realtime.disconnected.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
     lostConnection = true;
@@ -96,8 +116,10 @@ export const refreshOnLiveEvents = (
   realtime.connected.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
     if (lostConnection) {
       lostConnection = false;
-      refresh.schedule();
-      refresh.tasks();
+      refresh.schedule?.();
+      refresh.tasks?.();
+      refresh.progress?.();
+      refresh.documents?.();
     }
   });
 };

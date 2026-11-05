@@ -204,6 +204,9 @@ export class ProjectTasks {
     refreshOnLiveEvents(this.ctx, {
       schedule: () => void this.phases.refresh(),
       tasks: () => void this.tasks.refresh(),
+      // Las cifras del aviso de borrar cuentan avances y documentos.
+      progress: () => void this.tasks.refresh(),
+      documents: () => void this.tasks.refresh(),
     });
   }
 

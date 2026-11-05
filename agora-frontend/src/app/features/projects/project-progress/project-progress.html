@@ -1,0 +1,146 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="loading() || null">
+  @if (ctx.notFound()) {
+    <app-empty title="Este proyecto no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
+    </app-empty>
+  } @else if (ctx.errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button
+        appButton
+        variant="secondary"
+        type="button"
+        noticeAction
+        (click)="ctx.project.reload()"
+      >
+        Reintentar
+      </button>
+    </app-notice>
+  } @else if (ctx.view(); as project) {
+    <app-project-header [project]="project" />
+    <app-project-tabs [projectId]="project.id" [isMember]="ctx.isMember()" />
+
+    <section aria-labelledby="avances-titulo" class="grid gap-espacio-4">
+      <div class="flex flex-wrap items-center justify-between gap-espacio-3">
+        <h2 id="avances-titulo" class="titulo-seccion text-tinta">Avances</h2>
+        <!-- Con el formulario abierto, la acción primaria es la suya. -->
+        @if (ctx.canContribute() && !form()) {
+          <button appButton type="button" (click)="openCreate()">Registrar avance</button>
+        }
+      </div>
+
+      @if (notice(); as notice) {
+        <app-notice [tone]="notice.tone">{{ notice.message }}</app-notice>
+      }
+
+      @if (form(); as form) {
+        <app-progress-form
+          [entry]="form.entry"
+          [tasks]="taskOptions()"
+          [busy]="saving()"
+          [failure]="failure()"
+          (created)="create($event)"
+          (updated)="update($event)"
+          (cancelled)="closeForm()"
+        />
+      }
+
+      @if (listError(); as message) {
+        <!-- Lo que ya estaba cargado se queda: un fallo de red no borra la pantalla. -->
+        <app-notice tone="error">
+          {{ message }}
+          <button
+            appButton
+            variant="secondary"
+            type="button"
+            noticeAction
+            (click)="entries.refresh()"
+          >
+            Reintentar
+          </button>
+        </app-notice>
+      }
+
+      @if (entries.loading()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2, 3]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      } @else if (entries.items()?.length === 0) {
+        <app-empty
+          title="Este proyecto todavía no tiene avances"
+          [description]="
+            ctx.canContribute()
+              ? 'Registra el primero: una tarea que avanzó, una reunión o un imprevisto.'
+              : undefined
+          "
+        />
+      } @else if (entries.items()) {
+        <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of rows(); track row.entry.id) {
+            <li class="flex items-start justify-between gap-espacio-3 px-espacio-4 py-espacio-3">
+              <div class="flex items-start gap-espacio-2">
+                <app-avatar [name]="row.entry.author.fullName" />
+                <div class="grid gap-espacio-1 wrap-anywhere">
+                  <h3 class="cuerpo-fuerte text-tinta">{{ row.entry.author.fullName }}</h3>
+                  <p class="secundario text-tinta-media">
+                    <span class="tabular-nums">{{ row.moment }}</span>
+                    @if (row.task; as task) {
+                      · Tarea: {{ task }}
+                    }
+                  </p>
+                  <p class="cuerpo text-tinta whitespace-pre-line">{{ row.entry.description }}</p>
+                </div>
+              </div>
+
+              @if (row.canEdit || row.canDelete) {
+                <div class="flex flex-wrap justify-end gap-x-espacio-1 gap-y-espacio-2 shrink-0">
+                  @if (row.canEdit) {
+                    <button appButton variant="subtle" type="button" (click)="openEdit(row.entry)">
+                      Editar<span class="sr-only">: avance de {{ row.moment }}</span>
+                    </button>
+                  }
+                  @if (row.canDelete) {
+                    <button
+                      appButton
+                      variant="subtle-destructive"
+                      type="button"
+                      (click)="askToDelete(row.entry, deleteDialog)"
+                    >
+                      Borrar<span class="sr-only">: avance de {{ row.moment }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  } @else {
+    <div class="grid gap-espacio-2">
+      <app-skeleton width="espacio-8" class="cuerpo-fuerte" />
+      <app-skeleton class="titulo-pagina" />
+    </div>
+  }
+</main>
+
+<app-dialog
+  #deleteDialog
+  title="¿Borrar este avance?"
+  confirmLabel="Borrar avance"
+  busyLabel="Borrando avance…"
+  confirmVariant="destructive"
+  [busy]="deleting()"
+  (confirmed)="delete(deleteDialog)"
+>
+  Desaparece del historial del proyecto y no se puede recuperar.
+</app-dialog>
