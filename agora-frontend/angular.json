@@ -29,6 +29,9 @@
           },
           "configurations": {
             "production": {
+              "define": {
+                "AGORA_API_URL": "''"
+              },
               "budgets": [
                 {
                   "type": "initial",
