@@ -19,6 +19,7 @@ import { Empty } from '../../../shared/ui/empty/empty';
 import { FieldSelect } from '../../../shared/ui/field/field';
 import { Notice, type NoticeTone } from '../../../shared/ui/notice/notice';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { TaskPriorityPill } from '../../../shared/ui/task-priority/task-priority';
 import { WorkStatusPill, workStatusLabel } from '../../../shared/ui/work-status/work-status';
 import { LiveList } from '../live-list';
 import { injectProjectContext, refreshOnLiveEvents } from '../project-context';
@@ -30,12 +31,6 @@ interface ScreenNotice {
   message: string;
   tone: NoticeTone;
 }
-
-const PRIORITY_LABELS: Record<TaskPriority, string> = {
-  LOW: 'Prioridad baja',
-  MEDIUM: 'Prioridad media',
-  HIGH: 'Prioridad alta',
-};
 
 const STATUS_OPTIONS = (['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'BLOCKED', 'DONE'] as const).map(
   (value) => ({ value, label: workStatusLabel(value) }),
@@ -70,16 +65,17 @@ const count = (value: number, one: string, many: string): string =>
     RouterLink,
     Skeleton,
     TaskForm,
+    TaskPriorityPill,
     WorkStatusPill,
   ],
   templateUrl: './project-tasks.html',
+  styleUrl: './project-tasks.css',
 })
 export class ProjectTasks {
   readonly #api = inject(TasksApi);
   readonly #phasesApi = inject(PhasesApi);
 
   protected readonly ctx = injectProjectContext();
-  protected readonly priorityLabels = PRIORITY_LABELS;
   protected readonly statusOptions = STATUS_OPTIONS;
 
   protected readonly tasks = new LiveList<Task>(() => this.#api.list(this.ctx.projectId()));

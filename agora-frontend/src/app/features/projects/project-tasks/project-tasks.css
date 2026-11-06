@@ -1,0 +1,8 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin token». */
+
+/* La columna del contenido cede y la de las acciones no: sin esto, un título largo no deja
+   encoger la columna y empuja las acciones fuera de su sitio. `min-w-0` no genera CSS con
+   este tema. */
+.tarea-contenido {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}

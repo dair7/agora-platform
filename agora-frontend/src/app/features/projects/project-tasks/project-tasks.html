@@ -115,28 +115,39 @@
               >
                 @for (row of group.tasks; track row.task.id) {
                   <li class="grid gap-espacio-2 px-espacio-4 py-espacio-3">
-                    <div class="flex flex-wrap items-start justify-between gap-espacio-3">
-                      <div class="grid gap-espacio-1">
-                        <div class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
-                          <h4 class="cuerpo-fuerte text-tinta">{{ row.task.title }}</h4>
-                          @if (!canChangeStatus(row.task)) {
-                            <app-work-status [status]="row.task.status" />
-                          }
-                        </div>
+                    <!-- Una sola disposición para todas las filas: el contenido a la izquierda, en una
+                         columna que cede, y las acciones a la derecha, en una que no envuelve ni
+                         se encoge. Por debajo de `md`, las acciones van debajo. -->
+                    <div
+                      class="flex flex-col gap-espacio-3 md:flex-row md:items-start md:justify-between"
+                    >
+                      <div class="tarea-contenido grid grid-cols-1 gap-espacio-1 md:flex-1">
+                        <h4 class="cuerpo-fuerte text-tinta wrap-anywhere">{{ row.task.title }}</h4>
+                        <!-- El estado y la prioridad se leen de un vistazo. Con el desplegable a
+                             la vista, la píldora del estado repite lo que él ya dice: se esconde
+                             del lector, que lo oye una vez. -->
+                        <p class="flex flex-wrap items-center gap-espacio-2">
+                          <app-work-status
+                            [status]="row.task.status"
+                            [attr.aria-hidden]="canChangeStatus(row.task) || null"
+                          />
+                          <app-task-priority [priority]="row.task.priority" />
+                        </p>
                         @if (row.task.description; as description) {
-                          <p class="secundario text-tinta-media whitespace-pre-line">
+                          <p class="secundario text-tinta-media whitespace-pre-line wrap-anywhere">
                             {{ description }}
                           </p>
                         }
-                        <p class="secundario text-tinta-media">
+                        <p class="secundario text-tinta-media wrap-anywhere">
                           {{ row.task.assignee?.fullName ?? 'Sin responsable' }}
                           ·
                           <span class="tabular-nums">{{ row.period || 'Sin fechas' }}</span>
-                          · {{ priorityLabels[row.task.priority] }}
                         </p>
-                        <p class="secundario text-tinta-media">
+                        <!-- Aparte de los datos de arriba: es otra cosa, y pegada se leía como
+                             parte de ellos. -->
+                        <p class="secundario text-tinta-media wrap-anywhere mt-espacio-2">
                           @if (row.dependencies.length > 0) {
-                            Depende de:
+                            <span class="etiqueta text-tinta">Depende de</span>
                             @for (dependency of row.dependencies; track dependency.id) {
                               {{ dependency.title }}{{ $last ? '' : ' · ' }}
                             }
@@ -146,7 +157,9 @@
                         </p>
                       </div>
 
-                      <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                      <div
+                        class="flex flex-col items-start gap-espacio-2 md:shrink-0 md:flex-row md:flex-nowrap md:items-center md:gap-espacio-1"
+                      >
                         @if (canChangeStatus(row.task)) {
                           <div>
                             <select
@@ -166,31 +179,35 @@
                           </div>
                         }
                         @if (ctx.canManage()) {
-                          <button
-                            appButton
-                            variant="subtle"
-                            type="button"
-                            [attr.aria-expanded]="dependenciesOf() === row.task.id"
-                            (click)="toggleDependencies(row.task)"
+                          <div
+                            class="flex flex-wrap items-center max-md:-ml-espacio-4 md:flex-nowrap md:gap-x-espacio-1"
                           >
-                            Dependencias<span class="sr-only">: {{ row.task.title }}</span>
-                          </button>
-                          <button
-                            appButton
-                            variant="subtle"
-                            type="button"
-                            (click)="openEdit(row.task)"
-                          >
-                            Editar<span class="sr-only">: {{ row.task.title }}</span>
-                          </button>
-                          <button
-                            appButton
-                            variant="subtle-destructive"
-                            type="button"
-                            (click)="askToDelete(row.task, deleteDialog)"
-                          >
-                            Borrar<span class="sr-only">: {{ row.task.title }}</span>
-                          </button>
+                            <button
+                              appButton
+                              variant="subtle"
+                              type="button"
+                              [attr.aria-expanded]="dependenciesOf() === row.task.id"
+                              (click)="toggleDependencies(row.task)"
+                            >
+                              Dependencias<span class="sr-only">: {{ row.task.title }}</span>
+                            </button>
+                            <button
+                              appButton
+                              variant="subtle"
+                              type="button"
+                              (click)="openEdit(row.task)"
+                            >
+                              Editar<span class="sr-only">: {{ row.task.title }}</span>
+                            </button>
+                            <button
+                              appButton
+                              variant="subtle-destructive"
+                              type="button"
+                              (click)="askToDelete(row.task, deleteDialog)"
+                            >
+                              Borrar<span class="sr-only">: {{ row.task.title }}</span>
+                            </button>
+                          </div>
                         }
                       </div>
                     </div>
