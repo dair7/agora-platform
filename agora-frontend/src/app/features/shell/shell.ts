@@ -86,6 +86,10 @@ export class Shell {
     inject(DestroyRef).onDestroy(() => this.#wideQuery.removeEventListener('change', onChange));
   }
 
+  protected readonly isCoordinator = computed(
+    () => this.session.user()?.systemRole === 'COORDINATOR',
+  );
+
   /** El aviso de reconexión no promete lo que no hay: solo en el chat se puede escribir. */
   protected readonly canWrite = computed(() => this.#url().endsWith('/conversacion'));
 

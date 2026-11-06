@@ -4,7 +4,7 @@ import { authGuard, guestGuard, roleGuard } from './core/session/auth.guards';
 // Rutas en español, como las de la API: es lo que ve la persona en la barra de
 // direcciones. Cada pantalla se carga diferida, solo cuando se visita.
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'proyectos' },
+  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
   {
     path: 'entrar',
     title: 'Iniciar sesión · Ágora',
@@ -96,8 +96,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-chat/project-chat').then((m) => m.ProjectChat),
       },
-      // Pantalla provisional de la fase 3. La reemplaza el inicio por rol de la
-      // fase 13; hasta entonces se queda, aunque la raíz ya no lleve aquí.
+      // Donde se aterriza: distinto para cada rol.
       {
         path: 'inicio',
         title: 'Inicio · Ágora',
@@ -112,5 +111,5 @@ export const routes: Routes = [
     ],
   },
   // Hasta que exista la pantalla de "no encontrado".
-  { path: '**', redirectTo: 'proyectos' },
+  { path: '**', redirectTo: 'inicio' },
 ];

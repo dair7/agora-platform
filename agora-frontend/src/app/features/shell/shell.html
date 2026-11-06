@@ -1,14 +1,47 @@
 @if (wide()) {
   <header class="bg-superficie-00 border-b border-borde">
     <div
-      class="armazon-ancho relative mx-auto flex flex-wrap items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
+      class="armazon-ancho relative mx-auto flex items-center justify-between gap-espacio-2 lg:gap-espacio-4 py-espacio-3 px-espacio-5"
     >
-      <a routerLink="/proyectos" class="titulo-seccion text-tinta">Ágora</a>
+      <div class="flex shrink-0 items-center gap-espacio-2 lg:gap-espacio-4">
+        <a routerLink="/inicio" class="titulo-seccion text-tinta">Ágora</a>
+        <nav aria-label="Principal" class="flex gap-espacio-1">
+          <a
+            appButton
+            variant="subtle"
+            class="px-espacio-3! max-lg:px-espacio-2!"
+            routerLink="/inicio"
+            routerLinkActive="bg-veril-tenue text-tinta!"
+            ariaCurrentWhenActive="page"
+            >Inicio</a
+          >
+          <a
+            appButton
+            variant="subtle"
+            class="px-espacio-3! max-lg:px-espacio-2!"
+            routerLink="/proyectos"
+            routerLinkActive="bg-veril-tenue text-tinta!"
+            ariaCurrentWhenActive="page"
+            >Proyectos</a
+          >
+          @if (isCoordinator()) {
+            <a
+              appButton
+              variant="subtle"
+              class="px-espacio-3! max-lg:px-espacio-2!"
+              routerLink="/reportes"
+              routerLinkActive="bg-veril-tenue text-tinta!"
+              ariaCurrentWhenActive="page"
+              >Reportes</a
+            >
+          }
+        </nav>
+      </div>
 
       @if (session.user(); as user) {
-        <div class="flex flex-wrap items-center justify-end gap-x-espacio-4 gap-y-espacio-1">
+        <div class="armazon-persona flex items-center justify-end gap-espacio-2 lg:gap-espacio-4">
           <app-notification-inbox />
-          <div class="text-right">
+          <div class="armazon-persona text-right">
             <p class="cuerpo-fuerte text-tinta">{{ user.fullName }}</p>
             <p class="secundario text-tinta-media">{{ roleLabels[user.systemRole] }}</p>
           </div>
@@ -16,7 +49,7 @@
             appButton
             variant="subtle"
             type="button"
-            class="shrink-0"
+            class="shrink-0 max-lg:px-espacio-2!"
             [disabled]="leaving()"
             (click)="logout()"
           >
@@ -55,7 +88,16 @@
     <a
       appButton
       variant="subtle"
-      class="flex-auto text-center px-espacio-2! whitespace-nowrap"
+      class="etiqueta flex-auto text-center px-espacio-1! whitespace-nowrap"
+      routerLink="/inicio"
+      routerLinkActive="bg-veril-tenue text-tinta!"
+      ariaCurrentWhenActive="page"
+      >Inicio</a
+    >
+    <a
+      appButton
+      variant="subtle"
+      class="etiqueta flex-auto text-center px-espacio-1! whitespace-nowrap"
       routerLink="/proyectos"
       routerLinkActive="bg-veril-tenue text-tinta!"
       ariaCurrentWhenActive="page"
