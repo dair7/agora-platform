@@ -1,6 +1,7 @@
-import { Prisma, ProjectRole, ProjectStatus } from '@prisma/client';
+import { Prisma, ProjectRole } from '@prisma/client';
 import type { SystemRole, User } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
+import { CLOSED_PROJECT_STATUSES } from '../projects/projects.status.js';
 
 interface ListFilters {
   role?: SystemRole;
@@ -70,7 +71,7 @@ export const countLedOpenProjects = (userId: string): Promise<number> =>
     where: {
       userId,
       role: ProjectRole.PRINCIPAL_INVESTIGATOR,
-      project: { status: { notIn: [ProjectStatus.COMPLETED, ProjectStatus.CANCELLED] } },
+      project: { status: { notIn: CLOSED_PROJECT_STATUSES } },
     },
   });
 
