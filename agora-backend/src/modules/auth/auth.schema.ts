@@ -15,7 +15,7 @@ const email = z
 
 // bcrypt trunca a 72 bytes en silencio. El máximo es explícito para que una
 // contraseña más larga se rechace en vez de recortarse sin que nadie se entere.
-const password = z
+export const passwordSchema = z
   .string()
   .min(8, 'La contraseña debe tener al menos 8 caracteres')
   .max(72, 'La contraseña no puede superar 72 caracteres');
@@ -24,7 +24,7 @@ const password = z
 // puede colarse por el cuerpo de la petición.
 export const registerSchema = z.object({
   email,
-  password,
+  password: passwordSchema,
   fullName: z
     .string()
     .trim()
