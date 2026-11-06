@@ -18,10 +18,15 @@ import { ReportSummary } from '../../reports/report-summary/report-summary';
     <main class="grid gap-espacio-5" [attr.aria-busy]="summary.status() === 'loading' || null">
       <div class="flex flex-wrap items-start justify-between gap-espacio-4">
         <h1 class="titulo-pagina text-tinta">Inicio</h1>
-        <!-- En la barra inferior no cabe un sexto destino: los reportes se abren desde aquí. -->
-        @if (!noProjects()) {
-          <a appButton routerLink="/reportes">Ver reportes</a>
-        }
+        <!-- En la barra inferior no cabe un sexto destino: los reportes y las cuentas se abren
+             desde aquí. Cuentas se ofrece siempre, también sin proyectos: crear a la primera
+             persona es lo que viene antes de crear el primer proyecto. -->
+        <div class="flex flex-wrap items-center gap-espacio-3">
+          @if (!noProjects()) {
+            <a appButton routerLink="/reportes">Ver reportes</a>
+          }
+          <a appButton variant="secondary" routerLink="/cuentas">Cuentas</a>
+        </div>
       </div>
 
       @if (errorMessage(); as message) {
