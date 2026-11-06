@@ -4,7 +4,7 @@ Collaborative web platform for managing university research projects across thei
 
 Academic project for the *Programación Distribuida* course, Universidad de Cartagena, 2026-2.
 
-> **Status — Delivery 2 (backend and basic real-time communication).** This README documents the backend setup. The Angular client arrives in Delivery 3.
+> **Status — backend and web client complete and deployed:** the backend on Render, the client on Vercel, PostgreSQL 16, and files on Supabase. Still pending: private chats and automated backend tests. This README documents the backend; the client has its own, in [`agora-frontend/README.md`](agora-frontend/README.md).
 
 ## Contents
 
@@ -27,9 +27,9 @@ Academic project for the *Programación Distribuida* course, Universidad de Cart
 
 Three-tier client-server architecture:
 
-- **Presentation:** Angular SPA (Delivery 3). For now, a minimal HTML client in `docs/demo/`.
+- **Presentation:** Angular SPA in `agora-frontend/`. `docs/demo/` keeps a minimal HTML client for checking connectivity.
 - **Business logic:** Node.js + Express server, organised as a modular monolith. Each domain module (`auth`, `projects`, `chat`, …) has its own routes, controller, service, repository and validation schemas. Socket.io runs on the same HTTP server.
-- **Data:** PostgreSQL for structured data. File attachments will live in a separate file store; only their metadata goes into the database.
+- **Data:** PostgreSQL for structured data. File attachments live in a separate file store; only their metadata goes into the database.
 
 Communication runs over two channels, and they follow one rule: **every change goes through REST and is persisted first. Only after the write succeeds does the server emit the matching WebSocket event.** Clients never write through the socket; they only listen.
 
@@ -198,7 +198,7 @@ Local ports:
 | --- | --- |
 | 3000 | Backend (REST, Socket.io and the demo client) |
 | 5433 | PostgreSQL in Docker |
-| 4200 | Angular dev server (Delivery 3) |
+| 4200 | Angular dev server |
 | 5555 | Prisma Studio (`pnpm --filter agora-backend exec prisma studio`) |
 
 ## Seed accounts
@@ -562,7 +562,7 @@ Required variables: `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, `CORS_O
 
 Set **Root Directory** to `agora-frontend`. Everything else is in `agora-frontend/vercel.json`, including the rewrite that lets the single-page application answer on any route.
 
-The only variable is `API_URL`, the full URL of the API, such as `https://your-backend.onrender.com/api/v1`. **It is fixed at build time:** after changing it, deploy again. The build fails if it is missing, is not `https`, or does not end in `/api/v1`. A plain `pnpm build` does not read it and leaves the URL empty, so that output is not deployable.
+The only variable is `API_URL`, the full URL of the API, such as `https://your-backend.example.com/api/v1`. **It is fixed at build time:** after changing it, deploy again. The build fails if it is missing, is not `https`, or does not end in `/api/v1`. A plain `pnpm build` does not read it and leaves the URL empty, so that output is not deployable.
 
 ### Seeding production
 
