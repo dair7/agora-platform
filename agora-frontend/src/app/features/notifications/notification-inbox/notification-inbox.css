@@ -5,3 +5,25 @@
   max-height: min(60vh, 480px); /* sin token */
   overflow-y: auto;
 }
+
+/* El mismo panel, a pantalla completa. Las utilidades van en una capa: esto les gana. */
+@media (width < 48rem) {
+  .bandeja-panel {
+    position: fixed;
+    inset: 0; /* sin token: pegado a los cuatro bordes de la pantalla */
+    width: auto;
+    max-width: none;
+    margin: 0; /* sin token: pegado a los bordes */
+    border: 0; /* sin token: sin nada alrededor, el borde no separa de nada */
+    border-radius: 0; /* sin token: es la pantalla, no una tarjeta */
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Quien se desplaza es el panel entero, con su cabecera. */
+  .bandeja-lista {
+    max-height: none;
+    overflow-y: visible;
+  }
+}

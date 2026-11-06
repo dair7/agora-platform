@@ -4,8 +4,23 @@
    lleva un valor marcado con «sin token». Lo que sí es token va en la plantilla
    como utilidad. */
 
+/* Alto de pantalla como mínimo, para que en una pantalla corta la barra inferior siga
+   abajo. Es mecánica de la maquetación, no un valor de diseño. */
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh; /* sin token: mecánica, el alto de la pantalla */
+}
+
 /* El ancho del contenido, el mismo en la barra y en la pantalla para que el
    «Ágora» y el título de la pantalla queden alineados. */
 .armazon-ancho {
   max-width: 1040px; /* sin token */
+}
+
+/* `sticky` y no `fixed`: ocupa su sitio, así que el contenido no necesita un relleno que
+   adivine el alto de la barra. `bottom-0` no genera CSS con este tema. */
+.barra-inferior {
+  position: sticky;
+  bottom: 0; /* sin token: pegada al borde, y `bottom-0` no genera CSS */
 }

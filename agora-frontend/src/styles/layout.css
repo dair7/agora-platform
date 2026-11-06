@@ -1,0 +1,7 @@
+/* Lo único que no cabe en un componente: el desplazamiento es del documento. */
+
+/* La barra inferior tapa lo que queda detrás, y el foco no se puede quedar ahí: al tabular,
+   el navegador se detiene antes. Escondida mientras se escribe, no hace falta. */
+html:has(.barra-inferior:not(.hidden)) {
+  scroll-padding-bottom: 72px; /* sin token: el alto de la barra, 58px, y un respiro */
+}
