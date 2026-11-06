@@ -59,7 +59,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat, notifications (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat, notifications, reports (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── storage/         # file storage: one port, Supabase and local disk behind it
@@ -389,6 +389,23 @@ Downloads always go through the backend. There are no signed URLs: access is che
 A notification is `{ id, type, title, body, resourceId, projectId, isRead, readAt, createdAt }`. Somebody else's notification returns `404`. Only two facts create one, both caused by someone else and aimed at one person: being added to a project (`PROJECT_INVITATION`, `resourceId` is the project), which includes being named principal investigator of a new project, and being assigned a task (`TASK_ASSIGNED`, `resourceId` is the task). Doing either to yourself creates none. Everything else already travels as a project room event.
 
 `projectId` is resolved on every response, so a notification can link to its project: there is no route to a task without one. It is `null` when the target can no longer be reached, because the task was deleted or the person left the project. The notification stays in the list either way, and a client should simply not offer the link.
+
+**Reports** — aggregates, all computed in the database
+
+| Method | Route | Who | Query | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/reportes/resumen` | Coordination | — | `200 { summary }` |
+| `GET` | `/reportes/proyectos` | Coordination | `?pagina=1&porPagina=20` (1–100) | `200 { items, total, page, perPage }`, most overdue first |
+| `GET` | `/proyectos/:projectId/cifras` | Any member, or coordination | — | `200 { figures }` |
+| `GET` | `/mis-tareas` | Research accounts, their own | `?limite=50` (1–100) | `200 { tasks, total, overdueCount }`, overdue first |
+
+`figures`, and `tasks` in the first two, are `{ total, completed, completedPercent, overdue }`. `summary` is `{ projects: { total, byStatus }, tasks }`, and `byStatus` always has the five statuses.
+
+- **Completed:** finished tasks over all the tasks of the project. A project with no tasks has `completedPercent: null`, not `0`. It is not called progress on purpose: progress entries are texts, and this figure does not measure them.
+- **Overdue:** a task with a due date before today that is not finished, in an open project. Tasks only: phases and projects do not count. A project that is `COMPLETED` or `CANCELLED` has no overdue tasks: nothing is left to do there. `ON_HOLD` does count: a pause is temporary, and a date that passed has passed.
+- **Today** is computed in Colombia's time zone (`America/Bogota`), not in UTC. Due dates are `date` columns, and in UTC a task due today would show as overdue from 7 p.m.
+
+`/mis-tareas` lists the caller's unfinished tasks across all their open projects. Each one is `{ id, title, status, priority, dueDate, overdue, phase, project }`, and `total` and `overdueCount` count them all, even beyond `limite`. Coordination gets `403`: it belongs to no project, so it has no tasks. A research account gets `403` on `/reportes`, and `404` on the figures of a project it is not a member of.
 
 ### Access rules
 
