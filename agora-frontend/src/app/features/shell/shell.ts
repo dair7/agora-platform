@@ -7,6 +7,7 @@ import { RealtimeService } from '../../core/realtime/realtime.service';
 import { SessionService } from '../../core/session/session.service';
 import type { SystemRole } from '../../core/session/session.types';
 import { Button } from '../../shared/ui/button/button';
+import { Icon } from '../../shared/ui/icon/icon';
 import { Notice } from '../../shared/ui/notice/notice';
 import { UnreadBadge } from '../../shared/ui/unread-badge/unread-badge';
 import { NotificationInbox } from '../notifications/notification-inbox/notification-inbox';
@@ -45,6 +46,7 @@ const TEXT_ENTRY = 'textarea, input:not([type=checkbox], [type=radio], [type=fil
     RouterOutlet,
     AccountMenu,
     Button,
+    Icon,
     Notice,
     NotificationInbox,
     UnreadBadge,

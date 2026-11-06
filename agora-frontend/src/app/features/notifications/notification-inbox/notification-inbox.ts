@@ -19,6 +19,7 @@ import { formatMoment } from '../../../core/format/message-dates';
 import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { Button } from '../../../shared/ui/button/button';
 import { Empty } from '../../../shared/ui/empty/empty';
+import { Icon } from '../../../shared/ui/icon/icon';
 import { Notice } from '../../../shared/ui/notice/notice';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { UnreadBadge } from '../../../shared/ui/unread-badge/unread-badge';
@@ -53,7 +54,7 @@ const linkOf = ({ type, projectId }: AppNotification): readonly string[] | null 
  */
 @Component({
   selector: 'app-notification-inbox',
-  imports: [Button, Empty, Notice, RouterLink, Skeleton, UnreadBadge],
+  imports: [Button, Empty, Icon, Notice, RouterLink, Skeleton, UnreadBadge],
   templateUrl: './notification-inbox.html',
   styleUrl: './notification-inbox.css',
   host: {
