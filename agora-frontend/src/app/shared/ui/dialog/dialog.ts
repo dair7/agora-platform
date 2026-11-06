@@ -32,9 +32,11 @@ let nextId = 0;
       <h2 class="titulo-seccion" [id]="titleId">{{ title() }}</h2>
       <div class="cuerpo mt-espacio-2"><ng-content /></div>
       <div class="flex flex-wrap justify-end gap-espacio-3 mt-espacio-5">
-        <button appButton variant="secondary" type="button" [disabled]="busy()" (click)="close()">
-          Cancelar
-        </button>
+        @if (showCancel()) {
+          <button appButton variant="secondary" type="button" [disabled]="busy()" (click)="close()">
+            Cancelar
+          </button>
+        }
         <button
           appButton
           type="button"
@@ -64,9 +66,18 @@ export class Dialog {
   readonly busy = input(false);
   /** Falta algo dentro del diálogo, como elegir una persona. */
   readonly confirmDisabled = input(false);
+  /** Un diálogo que solo informa, como el de una contraseña generada, no tiene qué cancelar. */
+  readonly showCancel = input(true);
 
   /** Se pulsó confirmar. Quien lo usa ejecuta la acción y llama a `close()` al terminar. */
   readonly confirmed = output<void>();
+
+  /**
+   * Se cerró, por el botón, por Escape o por la acción. Quien guarda algo que no debe
+   * sobrevivir al diálogo —una contraseña generada— lo borra aquí, y así no depende de
+   * por cuál de las vías se cerró.
+   */
+  readonly closed = output<void>();
 
   protected readonly titleId = `dialogo-${nextId++}`;
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
@@ -89,6 +100,8 @@ export class Dialog {
   }
 
   protected onClose(): void {
+    this.closed.emit();
+
     if (this.#opener?.isConnected) {
       this.#opener.focus();
     }
