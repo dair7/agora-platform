@@ -1,28 +1,24 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
 import { SessionService } from '../../core/session/session.service';
-import type { SystemRole } from '../../core/session/session.types';
-import { Button } from '../../shared/ui/button/button';
+import { CoordinationHome } from './coordination-home/coordination-home';
+import { ResearcherHome } from './researcher-home/researcher-home';
 
-const ROLE_LABELS: Record<SystemRole, string> = {
-  COORDINATOR: 'Coordinación de investigación',
-  RESEARCHER: 'Investigación',
-};
-
+/** Donde se aterriza al entrar. Es distinto para cada rol: cada uno viene a algo distinto. */
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, Button],
-  templateUrl: './home.html',
+  imports: [CoordinationHome, ResearcherHome],
+  template: `
+    @if (isCoordinator()) {
+      <app-coordination-home />
+    } @else {
+      <app-researcher-home />
+    }
+  `,
 })
 export class Home {
-  readonly #router = inject(Router);
-  protected readonly session = inject(SessionService);
-  protected readonly roleLabels = ROLE_LABELS;
-  protected readonly leaving = signal(false);
+  readonly #session = inject(SessionService);
 
-  protected async logout(): Promise<void> {
-    this.leaving.set(true);
-    await this.session.logout();
-    await this.#router.navigateByUrl('/entrar');
-  }
+  protected readonly isCoordinator = computed(
+    () => this.#session.user()?.systemRole === 'COORDINATOR',
+  );
 }
