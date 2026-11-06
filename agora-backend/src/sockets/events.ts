@@ -38,13 +38,15 @@ export interface SocketData {
 }
 
 /**
- * Mismo objeto que devuelve `POST /proyectos/:projectId/mensajes`, más el
- * proyecto: el frontend maneja un solo tipo de mensaje venga de donde venga.
+ * Mismo objeto que devuelven las rutas de enviar: el frontend maneja un solo tipo de
+ * mensaje venga de donde venga. `conversationId` va siempre, y `projectId` solo en el
+ * chat de un proyecto: un mensaje privado no lo tiene.
  * Las fechas viajan como texto ISO, que es en lo que las convierte el JSON.
  */
 export interface ChatMessagePayload {
   id: string;
-  projectId: string;
+  conversationId: string;
+  projectId?: string;
   content: string;
   createdAt: string;
   sender: { id: string; fullName: string };

@@ -27,9 +27,14 @@ export interface MessagePage {
  * Un solo formato para la respuesta REST y para el evento: el frontend maneja
  * un único tipo de mensaje, llegue por donde llegue.
  */
-const toChatMessage = (projectId: string, row: MessageRow): ChatMessagePayload => ({
+export const toChatMessage = (
+  conversationId: string,
+  row: MessageRow,
+  projectId?: string,
+): ChatMessagePayload => ({
   id: row.id,
-  projectId,
+  conversationId,
+  ...(projectId && { projectId }),
   content: row.content,
   createdAt: row.createdAt.toISOString(),
   sender: row.sender,
@@ -50,11 +55,13 @@ const getConversationId = async (projectId: string, userId: string): Promise<str
   return conversationId;
 };
 
-const listMessagesAfter = async (
-  projectId: string,
+type ToMessage = (row: MessageRow) => ChatMessagePayload;
+
+const pageAfter = async (
   conversationId: string,
   after: string,
   limit: number,
+  toMessage: ToMessage,
 ): Promise<MessagePage> => {
   if (!(await repository.findMessageDate(conversationId, after))) {
     throw new AppError(404, 'NOT_FOUND', 'El mensaje no existe en esta conversación');
@@ -64,8 +71,30 @@ const listMessagesAfter = async (
   const page = rows.slice(0, limit);
 
   return {
-    messages: page.map((row) => toChatMessage(projectId, row)),
+    messages: page.map(toMessage),
     nextCursor: rows.length > limit ? page[page.length - 1].id : null,
+  };
+};
+
+/** El historial de una conversación, en los dos sentidos. Lo comparten proyecto y privado. */
+export const pageOf = async (
+  conversationId: string,
+  query: ListMessagesQuery,
+  toMessage: ToMessage,
+): Promise<MessagePage> => {
+  if (query.after) {
+    return pageAfter(conversationId, query.after, query.limit, toMessage);
+  }
+
+  const rows = await repository.findMessages(conversationId, query.before, query.limit + 1);
+
+  const hasMore = rows.length > query.limit;
+  const page = hasMore ? rows.slice(0, query.limit) : rows;
+
+  return {
+    messages: page.reverse().map(toMessage),
+    // Tras invertir, el más antiguo queda primero: es el cursor del bloque anterior.
+    nextCursor: hasMore ? page[0].id : null,
   };
 };
 
@@ -76,20 +105,9 @@ export const listMessages = async (
 ): Promise<MessagePage> => {
   const conversationId = await getConversationId(access.project.id, userId);
 
-  if (query.after) {
-    return listMessagesAfter(access.project.id, conversationId, query.after, query.limit);
-  }
-
-  const rows = await repository.findMessages(conversationId, query.before, query.limit + 1);
-
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
-
-  return {
-    messages: page.reverse().map((row) => toChatMessage(access.project.id, row)),
-    // Tras invertir, el más antiguo queda primero: es el cursor del bloque anterior.
-    nextCursor: hasMore ? page[0].id : null,
-  };
+  return pageOf(conversationId, query, (row) =>
+    toChatMessage(conversationId, row, access.project.id),
+  );
 };
 
 export const sendMessage = async (
@@ -106,7 +124,7 @@ export const sendMessage = async (
   }
 
   const row = await repository.createMessage(conversationId, userId, input.content);
-  const message = toChatMessage(access.project.id, row);
+  const message = toChatMessage(conversationId, row, access.project.id);
 
   // Después de persistir, nunca antes. Va a toda la sala, remitente incluido:
   // sus otras pestañas también lo necesitan, y la que envió lo descarta por id.
@@ -115,7 +133,7 @@ export const sendMessage = async (
   return message;
 };
 
-const readStateOf = async (conversationId: string, userId: string): Promise<ReadState> => {
+export const readStateOf = async (conversationId: string, userId: string): Promise<ReadState> => {
   const lastReadAt = await repository.findLastReadAt(conversationId, userId);
 
   return {
@@ -128,16 +146,12 @@ const readStateOf = async (conversationId: string, userId: string): Promise<Read
 export const getReadState = async (access: ProjectAccess, userId: string): Promise<ReadState> =>
   readStateOf(await getConversationId(access.project.id, userId), userId);
 
-/**
- * La fecha sale del mensaje, nunca del cliente. Un proyecto cerrado también acepta
- * la marca: es de quien lee, no toca el expediente.
- */
-export const markRead = async (
-  access: ProjectAccess,
+/** La fecha sale del mensaje, nunca del cliente. */
+export const markReadIn = async (
+  conversationId: string,
   userId: string,
   input: MarkReadInput,
 ): Promise<ReadState> => {
-  const conversationId = await getConversationId(access.project.id, userId);
   const createdAt = await repository.findMessageDate(conversationId, input.messageId);
 
   if (!createdAt) {
@@ -148,3 +162,11 @@ export const markRead = async (
 
   return readStateOf(conversationId, userId);
 };
+
+/** Un proyecto cerrado también acepta la marca: es de quien lee, no toca el expediente. */
+export const markRead = async (
+  access: ProjectAccess,
+  userId: string,
+  input: MarkReadInput,
+): Promise<ReadState> =>
+  markReadIn(await getConversationId(access.project.id, userId), userId, input);

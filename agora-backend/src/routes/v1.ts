@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes.js';
 import chatRoutes from '../modules/chat/chat.routes.js';
+import conversationRoutes from '../modules/conversations/conversations.routes.js';
 import documentRoutes from '../modules/documents/documents.routes.js';
 import notificationRoutes from '../modules/notifications/notifications.routes.js';
 import phaseRoutes from '../modules/phases/phases.routes.js';
@@ -30,6 +31,7 @@ router.use('/proyectos/:projectId/cifras', projectFigureRoutes);
 router.use('/proyectos', projectRoutes);
 router.use('/usuarios', userRoutes);
 router.use('/notificaciones', notificationRoutes);
+router.use('/conversaciones', conversationRoutes);
 router.use('/reportes', globalReportRoutes);
 router.use('/mis-tareas', myTaskRoutes);
 
