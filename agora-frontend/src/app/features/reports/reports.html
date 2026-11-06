@@ -1,4 +1,118 @@
-<main class="p-espacio-6">
-  <h1 class="titulo-pagina">Reportes</h1>
-  <p class="secundario text-tinta-media mt-espacio-2">Solo para coordinación.</p>
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="loading()" />
+
+<main class="grid gap-espacio-6" [attr.aria-busy]="loading() || null">
+  <h1 class="titulo-pagina text-tinta">Reportes</h1>
+
+  @if (errorMessage(); as message) {
+    <app-notice tone="error">
+      {{ message }}
+      <button appButton variant="secondary" type="button" noticeAction (click)="reload()">
+        Reintentar
+      </button>
+    </app-notice>
+  }
+
+  @if (noProjects()) {
+    <app-empty
+      title="Todavía no hay proyectos"
+      description="Cuando se cree el primero, sus cifras aparecen aquí."
+    >
+      <a appButton routerLink="/proyectos/nuevo" emptyAction>Crear proyecto</a>
+    </app-empty>
+  } @else {
+    @if (summaryValue(); as summary) {
+      <app-report-summary [summary]="summary" />
+    } @else if (summary.status() === 'loading') {
+      <div class="grid gap-espacio-4 md:grid-cols-3">
+        @for (card of [1, 2, 3]; track card) {
+          <div class="grid gap-espacio-2 bg-superficie-00 rounded-radio-md p-espacio-4">
+            <app-skeleton class="etiqueta" />
+            <app-skeleton class="titulo-pagina" />
+          </div>
+        }
+      </div>
+    }
+
+    @if (page() || projects.status() === 'loading') {
+      <section aria-labelledby="por-proyecto" class="grid gap-espacio-4">
+        <h2 id="por-proyecto" class="titulo-seccion text-tinta">Por proyecto</h2>
+
+        @if (page(); as result) {
+          @if (result.items.length === 0) {
+            <app-empty title="Esta página no tiene proyectos">
+              <a appButton variant="secondary" routerLink="/reportes" emptyAction
+                >Volver a la primera página</a
+              >
+            </app-empty>
+          } @else {
+            <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+              @for (row of rows(); track row.project.id) {
+                <li class="grid gap-espacio-1 px-espacio-4 py-espacio-3">
+                  <div
+                    class="flex flex-wrap items-start justify-between gap-x-espacio-3 gap-y-espacio-1"
+                  >
+                    <a
+                      class="cuerpo-fuerte text-tinta underline wrap-anywhere"
+                      [routerLink]="['/proyectos', row.project.id, 'tareas']"
+                      >{{ row.project.title }}</a
+                    >
+                    <app-project-status class="shrink-0" [status]="row.project.status" />
+                  </div>
+                  <p class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
+                    <span class="secundario text-tinta-media tabular-nums">{{
+                      row.completed
+                    }}</span>
+                    @if (row.overdue; as overdue) {
+                      <span
+                        class="etiqueta inline-block px-espacio-2 py-espacio-1 rounded-radio-sm whitespace-nowrap bg-baliza text-tinta tabular-nums"
+                        >{{ overdue }}</span
+                      >
+                    }
+                  </p>
+                </li>
+              }
+            </ul>
+
+            <!-- Solo cuando no todo cabe en una página. -->
+            @if (result.total > result.perPage) {
+              <nav class="flex items-center justify-center gap-espacio-4" aria-label="Paginación">
+                <button
+                  appButton
+                  variant="secondary"
+                  type="button"
+                  [disabled]="pageNumber() <= 1"
+                  (click)="goToPage(pageNumber() - 1)"
+                >
+                  Anterior
+                </button>
+                <span class="secundario text-tinta-media tabular-nums">
+                  Página {{ pageNumber() }} de {{ pageCount() }}
+                </span>
+                <button
+                  appButton
+                  variant="secondary"
+                  type="button"
+                  [disabled]="pageNumber() >= pageCount()"
+                  (click)="goToPage(pageNumber() + 1)"
+                >
+                  Siguiente
+                </button>
+              </nav>
+            }
+          }
+        } @else if (projects.status() === 'loading') {
+          <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+            @for (row of [1, 2, 3]; track row) {
+              <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+                <app-skeleton class="cuerpo-fuerte" />
+                <app-skeleton class="secundario" />
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
 </main>

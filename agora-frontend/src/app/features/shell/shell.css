@@ -18,6 +18,12 @@
   max-width: 1040px; /* sin token */
 }
 
+/* Entre 768 y unos 850px no cabe todo en una fila: cede el nombre, que parte en dos líneas,
+   y no la barra entera. `min-w-0` no genera CSS con este tema. */
+.armazon-persona {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}
+
 /* `sticky` y no `fixed`: ocupa su sitio, así que el contenido no necesita un relleno que
    adivine el alto de la barra. `bottom-0` no genera CSS con este tema. */
 .barra-inferior {

@@ -17,10 +17,12 @@ import {
   type ErrorCode,
 } from '../../../core/api/api-error';
 import { ProjectsApi } from '../../../core/api/projects.api';
+import { ReportsApi } from '../../../core/api/reports.api';
 import type { Member, ProjectRole } from '../../../core/api/projects.types';
 import { formatBudget } from '../../../core/format/project-budget';
 import { formatClosedAt, formatProjectPeriod } from '../../../core/format/project-dates';
 import { formatProjectLead } from '../../../core/format/project-lead';
+import { formatCompleted, formatOverdue } from '../../../core/format/task-figures';
 import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { SessionService } from '../../../core/session/session.service';
 import { Avatar } from '../../../shared/ui/avatar/avatar';
@@ -114,6 +116,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
 })
 export class ProjectDetail {
   readonly #api = inject(ProjectsApi);
+  readonly #reports = inject(ReportsApi);
   readonly #title = inject(Title);
   readonly #session = inject(SessionService);
   readonly #realtime = inject(RealtimeService);
@@ -124,6 +127,25 @@ export class ProjectDetail {
   protected readonly project = resource({
     params: () => this.#params().get('projectId') ?? '',
     loader: ({ params }) => this.#api.get(params),
+  });
+
+  readonly #figures = resource({
+    params: () => this.#params().get('projectId') ?? '',
+    loader: ({ params }) => this.#reports.projectFigures(params),
+  });
+
+  /** Si fallan, la fila no se pinta: la pantalla no depende de ellas. */
+  protected readonly taskFigures = computed(() => {
+    if (!this.#figures.hasValue()) {
+      return null;
+    }
+
+    const figures = this.#figures.value();
+
+    return {
+      completed: formatCompleted(figures),
+      overdue: figures.overdue > 0 ? formatOverdue(figures.overdue) : null,
+    };
   });
 
   /**

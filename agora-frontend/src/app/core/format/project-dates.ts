@@ -48,6 +48,9 @@ export const formatProjectPeriod = (startDate: string | null, endDate: string | 
   return '';
 };
 
+/** Una fecha de fin de tarea: columna `date`, así que en UTC, como el periodo. */
+export const formatDueDate = (date: string): string => full(parts(date));
+
 /**
  * El día de un instante, **en la hora local de quien mira, no en UTC**.
  *

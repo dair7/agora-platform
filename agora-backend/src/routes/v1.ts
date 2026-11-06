@@ -6,6 +6,11 @@ import notificationRoutes from '../modules/notifications/notifications.routes.js
 import phaseRoutes from '../modules/phases/phases.routes.js';
 import progressRoutes from '../modules/progress/progress.routes.js';
 import projectRoutes from '../modules/projects/projects.routes.js';
+import {
+  globalReportRoutes,
+  myTaskRoutes,
+  projectFigureRoutes,
+} from '../modules/reports/reports.routes.js';
 import taskRoutes from '../modules/tasks/tasks.routes.js';
 import userRoutes from '../modules/users/users.routes.js';
 
@@ -21,8 +26,11 @@ router.use('/proyectos/:projectId/fases', phaseRoutes);
 router.use('/proyectos/:projectId/tareas', taskRoutes);
 router.use('/proyectos/:projectId/avances', progressRoutes);
 router.use('/proyectos/:projectId/documentos', documentRoutes);
+router.use('/proyectos/:projectId/cifras', projectFigureRoutes);
 router.use('/proyectos', projectRoutes);
 router.use('/usuarios', userRoutes);
 router.use('/notificaciones', notificationRoutes);
+router.use('/reportes', globalReportRoutes);
+router.use('/mis-tareas', myTaskRoutes);
 
 export default router;

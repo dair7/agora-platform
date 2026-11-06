@@ -3,7 +3,11 @@
   appButton
   variant="subtle"
   type="button"
-  [class]="inBar() ? 'w-full px-espacio-2! whitespace-nowrap aria-expanded:bg-veril-tenue' : ''"
+  [class]="
+    inBar()
+      ? 'etiqueta w-full px-espacio-1! whitespace-nowrap aria-expanded:bg-veril-tenue'
+      : 'max-lg:px-espacio-2!'
+  "
   aria-controls="bandeja"
   [attr.aria-expanded]="open()"
   (click)="toggle()"

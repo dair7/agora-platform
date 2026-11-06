@@ -27,6 +27,27 @@ const STATUS: Record<ProjectStatus, { label: string; classes: string }> = {
 /** El texto de un estado, para quien lo ofrece fuera de la píldora: el desplegable de editar. */
 export const projectStatusLabel = (status: ProjectStatus): string => STATUS[status].label;
 
+/** En el orden del ciclo de un proyecto. */
+export const PROJECT_STATUSES: readonly ProjectStatus[] = [
+  'PLANNING',
+  'IN_PROGRESS',
+  'ON_HOLD',
+  'COMPLETED',
+  'CANCELLED',
+];
+
+// Literales y completas: Tailwind solo genera las clases que encuentra escritas.
+const FILLS: Record<ProjectStatus, string> = {
+  PLANNING: 'bg-estado-planeacion',
+  IN_PROGRESS: 'bg-estado-ejecucion',
+  ON_HOLD: 'bg-baliza',
+  COMPLETED: 'bg-estado-cierre',
+  CANCELLED: 'bg-superficie-20',
+};
+
+/** El relleno de un estado sin su texto, para quien lo pinta al lado de su nombre. */
+export const projectStatusFill = (status: ProjectStatus): string => FILLS[status];
+
 @Component({
   selector: 'app-project-status',
   template: '{{ label() }}',

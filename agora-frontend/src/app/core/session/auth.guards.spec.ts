@@ -72,16 +72,16 @@ describe('guards de sesión y rol', () => {
       expect(await visit('/inicio')).toBe('/inicio');
     });
 
-    it('no entra a reportes: la ruta no le existe y acaba en la lista de proyectos', async () => {
-      expect(await visit('/reportes')).toBe('/proyectos');
+    it('no entra a reportes: la ruta no le existe y acaba en su inicio', async () => {
+      expect(await visit('/reportes')).toBe('/inicio');
     });
 
     it('no vuelve a iniciar sesión', async () => {
-      expect(await visit('/entrar')).toBe('/proyectos');
+      expect(await visit('/entrar')).toBe('/inicio');
     });
 
     it('no ve la sesión expirada: con sesión no ha expirado nada', async () => {
-      expect(await visit('/sesion-expirada')).toBe('/proyectos');
+      expect(await visit('/sesion-expirada')).toBe('/inicio');
     });
   });
 

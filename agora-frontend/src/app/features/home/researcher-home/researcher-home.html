@@ -1,0 +1,76 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en CLAUDE.md. -->
+<app-loading-status [loading]="list.loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="list.loading() || null">
+  <div>
+    <h1 class="titulo-pagina text-tinta">Inicio</h1>
+    <p class="secundario text-tinta-media mt-espacio-1" role="status">{{ countLabel() }}</p>
+  </div>
+
+  @if (errorMessage(); as message) {
+    <!-- Conserva lo que había: un fallo de red no borra la lista. -->
+    <app-notice tone="error">
+      {{ message }}
+      <button appButton variant="secondary" type="button" noticeAction (click)="list.refresh()">
+        Reintentar
+      </button>
+    </app-notice>
+  }
+
+  <!-- Sin datos no hay encabezado: colgaría sobre una pantalla en blanco. -->
+  @if (page() || list.loading()) {
+    <section aria-labelledby="mis-tareas" class="grid gap-espacio-4">
+      <h2 id="mis-tareas" class="titulo-seccion text-tinta">Mis tareas</h2>
+
+      @if (list.loading()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2, 3]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      } @else if (page(); as result) {
+        @if (result.tasks.length === 0) {
+          <app-empty
+            title="No tienes tareas pendientes"
+            description="Aquí aparecen las tareas que te asignen en tus proyectos."
+          >
+            <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Ver proyectos</a>
+          </app-empty>
+        } @else {
+          <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+            @for (row of rows(); track row.task.id) {
+              <li class="grid gap-espacio-1 px-espacio-4 py-espacio-3">
+                <a
+                  class="cuerpo-fuerte text-tinta underline wrap-anywhere"
+                  [routerLink]="['/proyectos', row.task.project.id, 'tareas']"
+                  >{{ row.task.title }}</a
+                >
+                <p class="secundario text-tinta-media wrap-anywhere">
+                  {{ row.task.project.title }} · {{ row.task.phase.name }}
+                </p>
+                <p class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
+                  <app-work-status [status]="row.task.status" />
+                  @if (row.task.overdue) {
+                    <span
+                      class="etiqueta inline-block px-espacio-2 py-espacio-1 rounded-radio-sm whitespace-nowrap bg-baliza text-tinta"
+                      >Atrasada</span
+                    >
+                  }
+                  <span class="secundario text-tinta-media tabular-nums">{{ row.due }}</span>
+                </p>
+              </li>
+            }
+          </ul>
+
+          @if (truncated(); as note) {
+            <p class="secundario text-tinta-media">{{ note }}</p>
+          }
+        }
+      }
+    </section>
+  }
+</main>

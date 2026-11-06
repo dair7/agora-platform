@@ -17,7 +17,7 @@ import { Button } from '../../../shared/ui/button/button';
       appButton
       variant="subtle"
       type="button"
-      class="w-full px-espacio-2! aria-expanded:bg-veril-tenue"
+      class="etiqueta w-full px-espacio-1! aria-expanded:bg-veril-tenue"
       aria-controls="cuenta"
       [attr.aria-expanded]="open()"
       (click)="toggle()"
