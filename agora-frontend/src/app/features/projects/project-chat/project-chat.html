@@ -1,8 +1,4 @@
-<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
-     «Carga y vacío» en CLAUDE.md. -->
-<app-loading-status [loading]="loading()" />
-
-<main class="grid gap-espacio-4" [attr.aria-busy]="loading() || null">
+<main class="grid gap-espacio-4">
   @if (notFound()) {
     <app-empty title="Este proyecto no existe o no tienes acceso">
       <a appButton variant="secondary" routerLink="/proyectos" emptyAction>Volver a proyectos</a>
@@ -23,113 +19,12 @@
 
     <app-project-tabs [projectId]="projectId()" [isMember]="true" [chatOpen]="true" />
 
-    @if (historyError(); as message) {
-      <!-- Conserva lo que ya estaba cargado: un fallo de red no borra la pantalla. -->
-      <app-notice tone="error">
-        No se pudo cargar el historial. {{ message }}
-        <button appButton variant="secondary" type="button" noticeAction (click)="reload()">
-          Reintentar
-        </button>
-      </app-notice>
-    }
-
-    <!-- En lugar de la lista y no dentro: una tarjeta dentro de otra. -->
-    @if (!loading() && timeline().length === 0 && !historyError()) {
-      <app-empty
-        title="Todavía no hay mensajes"
-        [description]="closed() ? undefined : 'Escribe el primero para empezar la conversación.'"
-      />
-    } @else {
-      <!-- `tabindex` para recorrer el historial con el teclado. -->
-      <section
-        #scroller
-        (scroll)="onScroll()"
-        role="log"
-        aria-label="Mensajes"
-        tabindex="0"
-        class="chat-lista bg-superficie-00 border border-borde rounded-radio-md p-espacio-4"
-      >
-        @if (loading()) {
-          <div class="grid gap-espacio-4">
-            @for (row of [1, 2, 3]; track row) {
-              <div class="grid gap-espacio-1">
-                <app-skeleton width="espacio-8" class="secundario" />
-                <app-skeleton class="cuerpo" />
-              </div>
-            }
-          </div>
-        } @else {
-          @if (hasOlder()) {
-            <div class="flex justify-center mb-espacio-3">
-              <button
-                appButton
-                variant="subtle"
-                type="button"
-                [disabled]="loadingOlder()"
-                (click)="loadOlder()"
-              >
-                {{ loadingOlder() ? 'Cargando…' : 'Cargar anteriores' }}
-              </button>
-            </div>
-          }
-
-          <ol>
-            @for (item of timeline(); track item.key) {
-              @if (item.kind === 'day') {
-                <li class="secundario text-tinta-media text-center my-espacio-4">
-                  {{ item.label }}
-                </li>
-              } @else {
-                <li [class]="item.first ? 'mt-espacio-3' : 'mt-espacio-1'">
-                  <app-chat-message
-                    [item]="item"
-                    [online]="isOnline(item.senderId)"
-                    (retry)="retry(item.pending!)"
-                  />
-                </li>
-              }
-            }
-          </ol>
-        }
-      </section>
-    }
-
-    <!-- Se ve también con el proyecto cerrado: deshabilitado explica por qué no se puede
-         escribir, y escondido parecería un fallo. -->
-    @if (project.hasValue()) {
-      @if (closed()) {
-        <app-notice tone="block">
-          Este proyecto está cerrado. La conversación es de solo lectura.
-        </app-notice>
-      }
-
-      <form
-        #composerForm
-        class="grid gap-espacio-3"
-        novalidate
-        (submit)="$event.preventDefault(); send()"
-      >
-        <app-field for="chat-compositor" label="Mensaje">
-          <!-- De solo lectura y no deshabilitado mientras envía: conserva el foco. -->
-          <textarea
-            #composer
-            appTextarea
-            id="chat-compositor"
-            rows="2"
-            [disabled]="closed()"
-            [readOnly]="sending()"
-            [value]="draft()"
-            (focus)="onComposerFocus()"
-            (input)="onDraftInput($event)"
-            (keydown.enter)="onEnter($event)"
-          ></textarea>
-        </app-field>
-        <div class="flex justify-end">
-          <button appButton type="submit" [disabled]="!canSend()">
-            {{ sending() ? 'Enviando' : 'Enviar mensaje' }}
-          </button>
-        </div>
-      </form>
-    }
+    <app-chat-thread
+      [source]="source()"
+      [readOnly]="closed()"
+      [notice]="closed() ? 'Este proyecto está cerrado. La conversación es de solo lectura.' : null"
+      [showComposer]="project.hasValue()"
+      [online]="online()"
+    />
   }
 </main>

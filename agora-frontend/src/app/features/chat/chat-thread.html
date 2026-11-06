@@ -1,0 +1,93 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en docs/contexto/frontend-base.md. -->
+<app-loading-status [loading]="loading()" />
+
+@if (historyError(); as message) {
+  <!-- Conserva lo que ya estaba cargado: un fallo de red no borra la pantalla. -->
+  <app-notice tone="error">
+    No se pudo cargar el historial. {{ message }}
+    <button appButton variant="secondary" type="button" noticeAction (click)="reload()">
+      Reintentar
+    </button>
+  </app-notice>
+}
+
+<!-- En lugar de la lista y no dentro: una tarjeta dentro de otra. -->
+@if (!loading() && timeline().length === 0 && !historyError()) {
+  <app-empty
+    title="Todavía no hay mensajes"
+    [description]="readOnly() ? undefined : 'Escribe el primero para empezar la conversación.'"
+  />
+} @else {
+  <!-- `tabindex` para recorrer el historial con el teclado. -->
+  <section
+    #scroller
+    (scroll)="onScroll()"
+    role="log"
+    aria-label="Mensajes"
+    tabindex="0"
+    class="chat-lista bg-superficie-00 border border-borde rounded-radio-md p-espacio-4"
+    [class.chat-lista-alta]="tallList()"
+    [attr.aria-busy]="loading() || null"
+  >
+    @if (loading()) {
+      <div class="grid gap-espacio-4">
+        @for (row of [1, 2, 3]; track row) {
+          <div class="grid gap-espacio-1">
+            <app-skeleton width="espacio-8" class="secundario" />
+            <app-skeleton class="cuerpo" />
+          </div>
+        }
+      </div>
+    } @else {
+      @if (hasOlder()) {
+        <div class="flex justify-center mb-espacio-3">
+          <button
+            appButton
+            variant="subtle"
+            type="button"
+            [disabled]="loadingOlder()"
+            (click)="loadOlder()"
+          >
+            {{ loadingOlder() ? 'Cargando…' : 'Cargar anteriores' }}
+          </button>
+        </div>
+      }
+
+      <ol>
+        @for (item of timeline(); track item.key) {
+          @if (item.kind === 'day') {
+            <li class="secundario text-tinta-media text-center my-espacio-4">
+              {{ item.label }}
+            </li>
+          } @else {
+            <li [class]="item.first ? 'mt-espacio-3' : 'mt-espacio-1'">
+              <app-chat-message
+                [item]="item"
+                [online]="isOnline(item.senderId)"
+                (retry)="retry(item.pending!)"
+              />
+            </li>
+          }
+        }
+      </ol>
+    }
+  </section>
+}
+
+<!-- Se ve también cuando no se puede escribir: deshabilitado explica por qué, y escondido
+     parecería un fallo. -->
+@if (showComposer()) {
+  @if (notice(); as text) {
+    <app-notice tone="block">{{ text }}</app-notice>
+  }
+
+  <app-chat-composer
+    [draft]="draft()"
+    [sending]="sending()"
+    [disabled]="readOnly()"
+    [scroller]="scroller()"
+    (edited)="onEdited($event)"
+    (submitted)="send()"
+  />
+}
