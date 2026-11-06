@@ -1,5 +1,5 @@
 <!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
-     «Carga y vacío» en CLAUDE.md. -->
+     «Carga y vacío» en docs/contexto/frontend-base.md. -->
 <app-loading-status [loading]="project.isLoading()" />
 
 <main class="grid gap-espacio-6" [attr.aria-busy]="project.isLoading() || null">
@@ -186,6 +186,21 @@
               class="flex flex-col items-start md:items-end gap-espacio-1 md:gap-espacio-2 md:shrink-0"
             >
               <p class="secundario text-tinta-media">{{ roleLabels[member.role] }}</p>
+              <!-- A una cuenta desactivada no se le puede empezar nada, y a sí misma tampoco:
+                   el backend respondería 404 y 400. -->
+              @if (canWriteTo(member)) {
+                <button
+                  appButton
+                  variant="subtle"
+                  type="button"
+                  class="max-md:-ml-espacio-4 md:-mr-espacio-4"
+                  [disabled]="openingChat() !== null"
+                  (click)="writeTo(member)"
+                >
+                  {{ openingChat() === member.user.id ? 'Abriendo…' : 'Escribir'
+                  }}<span class="sr-only">: {{ member.user.fullName }}</span>
+                </button>
+              }
               <!-- Nunca en la fila del investigador principal: el backend responde 409,
                    y un botón que siempre falla no debería existir.
                    Discreto en arrecife, no relleno: un relleno rojo por fila sería un

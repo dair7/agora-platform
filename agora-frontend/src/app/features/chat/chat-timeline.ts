@@ -1,9 +1,9 @@
-import type { ChatMessage } from '../../../core/api/chat.types';
+import type { ChatMessage } from '../../core/api/chat.types';
 import {
   formatMessageDay,
   formatMessageTime,
   messageDayKey,
-} from '../../../core/format/message-dates';
+} from '../../core/format/message-dates';
 
 /** Un mensaje que todavía no tiene identificador del servidor. */
 export interface PendingMessage {

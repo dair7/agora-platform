@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
-import { Avatar } from '../../../shared/ui/avatar/avatar';
-import { Button } from '../../../shared/ui/button/button';
+import { Avatar } from '../../shared/ui/avatar/avatar';
+import { Button } from '../../shared/ui/button/button';
 import type { MessageItem } from './chat-timeline';
 
 /**

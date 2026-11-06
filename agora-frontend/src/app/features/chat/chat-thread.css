@@ -16,4 +16,8 @@
     height: calc(100dvh - 480px); /* sin token: cabecera, pestañas, compositor y barra */
     min-height: 160px; /* sin token: dos mensajes, lo mínimo para seguir el hilo */
   }
+
+  .chat-lista-alta {
+    height: calc(100dvh - 370px); /* sin token: lo mismo, sin las pestañas */
+  }
 }

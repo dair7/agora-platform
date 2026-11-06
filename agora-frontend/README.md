@@ -83,6 +83,8 @@ agora-frontend/
 | `core/realtime/`          | `RealtimeService`, the Socket.io connection, and the event contract it listens to                                               |
 | `core/session/`           | `SessionService`, the HTTP interceptor, the guards and `expireSession()`                                                        |
 | `features/auth/`          | Sign-in and the session-expired screen                                                                                          |
+| `features/chat/`          | What both chats share: the thread, the composer, the message and the timeline                                                   |
+| `features/conversations/` | The private chats: the list and one conversation                                                                                |
 | `features/home/`          | `/inicio`, one component per role                                                                                               |
 | `features/notifications/` | The notification inbox                                                                                                          |
 | `features/projects/`      | Every project screen, its forms, and what they share: `project-context.ts`, `project-permissions.ts`, `live-list.ts`            |
@@ -92,7 +94,7 @@ agora-frontend/
 
 ## Screens
 
-Thirteen routes, all declared in `app.routes.ts`. Everything except the first two is a child of the shell, behind `authGuard`.
+Fifteen routes, all declared in `app.routes.ts`. Everything except the first two is a child of the shell, behind `authGuard`.
 
 | Route                         | Who                    | What it does                                                                                                                                                          |
 | ----------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -109,6 +111,8 @@ Thirteen routes, all declared in `app.routes.ts`. Everything except the first tw
 | `/proyectos/:id/avances`      | Members, coordination  | Progress entries. Any member adds them; only the author edits                                                                                                         |
 | `/proyectos/:id/documentos`   | Members, coordination  | Upload, download and versions                                                                                                                                         |
 | `/proyectos/:id/conversacion` | Members                | The project chat, with history, unread count and presence. Coordination is sent to the detail                                                                         |
+| `/conversaciones`             | Everyone               | Your private chats, most recent first, and who you can start one with                                                                                                 |
+| `/conversaciones/:id`         | Participants           | One private chat. There is no presence, and with a deactivated account it can be read but not written to. Anyone else gets the not-found screen                       |
 
 Two pieces have no route: the **notification inbox** and the **account menu**, both in the shell. Below `md` the inbox takes the whole screen, and it is still the same panel.
 
@@ -149,7 +153,7 @@ Set up the backend as described in the root README, load the seed with `pnpm --f
 
 **To see the silent refresh,** set `JWT_EXPIRES_IN=10s` in `agora-backend/.env`, restart the backend, and keep using the application: requests keep working, and `/auth/refrescar` shows up in the network panel.
 
-**Narrow screens:** below 768px the top bar gives way to the bottom bar.
+**Narrow screens:** below 768px the top bar gives way to the bottom bar. Its five destinations use short labels: «Chat» is «Mensajes» on the top bar, and «Avisos» is «Notificaciones» from `lg` up.
 
 ## Conventions
 

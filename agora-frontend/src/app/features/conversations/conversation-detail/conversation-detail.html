@@ -1,0 +1,49 @@
+<main class="grid gap-espacio-4">
+  @if (notFound()) {
+    <!-- Una conversación ajena y una URL rota son lo mismo: distinguirlas confirmaría cuál
+         existe, que es lo que el backend esconde al responder 404. -->
+    <app-empty title="Esta conversación no existe o no tienes acceso">
+      <a appButton variant="secondary" routerLink="/conversaciones" emptyAction
+        >Volver a mensajes</a
+      >
+    </app-empty>
+  } @else {
+    <header class="grid gap-espacio-1">
+      <!-- El margen negativo compensa el relleno lateral del botón discreto. -->
+      <div>
+        <a appButton variant="subtle" class="-ml-espacio-4" routerLink="/conversaciones">
+          <span aria-hidden="true" class="mr-espacio-2">←</span>Mensajes
+        </a>
+      </div>
+      <h1 class="titulo-seccion text-tinta wrap-anywhere">
+        {{ value()?.otherUser?.fullName ?? 'Conversación' }}
+      </h1>
+    </header>
+
+    <!-- Sin la conversación no hay a quién escribirle, pero el enlace de vuelta se queda. -->
+    @if (errorMessage(); as message) {
+      <app-notice tone="error">
+        {{ message }}
+        <button
+          appButton
+          variant="secondary"
+          type="button"
+          noticeAction
+          (click)="conversation.reload()"
+        >
+          Reintentar
+        </button>
+      </app-notice>
+    } @else {
+      <app-chat-thread
+        [source]="source()"
+        [readOnly]="otherIsInactive()"
+        [notice]="
+          otherIsInactive() ? 'Esta cuenta está desactivada. Puedes leer, pero no escribir.' : null
+        "
+        [showComposer]="value() !== null"
+        [tallList]="true"
+      />
+    }
+  }
+</main>
