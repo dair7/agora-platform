@@ -78,9 +78,6 @@ const STATUS: Record<SampleStatus, { label: string; pill: string; bar: string }>
   },
 };
 
-// TODO(backend): «Recordarme» está en la pantalla porque lo trae la maqueta, pero es
-// inerte: la casilla no está enlazada a nada, y exigiría otra duración del refresh
-// token. Se conectan cuando el backend los tenga; no inventarlos aquí.
 @Component({
   selector: 'app-login',
   imports: [ReactiveFormsModule],
