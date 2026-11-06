@@ -18,7 +18,7 @@ import { ReportSummary } from '../../reports/report-summary/report-summary';
     <main class="grid gap-espacio-5" [attr.aria-busy]="summary.status() === 'loading' || null">
       <div class="flex flex-wrap items-start justify-between gap-espacio-4">
         <h1 class="titulo-pagina text-tinta">Inicio</h1>
-        <!-- En la barra inferior no cabe un quinto destino: los reportes se abren desde aquí. -->
+        <!-- En la barra inferior no cabe un sexto destino: los reportes se abren desde aquí. -->
         @if (!noProjects()) {
           <a appButton routerLink="/reportes">Ver reportes</a>
         }

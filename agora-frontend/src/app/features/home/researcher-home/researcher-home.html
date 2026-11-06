@@ -3,10 +3,7 @@
 <app-loading-status [loading]="list.loading()" />
 
 <main class="grid gap-espacio-5" [attr.aria-busy]="list.loading() || null">
-  <div>
-    <h1 class="titulo-pagina text-tinta">Inicio</h1>
-    <p class="secundario text-tinta-media mt-espacio-1" role="status">{{ countLabel() }}</p>
-  </div>
+  <h1 class="titulo-pagina text-tinta">Inicio</h1>
 
   @if (errorMessage(); as message) {
     <!-- Conserva lo que había: un fallo de red no borra la lista. -->
@@ -17,6 +14,22 @@
       </button>
     </app-notice>
   }
+
+  <!-- Siempre en la plantilla: una región viva solo anuncia los cambios de su texto. Sin
+       pendientes no hay cifras: el vacío de abajo ya lo dice, y dos ceros no suman nada. -->
+  <div class="grid grid-cols-2 gap-espacio-4 empty:hidden" role="status" aria-atomic="true">
+    @if (figures(); as figures) {
+      <app-figure label="Tareas pendientes" [value]="figures.pending" />
+      <app-figure label="Tareas atrasadas" [value]="figures.overdue" />
+    } @else if (list.loading()) {
+      @for (card of [1, 2]; track card) {
+        <div class="grid gap-espacio-2 bg-superficie-00 rounded-radio-md p-espacio-4">
+          <app-skeleton class="etiqueta" />
+          <app-skeleton class="titulo-pagina" />
+        </div>
+      }
+    }
+  </div>
 
   <!-- Sin datos no hay encabezado: colgaría sobre una pantalla en blanco. -->
   @if (page() || list.loading()) {
