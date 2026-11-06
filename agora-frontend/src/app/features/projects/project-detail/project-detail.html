@@ -126,6 +126,20 @@
             <dd class="cuerpo text-tinta-media">Sin objetivos</dd>
           }
         </div>
+        @if (taskFigures(); as figures) {
+          <div class="grid gap-espacio-1">
+            <dt class="etiqueta text-tinta">Tareas</dt>
+            <dd class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-1">
+              <span class="cuerpo text-tinta tabular-nums">{{ figures.completed }}</span>
+              @if (figures.overdue; as overdue) {
+                <span
+                  class="etiqueta inline-block px-espacio-2 py-espacio-1 rounded-radio-sm whitespace-nowrap bg-baliza text-tinta tabular-nums"
+                  >{{ overdue }}</span
+                >
+              }
+            </dd>
+          </div>
+        }
         <div class="grid gap-espacio-1">
           <dt class="etiqueta text-tinta">Presupuesto</dt>
           @if (view.budget; as budget) {
