@@ -86,7 +86,11 @@
       } @else if (entries.items()) {
         <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
           @for (row of rows(); track row.entry.id) {
-            <li class="flex items-start justify-between gap-espacio-3 px-espacio-4 py-espacio-3">
+            <!-- Por debajo de `md` las acciones van debajo, y no al lado: entre el avatar y ellas
+                 al texto no le quedaba ancho. -->
+            <li
+              class="grid gap-espacio-2 md:flex md:items-start md:justify-between md:gap-espacio-3 px-espacio-4 py-espacio-3"
+            >
               <div class="flex items-start gap-espacio-2">
                 <app-avatar [name]="row.entry.author.fullName" />
                 <div class="grid gap-espacio-1 wrap-anywhere">
@@ -102,7 +106,9 @@
               </div>
 
               @if (row.canEdit || row.canDelete) {
-                <div class="flex flex-wrap justify-end gap-x-espacio-1 gap-y-espacio-2 shrink-0">
+                <div
+                  class="flex flex-wrap gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4 md:justify-end md:shrink-0"
+                >
                   @if (row.canEdit) {
                     <button appButton variant="subtle" type="button" (click)="openEdit(row.entry)">
                       Editar<span class="sr-only">: avance de {{ row.moment }}</span>
