@@ -164,12 +164,13 @@
       <!-- Dentro de una tarjeta las filas se separan con línea, no con sombra. -->
       <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
         @for (member of view.members; track member.id) {
-          <!-- Por debajo de `md` el rol va debajo, y no al lado: entre él y el avatar, un
-               correo largo se partía en tres líneas. -->
+          <!-- La disposición de las tareas: la persona cede, y el rol y las acciones no. Por
+               debajo de `md` van debajo: entre ellos y el avatar, un correo largo se partía
+               en tres líneas. -->
           <li
-            class="grid gap-espacio-1 md:flex md:items-start md:justify-between md:gap-espacio-3 px-espacio-4 py-espacio-3"
+            class="flex flex-col gap-espacio-1 md:flex-row md:items-start md:justify-between md:gap-espacio-3 px-espacio-4 py-espacio-3"
           >
-            <div class="flex items-start gap-espacio-2">
+            <div class="miembro-contenido flex items-start gap-espacio-2 md:flex-1">
               <app-avatar
                 [name]="member.user.fullName"
                 [online]="online()?.has(member.user.id) ?? false"
@@ -182,97 +183,108 @@
                 }
               </div>
             </div>
-            <div
-              class="flex flex-col items-start md:items-end gap-espacio-1 md:gap-espacio-2 md:shrink-0"
-            >
+            <div class="flex flex-col items-start gap-espacio-1 md:items-end md:shrink-0">
               <p class="secundario text-tinta-media">{{ roleLabels[member.role] }}</p>
-              <!-- A una cuenta desactivada no se le puede empezar nada, y a sí misma tampoco:
+              <div class="flex items-center max-md:-ml-espacio-4 md:-mr-espacio-4">
+                <!-- A una cuenta desactivada no se le puede empezar nada, y a sí misma tampoco:
                    el backend respondería 404 y 400. -->
-              @if (canWriteTo(member)) {
-                <button
-                  appButton
-                  variant="subtle"
-                  type="button"
-                  class="max-md:-ml-espacio-4 md:-mr-espacio-4"
-                  [disabled]="openingChat() !== null"
-                  (click)="writeTo(member)"
-                >
-                  {{ openingChat() === member.user.id ? 'Abriendo…' : 'Escribir'
-                  }}<span class="sr-only">: {{ member.user.fullName }}</span>
-                </button>
-              }
-              <!-- Nunca en la fila del investigador principal: el backend responde 409,
+                @if (canWriteTo(member)) {
+                  <button
+                    appButton
+                    variant="subtle"
+                    type="button"
+                    [disabled]="openingChat() !== null"
+                    (click)="writeTo(member)"
+                  >
+                    {{ openingChat() === member.user.id ? 'Abriendo…' : 'Escribir'
+                    }}<span class="sr-only">: {{ member.user.fullName }}</span>
+                  </button>
+                }
+                <!-- Nunca en la fila del investigador principal: el backend responde 409,
                    y un botón que siempre falla no debería existir.
                    Discreto en arrecife, no relleno: un relleno rojo por fila sería un
-                   muro de rojo. El relleno queda para el confirmar del diálogo. El
-                   margen negativo alinea su texto con el del rol, como el «← Proyectos». -->
-              @if (canManage() && member.role !== 'PRINCIPAL_INVESTIGATOR') {
-                <button
-                  appButton
-                  variant="subtle-destructive"
-                  type="button"
-                  class="max-md:-ml-espacio-4 md:-mr-espacio-4"
-                  (click)="askToRemove(member, removeDialog)"
-                >
-                  Retirar del proyecto<span class="sr-only">: {{ member.user.fullName }}</span>
-                </button>
-              }
+                   muro de rojo. El relleno queda para el confirmar del diálogo. -->
+                @if (canManage() && member.role !== 'PRINCIPAL_INVESTIGATOR') {
+                  <button
+                    appButton
+                    variant="subtle-destructive"
+                    type="button"
+                    class="whitespace-nowrap"
+                    (click)="askToRemove(member, removeDialog)"
+                  >
+                    Retirar del proyecto<span class="sr-only">: {{ member.user.fullName }}</span>
+                  </button>
+                }
+              </div>
             </div>
           </li>
         }
       </ul>
 
       @if (canManage()) {
-        <!-- El botón va debajo del campo y no al lado: la etiqueta y el error cambian
-             la altura del campo, y alinearlos exigiría un valor que no es token. -->
-        <form
-          class="grid justify-items-start gap-espacio-3 max-w-ancho-formulario"
-          novalidate
-          (submit)="addMember($event)"
-        >
-          <app-field
-            class="w-full"
-            for="nuevo-miembro"
-            label="Agregar a una persona por su correo"
-            [error]="addFieldError()"
-          >
-            <input
-              appInput
-              id="nuevo-miembro"
-              type="email"
-              autocomplete="off"
-              [invalid]="addFieldError() !== null"
-              [describedBy]="addFieldError() !== null ? 'nuevo-miembro-error' : null"
-              [value]="newMemberEmail()"
-              (input)="newMemberEmail.set($any($event.target).value)"
-            />
-          </app-field>
-          <!-- Con el correo en blanco no hay nada que preguntarle al servidor. -->
-          <button
-            appButton
-            variant="secondary"
-            type="submit"
-            [disabled]="adding() || newMemberEmail().trim() === ''"
-          >
-            {{ adding() ? 'Agregando…' : 'Agregar miembro' }}
-          </button>
+        <form class="grid gap-espacio-3" novalidate (submit)="addMember($event)">
+          <div class="flex flex-col gap-espacio-3 md:flex-row md:items-start">
+            <app-field
+              class="md:flex-1"
+              for="nuevo-miembro"
+              label="Agregar a una persona por su correo"
+              [error]="addFieldError()"
+            >
+              <input
+                appInput
+                id="nuevo-miembro"
+                type="email"
+                autocomplete="off"
+                [invalid]="addFieldError() !== null"
+                [describedBy]="addFieldError() !== null ? 'nuevo-miembro-error' : null"
+                [value]="newMemberEmail()"
+                (input)="newMemberEmail.set($any($event.target).value)"
+              />
+            </app-field>
+            <!-- La etiqueta vacía mide lo que la del campo: así el botón queda a la altura del
+                 campo, también cuando aparece el error debajo, sin un valor que no es token. -->
+            <div class="grid gap-espacio-1 justify-items-start md:shrink-0">
+              <span class="etiqueta max-md:hidden" aria-hidden="true">&nbsp;</span>
+              <!-- Con el correo en blanco no hay nada que preguntarle al servidor. -->
+              <button
+                appButton
+                variant="secondary"
+                type="submit"
+                class="whitespace-nowrap"
+                [disabled]="adding() || newMemberEmail().trim() === ''"
+              >
+                {{ adding() ? 'Agregando…' : 'Agregar miembro' }}
+              </button>
+            </div>
+          </div>
           @if (addError(); as message) {
             <app-notice tone="error">{{ message }}</app-notice>
           }
         </form>
 
-        <!-- Sin nadie a quien traspasarlo, el botón no lleva a ningún sitio. -->
+        <!-- Sin nadie a quien traspasarlo, la sección no lleva a ningún sitio. -->
         @if (leadCandidates().length > 0) {
-          <div>
+          <section
+            aria-labelledby="traspaso-titulo"
+            class="grid gap-espacio-1 justify-items-start border-t border-borde pt-espacio-4 mt-espacio-2"
+          >
+            <h3 id="traspaso-titulo" class="titulo-tarjeta text-tinta">
+              Traspasar la investigación principal
+            </h3>
+            <p class="secundario text-tinta-media">
+              Pasarás a coinvestigación y dejarás de gestionar este proyecto.
+            </p>
+            <!-- El margen negativo alinea su texto con el del título, como el «← Proyectos». -->
             <button
               appButton
-              variant="secondary"
+              variant="subtle"
               type="button"
+              class="-ml-espacio-4"
               (click)="askToTransfer(transferDialog)"
             >
-              Traspasar la investigación principal
+              Elegir a quién traspasar
             </button>
-          </div>
+          </section>
         }
       }
     </section>
