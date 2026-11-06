@@ -12,7 +12,7 @@ import type { SystemRole } from './session.types';
 export const authGuard: CanMatchFn = () =>
   inject(SessionService).isAuthenticated() || inject(Router).parseUrl('/entrar');
 
-/** Entrar y registrarse son para quien no tiene sesión: con ella, a su inicio. */
+/** Entrar y la sesión expirada son para quien no tiene sesión: con ella, a su inicio. */
 export const guestGuard: CanMatchFn = () =>
   !inject(SessionService).isAuthenticated() || inject(Router).parseUrl('/inicio');
 

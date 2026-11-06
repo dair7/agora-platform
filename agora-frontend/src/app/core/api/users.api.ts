@@ -6,9 +6,9 @@ import { toQueryParams } from './query-params';
 import type { ListUsersQuery, UserSummary } from './users.types';
 
 /**
- * Cliente tipado de `/api/v1/usuarios`. Por ahora solo la consulta que necesita
- * el formulario de crear proyecto para elegir al investigador principal; el
- * resto del módulo llega con la fase 9.
+ * Cliente tipado de `/api/v1/usuarios`. Solo la consulta que necesita el formulario
+ * de crear proyecto para elegir al investigador principal: la API también edita, da de
+ * baja y reactiva cuentas, pero ninguna pantalla lo usa, y aquí no hay método sin pantalla.
  */
 @Injectable({ providedIn: 'root' })
 export class UsersApi {
