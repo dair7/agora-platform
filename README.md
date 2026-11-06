@@ -4,6 +4,8 @@ Collaborative web platform for managing university research projects across thei
 
 Academic project for the *Programación Distribuida* course, Universidad de Cartagena, 2026-2.
 
+**User manual (Spanish, with screenshots):** [`docs/manual/manual-de-usuario.md`](docs/manual/manual-de-usuario.md). It explains every screen step by step for people who do not program.
+
 > **Status — backend and web client complete and deployed:** the backend on Render, the client on Vercel, PostgreSQL 16, and files on Supabase. Still pending: private chats and automated backend tests. This README documents the backend; the client has its own, in [`agora-frontend/README.md`](agora-frontend/README.md).
 
 ## Contents
