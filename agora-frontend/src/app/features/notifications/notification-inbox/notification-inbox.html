@@ -3,6 +3,7 @@
   appButton
   variant="subtle"
   type="button"
+  [class]="inBar() ? 'w-full px-espacio-2! whitespace-nowrap aria-expanded:bg-veril-tenue' : ''"
   aria-controls="bandeja"
   [attr.aria-expanded]="open()"
   (click)="toggle()"
@@ -14,21 +15,32 @@
 </button>
 
 <!-- Justo después del botón: el foco entra con Tab, sin mover nada a mano. Se posiciona
-     contra la barra del armazón y no contra el botón, para no salirse a 360px. -->
+     contra la barra del armazón y no contra el botón. -->
 @if (open()) {
   <section
+    #panel
     id="bandeja"
     aria-label="Notificaciones"
-    class="absolute top-full right-espacio-5 left-espacio-5 sm:left-auto sm:w-full sm:max-w-ancho-formulario z-10 mt-espacio-1 grid gap-espacio-3 bg-superficie-00 border border-borde rounded-radio-md p-espacio-4 shadow-sombra-flotante"
+    class="bandeja-panel absolute top-full right-espacio-5 w-full max-w-ancho-formulario z-10 mt-espacio-1 grid gap-espacio-3 bg-superficie-00 border border-borde rounded-radio-md p-espacio-4 shadow-sombra-flotante"
   >
     <div class="flex flex-wrap items-center justify-between gap-espacio-2">
-      <h2 class="titulo-tarjeta text-tinta">Notificaciones</h2>
+      <h2 class="titulo-tarjeta text-tinta max-md:flex-1">Notificaciones</h2>
+      <button
+        #closer
+        appButton
+        variant="subtle"
+        type="button"
+        class="-mr-espacio-3 md:hidden"
+        (click)="closeAndReturn()"
+      >
+        Cerrar
+      </button>
       @if (unread() > 0) {
         <button
           appButton
           variant="subtle"
           type="button"
-          class="-mr-espacio-4"
+          class="max-md:-ml-espacio-3 md:-mr-espacio-4"
           [disabled]="marking()"
           (click)="markAllRead()"
         >
@@ -61,7 +73,10 @@
         description="Aquí llegan los proyectos a los que te suman y las tareas que te asignan."
       />
     } @else {
-      <ul class="bandeja-lista divide-y divide-borde">
+      <!-- El desplazamiento llega hasta el borde del panel y los botones se alinean solo con
+           `espacio-3`, no con todo su relleno: el anillo de foco ocupa 4px por fuera, y
+           pegado al borde se recortaría. -->
+      <ul class="bandeja-lista -mx-espacio-4 px-espacio-4 divide-y divide-borde">
         @for (row of rows(); track row.notification.id) {
           <li class="grid gap-espacio-1 py-espacio-3 wrap-anywhere">
             <!-- Sin leer se distingue por el peso, el punto y el texto para el lector, no
@@ -85,10 +100,11 @@
             }
             <p class="secundario text-tinta-media tabular-nums">{{ row.moment }}</p>
             @if (row.link || !row.notification.isRead) {
-              <div class="flex flex-wrap gap-x-espacio-4 gap-y-espacio-1">
+              <div class="flex flex-wrap -ml-espacio-3 gap-x-espacio-1">
                 @if (row.link; as link) {
                   <a
-                    class="secundario text-veril underline"
+                    appButton
+                    variant="subtle"
                     [routerLink]="link"
                     (click)="follow(row.notification)"
                   >
@@ -97,7 +113,8 @@
                 }
                 @if (!row.notification.isRead) {
                   <button
-                    class="secundario text-veril underline cursor-pointer disabled:cursor-not-allowed disabled:opacity-opacidad-deshabilitado"
+                    appButton
+                    variant="subtle"
                     type="button"
                     [disabled]="marking()"
                     (click)="markRead(row.notification)"

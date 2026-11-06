@@ -103,7 +103,12 @@
         </app-notice>
       }
 
-      <form class="grid gap-espacio-3" novalidate (submit)="$event.preventDefault(); send()">
+      <form
+        #composerForm
+        class="grid gap-espacio-3"
+        novalidate
+        (submit)="$event.preventDefault(); send()"
+      >
         <app-field for="chat-compositor" label="Mensaje">
           <!-- De solo lectura y no deshabilitado mientras envía: conserva el foco. -->
           <textarea
@@ -114,6 +119,7 @@
             [disabled]="closed()"
             [readOnly]="sending()"
             [value]="draft()"
+            (focus)="onComposerFocus()"
             (input)="onDraftInput($event)"
             (keydown.enter)="onEnter($event)"
           ></textarea>

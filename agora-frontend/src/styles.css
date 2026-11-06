@@ -3,3 +3,4 @@
 /* En la capa base: las utilidades pueden sobrescribir body, el foco y las clases de texto. */
 @import './styles/tokens.css' layer(base);
 @import './styles/theme.css';
+@import './styles/layout.css';

@@ -2,8 +2,11 @@ import {
   Component,
   ElementRef,
   DestroyRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
@@ -43,6 +46,10 @@ const linkOf = ({ type, projectId }: AppNotification): readonly string[] | null 
  * que ya no lleva a ningún sitio tiene que perder su enlace.
  *
  * Una sin `projectId` no tiene enlace y se queda en la lista: pasó de verdad.
+ *
+ * Por debajo de `md` el mismo panel ocupa la pantalla entera, por CSS, y no es una ruta:
+ * dos caminos para lo mismo acaban divergiendo. Ahí tapa el botón que lo abrió y no hay
+ * Escape ni clic fuera, así que lleva «Cerrar» y el foco entra en él.
  */
 @Component({
   selector: 'app-notification-inbox',
@@ -52,12 +59,19 @@ const linkOf = ({ type, projectId }: AppNotification): readonly string[] | null 
   host: {
     '(document:click)': 'closeOutside($event)',
     '(document:keydown.escape)': 'closeWithEscape()',
+    '(focusout)': 'closeWhenFocusLeaves($event)',
   },
 })
 export class NotificationInbox {
   readonly #api = inject(NotificationsApi);
   readonly #host = inject<ElementRef<HTMLElement>>(ElementRef);
+  readonly #injector = inject(Injector);
   private readonly opener = viewChild.required('opener', { read: ElementRef });
+  private readonly closer = viewChild('closer', { read: ElementRef });
+  private readonly panel = viewChild('panel', { read: ElementRef });
+
+  /** En la barra inferior: ocupa su parte del ancho, con menos relleno para que quepa. */
+  readonly inBar = input(false);
 
   readonly #items = signal<readonly AppNotification[] | null>(null);
   #run = 0;
@@ -132,11 +146,24 @@ export class NotificationInbox {
 
     if (this.open()) {
       void this.refresh();
+      afterNextRender(
+        () => {
+          if (this.#fullScreen()) {
+            (this.closer()?.nativeElement as HTMLElement).focus();
+          }
+        },
+        { injector: this.#injector },
+      );
     }
   }
 
   protected close(): void {
     this.open.set(false);
+  }
+
+  protected closeAndReturn(): void {
+    this.close();
+    (this.opener().nativeElement as HTMLElement).focus();
   }
 
   protected closeOutside(event: Event): void {
@@ -147,9 +174,26 @@ export class NotificationInbox {
 
   protected closeWithEscape(): void {
     if (this.open()) {
-      this.close();
-      (this.opener().nativeElement as HTMLElement).focus();
+      this.closeAndReturn();
     }
+  }
+
+  /**
+   * Con el teclado: pasar de largo no deja el panel abierto tapando lo que hay detrás. El
+   * botón que lo abrió cuenta como dentro, porque pulsarlo ya lo cierra, salvo a pantalla
+   * completa, donde queda debajo del panel y el foco no se vería.
+   */
+  protected closeWhenFocusLeaves({ relatedTarget }: FocusEvent): void {
+    const inside = (this.#fullScreen() ? this.panel() : this.#host)?.nativeElement as HTMLElement;
+
+    if (this.open() && relatedTarget instanceof Node && !inside?.contains(relatedTarget)) {
+      this.close();
+    }
+  }
+
+  /** «Cerrar» solo se pinta a pantalla completa. */
+  #fullScreen(): boolean {
+    return (this.closer()?.nativeElement as HTMLElement | undefined)?.checkVisibility() ?? false;
   }
 
   protected markRead(notification: AppNotification): Promise<void> {

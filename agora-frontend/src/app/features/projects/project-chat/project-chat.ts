@@ -74,6 +74,7 @@ export class ProjectChat {
   // `private` de TypeScript: `viewChild` no admite los campos privados de ES.
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
   private readonly composer = viewChild<ElementRef<HTMLTextAreaElement>>('composer');
+  private readonly composerForm = viewChild<ElementRef<HTMLFormElement>>('composerForm');
 
   protected readonly project = resource({
     params: () => this.projectId(),
@@ -108,6 +109,7 @@ export class ProjectChat {
    * el texto, los dos ya son cosas distintas y el vínculo se suelta.
    */
   readonly #composerId = signal<number | null>(null);
+  #stickToBottom = false;
 
   /**
    * Desde dónde hay que ponerse al día, o `null` si el historial es continuo. Se fija
@@ -161,7 +163,19 @@ export class ProjectChat {
       }
     });
 
-    inject(DestroyRef).onDestroy(() => this.#catchUpRun++);
+    const onViewportResize = () => this.#keepComposerInView();
+
+    window.visualViewport?.addEventListener('resize', onViewportResize);
+
+    inject(DestroyRef).onDestroy(() => {
+      this.#catchUpRun++;
+      window.visualViewport?.removeEventListener('resize', onViewportResize);
+    });
+  }
+
+  /** Antes de que el teclado encoja la lista: después ya no se sabe si estaba al fondo. */
+  protected onComposerFocus(): void {
+    this.#stickToBottom = this.#atBottom();
   }
 
   protected isOnline(userId: string): boolean {
@@ -231,6 +245,8 @@ export class ProjectChat {
   protected onDraftInput(event: Event): void {
     this.draft.set((event.target as HTMLTextAreaElement).value);
     this.#composerId.set(null);
+    // El campo crece con el texto, y empuja «Enviar mensaje» por debajo del teclado.
+    this.#revealComposer();
   }
 
   /** Enter envía y Shift+Enter hace salto: este evento solo llega sin modificadores. */
@@ -474,6 +490,36 @@ export class ProjectChat {
       if (mark) {
         void this.#markLatest();
       }
+    }
+  }
+
+  /**
+   * El navegador lleva a la vista el campo y no el formulario, y «Enviar mensaje» va debajo.
+   * Se mira el `visualViewport`, que es lo único que cambia con el teclado en todos los
+   * navegadores: Safari no conoce `interactive-widget`.
+   */
+  #keepComposerInView(): void {
+    if (document.activeElement !== this.composer()?.nativeElement) {
+      return;
+    }
+
+    const list = this.scroller()?.nativeElement;
+
+    if (list && this.#stickToBottom) {
+      list.scrollTop = list.scrollHeight;
+    }
+
+    this.#revealComposer();
+  }
+
+  /** Solo si se sale: en cada tecla, llevarlo al borde movería la página sin motivo. */
+  #revealComposer(): void {
+    const form = this.composerForm()?.nativeElement;
+    const viewport = window.visualViewport;
+    const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+
+    if (form && form.getBoundingClientRect().bottom > bottom) {
+      form.scrollIntoView({ block: 'end' });
     }
   }
 

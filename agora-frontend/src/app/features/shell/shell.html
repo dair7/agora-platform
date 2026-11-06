@@ -1,35 +1,37 @@
-<header class="bg-superficie-00 border-b border-borde">
-  <div
-    class="armazon-ancho relative mx-auto flex flex-wrap items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
-  >
-    <a routerLink="/proyectos" class="titulo-seccion text-tinta">Ágora</a>
+@if (wide()) {
+  <header class="bg-superficie-00 border-b border-borde">
+    <div
+      class="armazon-ancho relative mx-auto flex flex-wrap items-center justify-between gap-espacio-4 py-espacio-3 px-espacio-5"
+    >
+      <a routerLink="/proyectos" class="titulo-seccion text-tinta">Ágora</a>
 
-    @if (session.user(); as user) {
-      <div class="flex flex-wrap items-center justify-end gap-x-espacio-4 gap-y-espacio-1">
-        <app-notification-inbox />
-        <div class="text-right">
-          <p class="cuerpo-fuerte text-tinta">{{ user.fullName }}</p>
-          <p class="secundario text-tinta-media">{{ roleLabels[user.systemRole] }}</p>
+      @if (session.user(); as user) {
+        <div class="flex flex-wrap items-center justify-end gap-x-espacio-4 gap-y-espacio-1">
+          <app-notification-inbox />
+          <div class="text-right">
+            <p class="cuerpo-fuerte text-tinta">{{ user.fullName }}</p>
+            <p class="secundario text-tinta-media">{{ roleLabels[user.systemRole] }}</p>
+          </div>
+          <button
+            appButton
+            variant="subtle"
+            type="button"
+            class="shrink-0"
+            [disabled]="leaving()"
+            (click)="logout()"
+          >
+            {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
+          </button>
         </div>
-        <button
-          appButton
-          variant="subtle"
-          type="button"
-          class="shrink-0"
-          [disabled]="leaving()"
-          (click)="logout()"
-        >
-          {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
-        </button>
-      </div>
-    }
-  </div>
-</header>
+      }
+    </div>
+  </header>
+}
 
 <!-- Aquí y no en cada pantalla, para que cubra toda la aplicación. No se cierra sola:
      se va cuando la conexión vuelve. -->
 @if (realtime.status() === 'reconnecting') {
-  <div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-4">
+  <div class="armazon-ancho w-full mx-auto px-espacio-5 pt-espacio-4">
     <app-notice tone="attention"
       >Reconectando con el servidor.{{
         canWrite() ? ' Puedes seguir escribiendo.' : ''
@@ -39,6 +41,33 @@
 }
 
 <!-- Cada pantalla trae su propio <main>: las de antes del armazón ya lo hacían. -->
-<div class="armazon-ancho mx-auto px-espacio-5 pt-espacio-8 pb-espacio-8">
+<div class="armazon-ancho w-full flex-1 mx-auto px-espacio-5 py-espacio-5 md:py-espacio-8">
   <router-outlet />
 </div>
+
+<!-- Después del contenido y no antes: el orden del teclado es el que se ve. -->
+@if (!wide() && session.user(); as user) {
+  <nav
+    aria-label="Principal"
+    class="barra-inferior z-10 flex items-center gap-espacio-1 bg-superficie-00 border-t border-borde p-espacio-1"
+    [class.hidden]="typing()"
+  >
+    <a
+      appButton
+      variant="subtle"
+      class="flex-auto text-center px-espacio-2! whitespace-nowrap"
+      routerLink="/proyectos"
+      routerLinkActive="bg-veril-tenue text-tinta!"
+      ariaCurrentWhenActive="page"
+      >Proyectos</a
+    >
+    <app-notification-inbox class="flex-auto" [inBar]="true" />
+    <app-account-menu
+      class="flex-auto"
+      [name]="user.fullName"
+      [role]="roleLabels[user.systemRole]"
+      [leaving]="leaving()"
+      (leave)="logout()"
+    />
+  </nav>
+}

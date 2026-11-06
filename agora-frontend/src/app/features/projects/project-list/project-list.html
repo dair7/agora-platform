@@ -25,18 +25,19 @@
       (input)="search($any($event.target).value)"
     />
 
-    <!-- El elegido se distingue por el borde y el texto en veril, no por el fondo:
-         veril-tenue sobre superficie-10 da 1.11:1 y solo se leía como más apagado.
+    <!-- El elegido se distingue por el peso y el texto en veril, como la pestaña activa, y no
+         por el fondo: veril-tenue sobre superficie-10 da 1.11:1. No por el borde tampoco:
+         el de los demás, veril-somero, queda a 1.32:1 del suyo.
          El único relleno veril de la pantalla sigue siendo el botón primario. -->
     <div class="flex flex-wrap gap-espacio-2" role="group" aria-label="Filtrar por estado">
       @for (filter of statusFilters; track filter.label) {
         <button
           type="button"
-          class="secundario px-espacio-3 py-espacio-2 rounded-radio-pildora border cursor-pointer"
+          class="px-espacio-3 py-espacio-2 rounded-radio-pildora border cursor-pointer"
           [class]="
             query().estado === filter.value
-              ? 'bg-veril-tenue border-veril text-veril'
-              : 'bg-superficie-00 border-borde-fuerte text-tinta'
+              ? 'cuerpo-fuerte bg-veril-tenue border-veril text-veril'
+              : 'cuerpo bg-superficie-00 border-veril-somero text-tinta'
           "
           [attr.aria-pressed]="query().estado === filter.value"
           (click)="filterByStatus(filter.value)"

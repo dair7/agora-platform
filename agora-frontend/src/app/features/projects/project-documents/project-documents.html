@@ -84,7 +84,11 @@
         <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
           @for (row of rows(); track row.document.id) {
             <li class="grid gap-espacio-2 px-espacio-4 py-espacio-3">
-              <div class="flex flex-wrap items-start justify-between gap-espacio-3">
+              <!-- Por debajo de `md` las acciones siempre van debajo: al lado, un nombre corto
+                   las dejaría a medio partir. -->
+              <div
+                class="grid gap-espacio-2 md:flex md:flex-wrap md:items-start md:justify-between md:gap-espacio-3"
+              >
                 <div class="grid gap-espacio-1 wrap-anywhere">
                   <h3 class="cuerpo-fuerte text-tinta">{{ row.document.name }}</h3>
                   <p class="secundario text-tinta-media tabular-nums">{{ row.details }}</p>
@@ -93,7 +97,9 @@
                   }
                 </div>
 
-                <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                <div
+                  class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4"
+                >
                   <button
                     appButton
                     variant="subtle"
@@ -146,14 +152,18 @@
                   [attr.aria-label]="'Versiones de ' + row.document.name"
                 >
                   @for (version of chain.items(); track version.id) {
-                    <li class="flex flex-wrap items-center justify-between gap-espacio-2">
+                    <li
+                      class="grid gap-espacio-2 md:flex md:flex-wrap md:items-center md:justify-between"
+                    >
                       <div class="grid gap-espacio-1 wrap-anywhere">
                         <p class="secundario text-tinta">{{ version.name }}</p>
                         <p class="secundario text-tinta-media tabular-nums">
                           {{ details(version) }}{{ $first ? ' · La última' : '' }}
                         </p>
                       </div>
-                      <div class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2">
+                      <div
+                        class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4"
+                      >
                         <button
                           appButton
                           variant="subtle"

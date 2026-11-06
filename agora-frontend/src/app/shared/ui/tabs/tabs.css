@@ -1,0 +1,21 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin token». */
+
+/* Por encima de la barra, dentro de su borde de 1px. No recibe clics: debajo sigue
+   habiendo una pestaña. */
+.tabs-borde {
+  position: absolute;
+  top: 1px; /* sin token: el grosor del borde de la barra */
+  bottom: 1px; /* sin token: el grosor del borde de la barra */
+  width: var(--espacio-6);
+  pointer-events: none;
+}
+
+.tabs-borde-inicio {
+  left: 1px; /* sin token: el grosor del borde de la barra */
+  border-radius: var(--radio-md) 0 0 var(--radio-md);
+}
+
+.tabs-borde-fin {
+  right: 1px; /* sin token: el grosor del borde de la barra */
+  border-radius: 0 var(--radio-md) var(--radio-md) 0;
+}

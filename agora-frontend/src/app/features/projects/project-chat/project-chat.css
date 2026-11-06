@@ -7,3 +7,13 @@
   min-height: 280px; /* sin token */
   overflow-y: auto;
 }
+
+/* El resto de la pantalla, para que el compositor quede a la vista sin desplazar. Con el
+   teclado abierto el alto baja de todos modos al mínimo: `resizes-content`, en
+   `index.html`, hace que `dvh` lo siga. */
+@media (width < 48rem) {
+  .chat-lista {
+    height: calc(100dvh - 480px); /* sin token: cabecera, pestañas, compositor y barra */
+    min-height: 160px; /* sin token: dos mensajes, lo mínimo para seguir el hilo */
+  }
+}
