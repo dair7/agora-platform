@@ -8,16 +8,40 @@
   overflow-y: auto;
 }
 
+/* Fina y sin flechas. `veril-somero` es el token más claro que llega a 3:1 sobre
+   `superficie-00`: 4.50:1, el mismo criterio que el borde de los controles.
+
+   Dos caminos, y no sobra ninguno: en Chromium para Windows, `scrollbar-width` y
+   `scrollbar-color` dejan las flechas (medido), y además anulan `::-webkit-scrollbar`,
+   así que las propiedades estándar solo van donde ese selector no existe: Firefox. */
+@supports selector(::-webkit-scrollbar) {
+  .chat-lista::-webkit-scrollbar {
+    width: var(--espacio-2);
+  }
+
+  .chat-lista::-webkit-scrollbar-thumb {
+    background-color: var(--veril-somero);
+    border-radius: var(--radio-pildora);
+  }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .chat-lista {
+    scrollbar-width: thin;
+    scrollbar-color: var(--veril-somero) transparent;
+  }
+}
+
 /* El resto de la pantalla, para que el compositor quede a la vista sin desplazar. Con el
    teclado abierto el alto baja de todos modos al mínimo: `resizes-content`, en
    `index.html`, hace que `dvh` lo siga. */
 @media (width < 48rem) {
   .chat-lista {
-    height: calc(100dvh - 480px); /* sin token: cabecera, pestañas, compositor y barra */
+    height: calc(100dvh - 488px); /* sin token: cabecera, pestañas, compositor y barra */
     min-height: 160px; /* sin token: dos mensajes, lo mínimo para seguir el hilo */
   }
 
   .chat-lista-alta {
-    height: calc(100dvh - 370px); /* sin token: lo mismo, sin las pestañas */
+    height: calc(100dvh - 378px); /* sin token: lo mismo, sin las pestañas */
   }
 }
