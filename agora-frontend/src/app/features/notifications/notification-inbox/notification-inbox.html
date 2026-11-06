@@ -5,17 +5,33 @@
   type="button"
   [class]="
     inBar()
-      ? 'etiqueta w-full px-espacio-1! whitespace-nowrap aria-expanded:bg-veril-tenue'
-      : 'max-lg:px-espacio-2! whitespace-nowrap'
+      ? 'etiqueta w-full flex! flex-col items-center px-espacio-1! py-espacio-1! whitespace-nowrap aria-expanded:bg-veril-tenue'
+      : 'aria-expanded:bg-veril-tenue'
   "
   aria-controls="bandeja"
   [attr.aria-expanded]="open()"
   (click)="toggle()"
 >
-  <!-- Corto por debajo de `lg`: con «Mensajes» en la barra, el largo no cabía a 768px. -->
-  <span class="lg:hidden">Avisos</span><span class="max-lg:hidden">Notificaciones</span>
-  @if (unread() > 0) {
-    <app-unread-badge class="ml-espacio-1" [count]="unread()" [label]="unreadLabel()" />
+  <!-- En la barra superior va solo la campana: el nombre sigue ahí para el lector. -->
+  @if (!inBar()) {
+    <span class="sr-only">Notificaciones</span>
+  }
+  <!-- La cifra va sobre la campana solo abajo, donde el ancho es fijo. Arriba va al lado,
+       como en «Mensajes»: encima, una de tres dígitos pisaba el nombre a 768px. -->
+  <span [class]="inBar() ? 'relative block' : 'flex items-center gap-espacio-1'">
+    <app-icon name="bell" />
+    @if (unread() > 0) {
+      <app-unread-badge
+        [class]="
+          inBar() ? 'absolute -top-espacio-1 left-espacio-4 border border-superficie-00' : ''
+        "
+        [count]="unread()"
+        [label]="unreadLabel()"
+      />
+    }
+  </span>
+  @if (inBar()) {
+    Avisos
   }
 </button>
 

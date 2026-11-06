@@ -1,7 +1,7 @@
 @if (wide()) {
   <header class="bg-superficie-00 border-b border-borde">
     <div
-      class="armazon-ancho relative mx-auto flex items-center justify-between gap-espacio-2 lg:gap-espacio-4 py-espacio-3 px-espacio-5"
+      class="relative flex items-center justify-between gap-espacio-2 lg:gap-espacio-4 py-espacio-3 px-espacio-5"
     >
       <div class="flex shrink-0 items-center gap-espacio-2 lg:gap-espacio-4">
         <a routerLink="/inicio" class="titulo-seccion text-tinta">Ágora</a>
@@ -62,10 +62,11 @@
             appButton
             variant="subtle"
             type="button"
-            class="shrink-0 max-lg:px-espacio-2!"
+            class="inline-flex! shrink-0 items-center gap-espacio-2 max-lg:px-espacio-2!"
             [disabled]="leaving()"
             (click)="logout()"
           >
+            <app-icon name="log-out" size="espacio-4" />
             {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
           </button>
         </div>
@@ -95,43 +96,52 @@
 @if (!wide() && session.user(); as user) {
   <nav
     aria-label="Principal"
-    class="barra-inferior z-10 flex items-center bg-superficie-00 border-t border-borde p-espacio-1"
+    class="barra-inferior z-10 grid grid-cols-5 bg-superficie-00 border-t border-borde p-espacio-1"
     [class.hidden]="typing()"
   >
     <a
       appButton
       variant="subtle"
-      class="etiqueta flex-auto text-center px-espacio-1! whitespace-nowrap"
+      class="etiqueta flex! flex-col items-center px-espacio-1! py-espacio-1! whitespace-nowrap"
       routerLink="/inicio"
       routerLinkActive="bg-veril-tenue text-tinta!"
       ariaCurrentWhenActive="page"
-      >Inicio</a
     >
+      <app-icon name="house" />
+      Inicio
+    </a>
     <a
       appButton
       variant="subtle"
-      class="etiqueta flex-auto text-center px-espacio-1! whitespace-nowrap"
+      class="etiqueta flex! flex-col items-center px-espacio-1! py-espacio-1! whitespace-nowrap"
       routerLink="/proyectos"
       routerLinkActive="bg-veril-tenue text-tinta!"
       ariaCurrentWhenActive="page"
-      >Proyectos</a
     >
+      <app-icon name="folder" />
+      Proyectos
+    </a>
     <a
       appButton
       variant="subtle"
-      class="etiqueta flex-auto text-center px-espacio-1! whitespace-nowrap"
+      class="etiqueta flex! flex-col items-center px-espacio-1! py-espacio-1! whitespace-nowrap"
       routerLink="/conversaciones"
       routerLinkActive="bg-veril-tenue text-tinta!"
       ariaCurrentWhenActive="page"
     >
+      <span class="relative block">
+        <app-icon name="message-circle" />
+        @if (realtime.conversationUnreadTotal(); as count) {
+          <app-unread-badge
+            class="absolute -top-espacio-1 left-espacio-4 border border-superficie-00"
+            [count]="count"
+          />
+        }
+      </span>
       Chat
-      @if (realtime.conversationUnreadTotal(); as count) {
-        <app-unread-badge class="ml-espacio-1" [count]="count" />
-      }
     </a>
-    <app-notification-inbox class="flex-auto" [inBar]="true" />
+    <app-notification-inbox [inBar]="true" />
     <app-account-menu
-      class="flex-auto"
       [name]="user.fullName"
       [role]="roleLabels[user.systemRole]"
       [leaving]="leaving()"

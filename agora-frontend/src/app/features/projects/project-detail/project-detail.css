@@ -1,0 +1,7 @@
+/* Como en login.css, cada regla lleva un valor que no es token, marcado con «sin token». */
+
+/* La persona cede, y el rol y las acciones no: sin esto, un correo largo no deja encoger la
+   columna. `min-w-0` no genera CSS con este tema. */
+.miembro-contenido {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}

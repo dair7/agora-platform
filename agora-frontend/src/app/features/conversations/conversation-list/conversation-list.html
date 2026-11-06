@@ -2,7 +2,7 @@
      «Carga y vacío» en docs/contexto/frontend-base.md. -->
 <app-loading-status [loading]="list.loading()" />
 
-<main class="grid gap-espacio-5" [attr.aria-busy]="list.loading() || null">
+<main class="grid grid-cols-1 gap-espacio-5" [attr.aria-busy]="list.loading() || null">
   <div class="flex flex-wrap items-start justify-between gap-espacio-4">
     <h1 class="titulo-pagina text-tinta">Mensajes</h1>
     <button
@@ -109,7 +109,7 @@
               [routerLink]="['/conversaciones', row.conversation.id]"
             >
               <app-avatar [name]="row.conversation.otherUser.fullName" />
-              <span class="grid gap-espacio-1 flex-1 conversacion-texto">
+              <span class="grid grid-cols-1 gap-espacio-1 flex-1 conversacion-texto">
                 <span class="flex items-baseline justify-between gap-espacio-2">
                   <span class="cuerpo-fuerte text-tinta wrap-anywhere">{{
                     row.conversation.otherUser.fullName

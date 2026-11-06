@@ -153,7 +153,7 @@ Set up the backend as described in the root README, load the seed with `pnpm --f
 
 **To see the silent refresh,** set `JWT_EXPIRES_IN=10s` in `agora-backend/.env`, restart the backend, and keep using the application: requests keep working, and `/auth/refrescar` shows up in the network panel.
 
-**Narrow screens:** below 768px the top bar gives way to the bottom bar. Its five destinations use short labels: «Chat» is «Mensajes» on the top bar, and «Avisos» is «Notificaciones» from `lg` up.
+**Narrow screens:** below 768px the top bar gives way to the bottom bar. Its five destinations are an icon with a short label: «Chat» is «Mensajes» on the top bar, and «Avisos» is the bell there, whose name stays available to screen readers.
 
 ## Conventions
 
@@ -239,6 +239,8 @@ The breakpoints are Tailwind's defaults, kept on purpose: the design system does
 | `lg:`  | 64rem           | 1024px         |
 | `xl:`  | 80rem           | 1280px         |
 | `2xl:` | 96rem           | 1536px         |
+
+**Icons come from Lucide, never drawn by hand.** `app-icon` holds the paths, copied from `lucide-static` with no new dependency; the ISC notice is in `public/LICENSE-lucide.txt`, and the MIT one too for the icons Lucide inherited from Feather (`log-out` is one: check that list before adding an icon). An icon is decorative, so whoever uses it provides the name, with visible text or `sr-only`.
 
 **`md` is the responsive breakpoint.** Below it there is a bottom bar instead of the top bar, the inbox takes the whole screen, and row actions go under the text. `max-md:` applies below it. Check every screen at 360px: none may scroll sideways.
 

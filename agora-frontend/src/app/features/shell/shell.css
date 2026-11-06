@@ -12,8 +12,8 @@
   min-height: 100dvh; /* sin token: mecánica, el alto de la pantalla */
 }
 
-/* El ancho del contenido, el mismo en la barra y en la pantalla para que el
-   «Ágora» y el título de la pantalla queden alineados. */
+/* El ancho de la pantalla y del aviso de reconexión: una línea de texto de 1900px no se
+   lee. La barra no lo lleva: va de borde a borde, y con este ancho flotaba en el centro. */
 .armazon-ancho {
   max-width: 1040px; /* sin token */
 }

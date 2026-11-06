@@ -1,5 +1,6 @@
 import { Component, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { Button } from '../../../shared/ui/button/button';
+import { Icon } from '../../../shared/ui/icon/icon';
 
 /**
  * «Cuenta», en la barra inferior. La barra no tiene sitio para el nombre, y por eso abre
@@ -10,18 +11,19 @@ import { Button } from '../../../shared/ui/button/button';
  */
 @Component({
   selector: 'app-account-menu',
-  imports: [Button],
+  imports: [Button, Icon],
   template: `
     <button
       #opener
       appButton
       variant="subtle"
       type="button"
-      class="etiqueta w-full px-espacio-1! aria-expanded:bg-veril-tenue"
+      class="etiqueta w-full flex! flex-col items-center px-espacio-1! py-espacio-1! aria-expanded:bg-veril-tenue"
       aria-controls="cuenta"
       [attr.aria-expanded]="open()"
       (click)="toggle()"
     >
+      <app-icon name="user" />
       Cuenta
     </button>
 
@@ -40,9 +42,11 @@ import { Button } from '../../../shared/ui/button/button';
           appButton
           variant="secondary"
           type="button"
+          class="inline-flex! items-center justify-center gap-espacio-2"
           [disabled]="leaving()"
           (click)="leave.emit()"
         >
+          <app-icon name="log-out" size="espacio-4" />
           {{ leaving() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
         </button>
       </section>

@@ -44,6 +44,7 @@ export const isAtBottom = (element: HTMLElement | undefined): boolean =>
           #field
           appTextarea
           id="chat-compositor"
+          class="resize-none!"
           rows="2"
           [disabled]="disabled()"
           [readOnly]="sending()"

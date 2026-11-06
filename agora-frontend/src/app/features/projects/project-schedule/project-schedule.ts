@@ -61,6 +61,7 @@ const DELETE_MESSAGES = {
     WorkStatusPill,
   ],
   templateUrl: './project-schedule.html',
+  styleUrl: './project-schedule.css',
 })
 export class ProjectSchedule {
   readonly #api = inject(PhasesApi);

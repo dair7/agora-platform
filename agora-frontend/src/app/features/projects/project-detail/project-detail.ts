@@ -114,6 +114,7 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
     Skeleton,
   ],
   templateUrl: './project-detail.html',
+  styleUrl: './project-detail.css',
 })
 export class ProjectDetail {
   readonly #api = inject(ProjectsApi);

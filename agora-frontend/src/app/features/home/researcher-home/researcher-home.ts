@@ -5,7 +5,7 @@ import { apiErrorOutcome } from '../../../core/api/api-error';
 import { ReportsApi } from '../../../core/api/reports.api';
 import type { MyTasksPage } from '../../../core/api/reports.types';
 import { formatDueDate } from '../../../core/format/project-dates';
-import { formatCount, formatOverdue } from '../../../core/format/task-figures';
+import { formatCount } from '../../../core/format/task-figures';
 import { RealtimeService } from '../../../core/realtime/realtime.service';
 import { Button } from '../../../shared/ui/button/button';
 import { Empty } from '../../../shared/ui/empty/empty';
@@ -13,6 +13,7 @@ import { Notice } from '../../../shared/ui/notice/notice';
 import { LoadingStatus, Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { WorkStatusPill } from '../../../shared/ui/work-status/work-status';
 import { LiveList } from '../../projects/live-list';
+import { Figure } from '../../reports/figure/figure';
 
 /**
  * El inicio de quien investiga: lo pendiente suyo en todos sus proyectos, con lo atrasado
@@ -24,7 +25,7 @@ import { LiveList } from '../../projects/live-list';
  */
 @Component({
   selector: 'app-researcher-home',
-  imports: [RouterLink, Button, Empty, LoadingStatus, Notice, Skeleton, WorkStatusPill],
+  imports: [RouterLink, Button, Empty, Figure, LoadingStatus, Notice, Skeleton, WorkStatusPill],
   templateUrl: './researcher-home.html',
 })
 export class ResearcherHome {
@@ -40,16 +41,16 @@ export class ResearcherHome {
     })),
   );
 
-  protected readonly countLabel = computed(() => {
+  /**
+   * Las dos vienen sumadas del servidor. No hay una tercera: cualquier otra saldría de contar
+   * `tasks`, que llega cortada, y con más de 50 pendientes la cifra sería falsa sin avisar.
+   */
+  protected readonly figures = computed(() => {
     const page = this.page();
 
-    if (!page) {
-      return '';
-    }
-
-    const pending = page.total === 1 ? '1 pendiente' : `${formatCount(page.total)} pendientes`;
-
-    return page.overdueCount > 0 ? `${pending} · ${formatOverdue(page.overdueCount)}` : pending;
+    return page && page.total > 0
+      ? { pending: formatCount(page.total), overdue: formatCount(page.overdueCount) }
+      : null;
   });
 
   /** Lo que no entra en la lista se dice: un corte que no se ve parece el total. */
