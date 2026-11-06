@@ -1,4 +1,6 @@
-/* Sin esto, un mensaje largo no deja encoger la fila, y `truncate` no recorta nada. */
+/* Sin esto, un mensaje largo no deja encoger la fila, y `truncate` no recorta nada. Los
+   `grid-cols-1` de `main` y de esta fila son la otra mitad: una columna `auto` crece hasta
+   el ancho del mensaje, y uno largo llevaba la página a 518px a 360. */
 .conversacion-texto {
   min-width: 0; /* sin token: mecánica de flexbox */
 }
