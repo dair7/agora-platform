@@ -9,13 +9,14 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   apiErrorCode,
   apiErrorOutcome,
   type ApiErrorMessages,
   type ErrorCode,
 } from '../../../core/api/api-error';
+import { ConversationsApi } from '../../../core/api/conversations.api';
 import { ProjectsApi } from '../../../core/api/projects.api';
 import { ReportsApi } from '../../../core/api/reports.api';
 import type { Member, ProjectRole } from '../../../core/api/projects.types';
@@ -117,6 +118,8 @@ const textOrNull = (value: string | null): string | null => (value?.trim() ? val
 export class ProjectDetail {
   readonly #api = inject(ProjectsApi);
   readonly #reports = inject(ReportsApi);
+  readonly #conversations = inject(ConversationsApi);
+  readonly #router = inject(Router);
   readonly #title = inject(Title);
   readonly #session = inject(SessionService);
   readonly #realtime = inject(RealtimeService);
@@ -236,6 +239,36 @@ export class ProjectDetail {
 
     return this.view()?.members.some((m) => m.user.id === me) ?? false;
   });
+
+  /** La persona con la que se está abriendo una conversación privada. */
+  protected readonly openingChat = signal<string | null>(null);
+
+  protected canWriteTo({ user }: Member): boolean {
+    return user.isActive && user.id !== this.#session.user()?.id;
+  }
+
+  /** Abre la conversación que ya tenían, o una nueva: el backend decide cuál. */
+  protected async writeTo({ user }: Member): Promise<void> {
+    this.openingChat.set(user.id);
+    this.actionError.set(null);
+
+    try {
+      const { id } = await this.#conversations.open(user.id);
+
+      await this.#router.navigate(['/conversaciones', id]);
+    } catch (error) {
+      const outcome = apiErrorOutcome(error);
+
+      if (outcome.kind !== 'none') {
+        this.actionError.set({
+          code: outcome.kind === 'message' ? outcome.code : 'VALIDATION_ERROR',
+          message: outcome.message,
+        });
+      }
+    } finally {
+      this.openingChat.set(null);
+    }
+  }
 
   /** El error de la última acción de cerrar o retirar; se limpia al empezar otra. */
   protected readonly actionError = signal<ActionError | null>(null);

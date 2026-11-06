@@ -1,0 +1,4 @@
+/* Sin esto, un mensaje largo no deja encoger la fila, y `truncate` no recorta nada. */
+.conversacion-texto {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}

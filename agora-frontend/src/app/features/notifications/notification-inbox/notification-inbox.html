@@ -6,13 +6,14 @@
   [class]="
     inBar()
       ? 'etiqueta w-full px-espacio-1! whitespace-nowrap aria-expanded:bg-veril-tenue'
-      : 'max-lg:px-espacio-2!'
+      : 'max-lg:px-espacio-2! whitespace-nowrap'
   "
   aria-controls="bandeja"
   [attr.aria-expanded]="open()"
   (click)="toggle()"
 >
-  Notificaciones
+  <!-- Corto por debajo de `lg`: con «Mensajes» en la barra, el largo no cabía a 768px. -->
+  <span class="lg:hidden">Avisos</span><span class="max-lg:hidden">Notificaciones</span>
   @if (unread() > 0) {
     <app-unread-badge class="ml-espacio-1" [count]="unread()" [label]="unreadLabel()" />
   }

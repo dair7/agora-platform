@@ -1,12 +1,14 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { ConversationsApi } from '../../core/api/conversations.api';
 import { RealtimeService } from '../../core/realtime/realtime.service';
 import { SessionService } from '../../core/session/session.service';
 import type { SystemRole } from '../../core/session/session.types';
 import { Button } from '../../shared/ui/button/button';
 import { Notice } from '../../shared/ui/notice/notice';
+import { UnreadBadge } from '../../shared/ui/unread-badge/unread-badge';
 import { NotificationInbox } from '../notifications/notification-inbox/notification-inbox';
 import { AccountMenu } from './account-menu/account-menu';
 
@@ -45,6 +47,7 @@ const TEXT_ENTRY = 'textarea, input:not([type=checkbox], [type=radio], [type=fil
     Button,
     Notice,
     NotificationInbox,
+    UnreadBadge,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
@@ -55,6 +58,7 @@ const TEXT_ENTRY = 'textarea, input:not([type=checkbox], [type=radio], [type=fil
 })
 export class Shell {
   readonly #router = inject(Router);
+  readonly #conversations = inject(ConversationsApi);
   protected readonly session = inject(SessionService);
   protected readonly realtime = inject(RealtimeService);
   protected readonly roleLabels = ROLE_LABELS;
@@ -84,6 +88,31 @@ export class Shell {
 
     this.#wideQuery.addEventListener('change', onChange);
     inject(DestroyRef).onDestroy(() => this.#wideQuery.removeEventListener('change', onChange));
+
+    // La cifra de las barras sale del servidor. Se vuelve a pedir tras una reconexión: lo que
+    // llegó sin conexión el socket nunca lo entregó.
+    void this.#refreshConversationUnread();
+
+    let lostConnection = false;
+
+    this.realtime.disconnected.pipe(takeUntilDestroyed()).subscribe(() => {
+      lostConnection = true;
+    });
+    this.realtime.connected.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (lostConnection) {
+        lostConnection = false;
+        void this.#refreshConversationUnread();
+      }
+    });
+  }
+
+  /** Un fallo solo deja de pintar la cifra. */
+  async #refreshConversationUnread(): Promise<void> {
+    try {
+      this.realtime.setConversationsUnread(await this.#conversations.list());
+    } catch {
+      // Sin cifra: la lista de mensajes dirá lo que pasa si la persona entra.
+    }
   }
 
   protected readonly isCoordinator = computed(
@@ -91,7 +120,9 @@ export class Shell {
   );
 
   /** El aviso de reconexión no promete lo que no hay: solo en el chat se puede escribir. */
-  protected readonly canWrite = computed(() => this.#url().endsWith('/conversacion'));
+  protected readonly canWrite = computed(() =>
+    /\/conversacion$|\/conversaciones\/[^/?]+/.test(this.#url()),
+  );
 
   protected onFocusIn({ target }: FocusEvent): void {
     this.typing.set(

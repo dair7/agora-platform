@@ -96,6 +96,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/projects/project-chat/project-chat').then((m) => m.ProjectChat),
       },
+      {
+        path: 'conversaciones',
+        title: 'Mensajes · Ágora',
+        loadComponent: () =>
+          import('./features/conversations/conversation-list/conversation-list').then(
+            (m) => m.ConversationList,
+          ),
+      },
+      // Sin guard: quién participa lo decide el backend, con la fila de participante.
+      {
+        path: 'conversaciones/:conversationId',
+        // Provisional: la pantalla lo cambia por el nombre de la otra persona.
+        title: 'Conversación · Ágora',
+        loadComponent: () =>
+          import('./features/conversations/conversation-detail/conversation-detail').then(
+            (m) => m.ConversationDetail,
+          ),
+      },
       // Donde se aterriza: distinto para cada rol.
       {
         path: 'inicio',

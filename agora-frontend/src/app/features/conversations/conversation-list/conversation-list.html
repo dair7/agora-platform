@@ -1,0 +1,142 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en docs/contexto/frontend-base.md. -->
+<app-loading-status [loading]="list.loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="list.loading() || null">
+  <div class="flex flex-wrap items-start justify-between gap-espacio-4">
+    <h1 class="titulo-pagina text-tinta">Mensajes</h1>
+    <button
+      appButton
+      type="button"
+      [variant]="choosing() ? 'secondary' : 'primary'"
+      aria-controls="contactos"
+      [attr.aria-expanded]="choosing()"
+      (click)="toggleChoosing()"
+    >
+      {{ choosing() ? 'Cerrar' : 'Nueva conversación' }}
+    </button>
+  </div>
+
+  @if (choosing()) {
+    <section id="contactos" aria-labelledby="contactos-titulo" class="grid gap-espacio-3">
+      <h2 id="contactos-titulo" class="titulo-seccion text-tinta">¿Con quién?</h2>
+
+      @if (contactsError(); as message) {
+        <app-notice tone="error">
+          {{ message }}
+          <button appButton variant="secondary" type="button" noticeAction (click)="loadContacts()">
+            Reintentar
+          </button>
+        </app-notice>
+      }
+
+      @if (contacts(); as people) {
+        @if (people.length === 0) {
+          <app-empty
+            title="Todavía no hay con quién hablar"
+            description="Aquí aparecen la coordinación y quienes comparten proyecto contigo."
+          />
+        } @else {
+          <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+            @for (person of people; track person.id) {
+              <li class="flex items-center justify-between gap-espacio-3 px-espacio-4 py-espacio-2">
+                <div class="flex items-center gap-espacio-2 conversacion-texto">
+                  <app-avatar [name]="person.fullName" />
+                  <div class="wrap-anywhere">
+                    <p class="cuerpo-fuerte text-tinta">{{ person.fullName }}</p>
+                    <p class="secundario text-tinta-media">{{ roleLabels[person.systemRole] }}</p>
+                  </div>
+                </div>
+                <button
+                  appButton
+                  variant="subtle"
+                  type="button"
+                  class="-mr-espacio-3 shrink-0"
+                  [disabled]="opening() !== null"
+                  (click)="open(person)"
+                >
+                  {{ opening() === person.id ? 'Abriendo…' : 'Escribir'
+                  }}<span class="sr-only">: {{ person.fullName }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      } @else if (!contactsError()) {
+        <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (row of [1, 2]; track row) {
+            <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+              <app-skeleton class="cuerpo-fuerte" />
+              <app-skeleton class="secundario" />
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (errorMessage(); as message) {
+    <!-- Conserva lo que había: un fallo de red no borra la lista. -->
+    <app-notice tone="error">
+      {{ message }}
+      <button appButton variant="secondary" type="button" noticeAction (click)="list.refresh()">
+        Reintentar
+      </button>
+    </app-notice>
+  }
+
+  @if (list.loading()) {
+    <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+      @for (row of [1, 2, 3]; track row) {
+        <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+          <app-skeleton class="cuerpo-fuerte" />
+          <app-skeleton class="secundario" />
+        </div>
+      }
+    </div>
+  } @else if (list.items(); as items) {
+    @if (items.length === 0) {
+      <app-empty
+        title="Todavía no tienes conversaciones"
+        description="Elige a alguien y escríbele: la conversación es solo de los dos."
+      />
+    } @else {
+      <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+        @for (row of rows(); track row.conversation.id) {
+          <li>
+            <a
+              class="flex items-start gap-espacio-2 px-espacio-4 py-espacio-3 rounded-radio-md"
+              [routerLink]="['/conversaciones', row.conversation.id]"
+            >
+              <app-avatar [name]="row.conversation.otherUser.fullName" />
+              <span class="grid gap-espacio-1 flex-1 conversacion-texto">
+                <span class="flex items-baseline justify-between gap-espacio-2">
+                  <span class="cuerpo-fuerte text-tinta wrap-anywhere">{{
+                    row.conversation.otherUser.fullName
+                  }}</span>
+                  <span class="secundario text-tinta-media tabular-nums shrink-0">{{
+                    row.moment
+                  }}</span>
+                </span>
+                <span class="flex items-center justify-between gap-espacio-2">
+                  <span class="secundario text-tinta-media truncate">
+                    @if (row.own) {
+                      Tú:
+                    }
+                    {{ row.conversation.lastMessage?.content }}
+                  </span>
+                  @if (row.conversation.unreadCount > 0) {
+                    <app-unread-badge class="shrink-0" [count]="row.conversation.unreadCount" />
+                  }
+                </span>
+                @if (!row.conversation.otherUser.isActive) {
+                  <span class="secundario text-tinta-media">Cuenta desactivada</span>
+                }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  }
+</main>
