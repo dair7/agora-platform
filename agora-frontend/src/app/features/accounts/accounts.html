@@ -1,0 +1,359 @@
+<!-- Siempre en la plantilla y fuera del contenedor con aria-busy: ver
+     «Carga y vacío» en docs/contexto/frontend-base.md. -->
+<app-loading-status [loading]="loading()" />
+
+<main class="grid gap-espacio-5" [attr.aria-busy]="loading() || null">
+  <div class="flex flex-wrap items-start justify-between gap-espacio-4">
+    <div>
+      <h1 class="titulo-pagina text-tinta">Cuentas</h1>
+      <!-- Se anuncia cuando cambia por un filtro o una búsqueda. -->
+      <p class="secundario text-tinta-media mt-espacio-1" role="status">{{ countLabel() }}</p>
+    </div>
+
+    <!-- La única acción primaria de la pantalla. -->
+    <button appButton type="button" (click)="openCreate(createDialog)">Nueva cuenta</button>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-x-espacio-3 gap-y-espacio-2">
+    <label for="buscar-cuentas" class="sr-only">Buscar cuentas por nombre o correo</label>
+    <input
+      appInput
+      id="buscar-cuentas"
+      type="search"
+      class="cuentas-busqueda"
+      placeholder="Buscar por nombre o correo"
+      autocomplete="off"
+      [value]="query().buscar"
+      (input)="search($any($event.target).value)"
+    />
+
+    <!-- Como los estados de la lista de proyectos: el elegido se distingue por el peso y el
+         texto en veril, y no por el relleno, que es del botón primario. -->
+    <div class="flex flex-wrap gap-espacio-2" role="group" aria-label="Filtrar por rol">
+      @for (filter of roleFilters; track filter.label) {
+        <button
+          type="button"
+          class="px-espacio-3 py-espacio-2 rounded-radio-pildora border cursor-pointer"
+          [class]="
+            query().rol === filter.value
+              ? 'cuerpo-fuerte bg-veril-tenue border-veril text-veril'
+              : 'cuerpo bg-superficie-00 border-veril-somero text-tinta'
+          "
+          [attr.aria-pressed]="query().rol === filter.value"
+          (click)="filterByRole(filter.value)"
+        >
+          {{ filter.label }}
+        </button>
+      }
+    </div>
+
+    <label class="flex items-center gap-espacio-2 cuerpo text-tinta cursor-pointer py-espacio-2">
+      <input
+        type="checkbox"
+        role="switch"
+        class="cuentas-interruptor size-espacio-5 cursor-pointer"
+        [checked]="query().desactivadas"
+        (change)="toggleInactive($any($event.target).checked)"
+      />
+      Mostrar desactivadas
+    </label>
+  </div>
+
+  @if (pageNotice(); as message) {
+    <app-notice tone="error">{{ message }}</app-notice>
+  }
+
+  <section
+    #listRegion
+    class="cuentas-lista"
+    tabindex="-1"
+    aria-label="Lista de cuentas"
+    [attr.aria-busy]="loading() || null"
+  >
+    @if (loading()) {
+      <div class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+          <div class="px-espacio-4 py-espacio-3 grid gap-espacio-1">
+            <app-skeleton class="cuerpo-fuerte" />
+            <app-skeleton class="secundario" />
+          </div>
+        }
+      </div>
+    } @else if (errorMessage(); as message) {
+      <app-notice tone="error">
+        {{ message }}
+        <button
+          appButton
+          variant="secondary"
+          type="button"
+          noticeAction
+          (click)="accounts.reload()"
+        >
+          Reintentar
+        </button>
+      </app-notice>
+    } @else if (list(); as rows) {
+      @if (rows.length === 0) {
+        @if (hasFilters()) {
+          <app-empty
+            title="Ninguna cuenta coincide con la búsqueda"
+            description="Prueba con otro término o quita los filtros."
+          >
+            <button
+              appButton
+              variant="secondary"
+              type="button"
+              emptyAction
+              (click)="clearFilters()"
+            >
+              Limpiar filtros
+            </button>
+          </app-empty>
+        } @else {
+          <app-empty
+            title="Todavía no hay cuentas"
+            description="Crea la primera para que pueda entrar a la plataforma."
+          />
+        }
+      } @else {
+        <ul class="bg-superficie-00 border border-borde rounded-radio-md divide-y divide-borde">
+          @for (account of rows; track account.id) {
+            <li class="px-espacio-4 py-espacio-3">
+              <div
+                class="flex flex-col gap-espacio-3 md:flex-row md:items-start md:justify-between"
+              >
+                <div class="cuenta-contenido grid grid-cols-1 gap-espacio-1 md:flex-1">
+                  <p class="cuerpo-fuerte text-tinta wrap-anywhere">{{ account.fullName }}</p>
+                  <p class="secundario text-tinta-media wrap-anywhere">{{ account.email }}</p>
+                  <p class="flex flex-wrap items-center gap-espacio-2">
+                    <span class="secundario text-tinta-media">{{
+                      roleLabels[account.systemRole]
+                    }}</span>
+                    @if (!account.isActive) {
+                      <span
+                        class="etiqueta inline-block px-espacio-2 py-espacio-1 rounded-radio-sm whitespace-nowrap bg-superficie-20 text-tinta"
+                        >Desactivada</span
+                      >
+                    }
+                    @if (isSelf(account)) {
+                      <span
+                        class="etiqueta inline-block px-espacio-2 py-espacio-1 rounded-radio-sm whitespace-nowrap border border-veril-somero bg-superficie-00 text-tinta"
+                        >Tú</span
+                      >
+                    }
+                  </p>
+                </div>
+
+                <!-- La propia cuenta no tiene acciones: desactivarse o restablecerse es un 409, y
+                     un botón que siempre falla es peor que ninguno. -->
+                @if (!isSelf(account)) {
+                  <div
+                    class="flex flex-wrap items-center max-md:-ml-espacio-4 md:flex-nowrap md:shrink-0 md:gap-x-espacio-1"
+                  >
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      (click)="openRename(account, renameDialog)"
+                    >
+                      Editar nombre<span class="sr-only">: {{ account.fullName }}</span>
+                    </button>
+                    <button
+                      appButton
+                      variant="subtle"
+                      type="button"
+                      (click)="openReset(account, resetDialog)"
+                    >
+                      Restablecer contraseña<span class="sr-only">: {{ account.fullName }}</span>
+                    </button>
+                    @if (account.isActive) {
+                      <button
+                        appButton
+                        variant="subtle-destructive"
+                        type="button"
+                        (click)="openDeactivate(account, deactivateDialog)"
+                      >
+                        Desactivar<span class="sr-only">: {{ account.fullName }}</span>
+                      </button>
+                    } @else {
+                      <button
+                        appButton
+                        variant="subtle"
+                        type="button"
+                        [disabled]="reactivatingId() !== null"
+                        (click)="reactivate(account)"
+                      >
+                        {{ reactivatingId() === account.id ? 'Reactivando…' : 'Reactivar'
+                        }}<span class="sr-only">: {{ account.fullName }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </section>
+</main>
+
+<!-- Nueva cuenta. Con la cuenta creada, el mismo diálogo pasa a mostrar la contraseña. -->
+<app-dialog
+  #createDialog
+  [title]="created() ? 'Cuenta creada' : 'Nueva cuenta'"
+  [confirmLabel]="created() ? 'Listo' : 'Crear cuenta'"
+  busyLabel="Creando cuenta…"
+  [busy]="creation.busy()"
+  [showCancel]="!created()"
+  (confirmed)="confirmCreate(createDialog)"
+  (closed)="clearCreated()"
+>
+  @if (created(); as credential) {
+    <app-generated-password [password]="credential.password">
+      La cuenta de {{ credential.person }} está lista y esta es su contraseña inicial. Nadie puede
+      cambiarla por su cuenta: si la olvida, la coordinación la restablece.
+    </app-generated-password>
+  } @else {
+    <p>La contraseña inicial se genera sola y se muestra una vez, al crear la cuenta.</p>
+
+    @if (creation.notice(); as message) {
+      <app-notice class="mt-espacio-4" tone="error">{{ message }}</app-notice>
+    }
+
+    <app-field
+      class="mt-espacio-4"
+      for="cuenta-nombre"
+      label="Nombre completo"
+      [error]="creation.fields()['fullName']"
+    >
+      <input
+        appInput
+        id="cuenta-nombre"
+        type="text"
+        autocomplete="off"
+        [attr.maxlength]="nameMax"
+        [invalid]="!!creation.fields()['fullName']"
+        [describedBy]="creation.fields()['fullName'] ? 'cuenta-nombre-error' : null"
+        [disabled]="creation.busy()"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault(); confirmCreate(createDialog)"
+      />
+    </app-field>
+
+    <app-field
+      class="mt-espacio-4"
+      for="cuenta-correo"
+      label="Correo"
+      [error]="creation.fields()['email']"
+    >
+      <input
+        appInput
+        id="cuenta-correo"
+        type="email"
+        autocomplete="off"
+        [attr.maxlength]="emailMax"
+        [invalid]="!!creation.fields()['email']"
+        [describedBy]="creation.fields()['email'] ? 'cuenta-correo-error' : null"
+        [disabled]="creation.busy()"
+        [value]="newEmail()"
+        (input)="newEmail.set($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault(); confirmCreate(createDialog)"
+      />
+    </app-field>
+  }
+</app-dialog>
+
+<!-- Editar el nombre: solo eso. El correo es la identidad con la que se entra, y el rol no
+     se cambia desde aquí. -->
+<app-dialog
+  #renameDialog
+  title="Editar nombre"
+  confirmLabel="Guardar"
+  busyLabel="Guardando…"
+  [busy]="renaming.busy()"
+  (confirmed)="submitRename(renameDialog)"
+>
+  @if (renaming.notice(); as message) {
+    <app-notice class="mb-espacio-4" tone="error">{{ message }}</app-notice>
+  }
+
+  <app-field
+    for="cuenta-editar-nombre"
+    label="Nombre completo"
+    [error]="renaming.fields()['fullName']"
+  >
+    <input
+      appInput
+      id="cuenta-editar-nombre"
+      type="text"
+      autocomplete="off"
+      [attr.maxlength]="nameMax"
+      [invalid]="!!renaming.fields()['fullName']"
+      [describedBy]="renaming.fields()['fullName'] ? 'cuenta-editar-nombre-error' : null"
+      [disabled]="renaming.busy()"
+      [value]="renameValue()"
+      (input)="renameValue.set($any($event.target).value)"
+      (keydown.enter)="$event.preventDefault(); submitRename(renameDialog)"
+    />
+  </app-field>
+</app-dialog>
+
+<!-- Restablecer. La contraseña la genera el cliente; el servidor solo la recibe. -->
+<app-dialog
+  #resetDialog
+  [title]="
+    resetDone()
+      ? 'Contraseña restablecida'
+      : '¿Restablecer la contraseña de ' + (resetTarget()?.fullName ?? '') + '?'
+  "
+  [confirmLabel]="resetDone() ? 'Listo' : 'Restablecer contraseña'"
+  busyLabel="Restableciendo…"
+  [confirmVariant]="resetDone() ? 'primary' : 'destructive'"
+  [busy]="reset.busy()"
+  [showCancel]="!resetDone()"
+  (confirmed)="confirmReset(resetDialog)"
+  (closed)="clearReset()"
+>
+  @if (resetDone(); as credential) {
+    <app-generated-password [password]="credential.password">
+      La contraseña de {{ credential.person }} cambió: la anterior ya no sirve y sus sesiones
+      abiertas se cerraron.
+    </app-generated-password>
+  } @else {
+    @if (reset.notice(); as message) {
+      <app-notice class="mb-espacio-4" tone="error">{{ message }}</app-notice>
+    }
+    <p>
+      Se genera una contraseña nueva y la actual deja de servir. Las sesiones abiertas de esta
+      persona se cierran y tendrá que entrar de nuevo.
+    </p>
+    <p class="mt-espacio-2">
+      La contraseña nueva se muestra una sola vez, para que se la entregues.
+    </p>
+  }
+</app-dialog>
+
+<!-- Desactivar. Es una baja lógica: nada se borra, y se deshace con «Reactivar». -->
+<app-dialog
+  #deactivateDialog
+  [title]="'¿Desactivar la cuenta de ' + (deactivateTarget()?.fullName ?? '') + '?'"
+  confirmLabel="Desactivar"
+  busyLabel="Desactivando…"
+  confirmVariant="destructive"
+  [busy]="deactivation.busy()"
+  (confirmed)="submitDeactivate(deactivateDialog)"
+>
+  @if (deactivation.notice(); as message) {
+    <app-notice class="mb-espacio-4" tone="error">{{ message }}</app-notice>
+  }
+  <p>
+    Sus sesiones se cierran y no podrá volver a entrar mientras esté desactivada. Lo que tenga
+    abierto puede seguir respondiendo hasta 15 minutos.
+  </p>
+  <p class="mt-espacio-2">
+    Sus proyectos, tareas y mensajes se conservan. Si dirige proyectos abiertos, antes tiene que
+    traspasar la investigación principal o cerrarlos.
+  </p>
+</app-dialog>
