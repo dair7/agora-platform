@@ -87,9 +87,9 @@
               <!-- Por debajo de `md` las acciones siempre van debajo: al lado, un nombre corto
                    las dejaría a medio partir. -->
               <div
-                class="grid gap-espacio-2 md:flex md:flex-wrap md:items-start md:justify-between md:gap-espacio-3"
+                class="grid gap-espacio-2 md:flex md:items-start md:justify-between md:gap-espacio-3"
               >
-                <div class="grid gap-espacio-1 wrap-anywhere">
+                <div class="documento-contenido grid gap-espacio-1 wrap-anywhere md:flex-1">
                   <h3 class="cuerpo-fuerte text-tinta">{{ row.document.name }}</h3>
                   <p class="secundario text-tinta-media tabular-nums">{{ row.details }}</p>
                   @if (row.task; as task) {
@@ -98,7 +98,7 @@
                 </div>
 
                 <div
-                  class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4"
+                  class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4 md:flex-nowrap md:shrink-0"
                 >
                   <button
                     appButton
@@ -153,16 +153,16 @@
                 >
                   @for (version of chain.items(); track version.id) {
                     <li
-                      class="grid gap-espacio-2 md:flex md:flex-wrap md:items-center md:justify-between"
+                      class="grid gap-espacio-2 md:flex md:items-center md:justify-between md:gap-espacio-3"
                     >
-                      <div class="grid gap-espacio-1 wrap-anywhere">
+                      <div class="documento-contenido grid gap-espacio-1 wrap-anywhere md:flex-1">
                         <p class="secundario text-tinta">{{ version.name }}</p>
                         <p class="secundario text-tinta-media tabular-nums">
                           {{ details(version) }}{{ $first ? ' · La última' : '' }}
                         </p>
                       </div>
                       <div
-                        class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4"
+                        class="flex flex-wrap items-center gap-x-espacio-1 gap-y-espacio-2 max-md:-ml-espacio-4 md:flex-nowrap md:shrink-0"
                       >
                         <button
                           appButton

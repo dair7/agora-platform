@@ -64,6 +64,7 @@ const DELETE_MESSAGES: ApiErrorMessages = {
     Skeleton,
   ],
   templateUrl: './project-documents.html',
+  styleUrl: './project-documents.css',
 })
 export class ProjectDocuments {
   readonly #api = inject(DocumentsApi);
