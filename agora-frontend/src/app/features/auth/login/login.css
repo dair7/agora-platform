@@ -179,7 +179,7 @@
   background: var(--superficie-10);
 }
 
-/* Recordarme y olvido */
+/* Recordarme */
 .entrada-opciones {
   margin-top: -6px; /* sin token */
 }
@@ -199,20 +199,6 @@
   height: 18px;
   margin: 0;
   accent-color: var(--veril);
-}
-
-.entrada-olvido {
-  min-height: 44px; /* sin token */
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.entrada-enlace {
-  color: var(--veril);
-}
-
-.entrada-enlace:hover {
-  color: var(--veril-hundido);
 }
 
 /* Error de la sesión */
