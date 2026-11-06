@@ -10806,14 +10806,14 @@
           "response": []
         },
         {
-          "name": "2. Sesión de un miembro de P1",
+          "name": "2. Sesión de un miembro de P1 sin marca",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const body = pm.response.json();\r\npm.environment.set('readerToken', body.accessToken);\r\npm.environment.set('readProjectId', 'b1000000-0000-4000-8000-000000000001');\r\n// Un mensaje de la conversación privada del seed.\r\npm.environment.set('foreignMessageId', '0b000000-0000-4000-8000-000000000006');\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                  "const body = pm.response.json();\r\n// Sofía y no otra persona: el seed la deja sin marca, y por eso marcar la mueve. Con una\r\n// marca posterior al último mensaje, el paso 6 no tendría nada que hacer avanzar.\r\npm.environment.set('readerToken', body.accessToken);\r\npm.environment.set('readProjectId', 'b1000000-0000-4000-8000-000000000001');\r\n// Un mensaje de la conversación privada del seed.\r\npm.environment.set('foreignMessageId', '0b000000-0000-4000-8000-000000000006');\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
                 ]
               }
             }
@@ -10826,7 +10826,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{ \"email\": \"andres.pardo@example.com\", \"password\": \"Coinvestigador123*\" }",
+              "raw": "{ \"email\": \"sofia.navarro@example.com\", \"password\": \"Coinvestigador123*\" }",
               "options": {
                 "raw": {
                   "language": "json"
@@ -13614,6 +13614,1490 @@
               "path": [
                 "proyectos",
                 "b1000000-0000-4000-8000-000000000002"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "conversaciones",
+      "item": [
+        {
+          "name": "1. Sesión de Laura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('convLauraToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"laura.mendoza@example.com\",\"password\":\"Investigador123*\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Sesión de quien no participa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('convOutsiderToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"sofia.navarro@example.com\",\"password\":\"Coinvestigador123*\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Sesión de quien no comparte proyecto con Laura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('convStrangerToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"daniel.osorio@example.com\",\"password\":\"Coinvestigador123*\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Sesión de la coordinación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\npm.environment.set('convCoordToken', body.accessToken);\r\n\r\npm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"coordinacion@example.com\",\"password\":\"Coordinador123*\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/iniciar-sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "iniciar-sesion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Contactos: quien comparte proyecto, y la coordinación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { contacts } = pm.response.json();\r\nconst ids = contacts.map((contact) => contact.id);\r\n\r\npm.test('200, con la coordinación y sus compañeros', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(ids).to.include.members(['a1000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000004', 'a1000000-0000-4000-8000-000000000005']);\r\n});\r\n\r\npm.test('sin quien no comparte proyecto', () => {\r\n  pm.expect(ids).to.not.include('a1000000-0000-4000-8000-000000000006');\r\n});\r\n\r\npm.test('sin correo', () => {\r\n  pm.expect(contacts[0]).to.have.all.keys('id', 'fullName', 'systemRole');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/contactos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "contactos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Contactos de la coordinación: todas las cuentas activas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { contacts } = pm.response.json();\r\n\r\npm.test('200, y ella no sale', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(contacts.map((contact) => contact.id)).to.not.include('a1000000-0000-4000-8000-000000000001');\r\n  pm.expect(contacts.map((contact) => contact.id)).to.include.members(['a1000000-0000-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000006']);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convCoordToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/contactos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "contactos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. 401: contactos sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('401: sin token', () => {\r\n  pm.response.to.have.status(401);\r\n  pm.expect(body.error.code).to.eql('UNAUTHENTICATED');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/contactos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "contactos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. Mis conversaciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { conversations } = pm.response.json();\r\n\r\npm.test('200, con la del seed', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(conversations.map((item) => item.id)).to.include('0a000000-0000-4000-8000-000000000002');\r\n});\r\n\r\npm.test('trae a la otra persona y el último mensaje', () => {\r\n  pm.expect(conversations[0]).to.have.all.keys('id', 'otherUser', 'lastMessage', 'unreadCount');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Abrir la que ya existe: la misma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { conversation } = pm.response.json();\r\n\r\npm.test('200, no crea otra', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(conversation.id).to.eql('0a000000-0000-4000-8000-000000000002');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"a1000000-0000-4000-8000-000000000004\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. 404: abrir con quien no comparte proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: un 403 confirmaría que la cuenta existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convStrangerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"a1000000-0000-4000-8000-000000000002\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11. Una existente sigue valiendo sin compartir proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: la regla decide con quién se empieza', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convStrangerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"a1000000-0000-4000-8000-000000000005\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12. 404: abrir con una cuenta que no existe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convCoordToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"00000000-0000-4000-8000-000000000000\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13. 400: abrir consigo misma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: hacen falta dos personas', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"a1000000-0000-4000-8000-000000000002\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. 400: un campo de más",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: el cuerpo solo dice con quién', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":\"a1000000-0000-4000-8000-000000000004\",\"type\":\"PROJECT\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15. Detalle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: participa', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16. 404: detalle, quien no participa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: para quien no participa no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convOutsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17. 404: la coordinación tampoco entra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: ver todos los proyectos no da para esto', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convCoordToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18. 404: un chat de proyecto por esta ruta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: saltaría la regla de proyecto cerrado', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000001/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000001",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "19. 400: identificador malformado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: se valida antes de buscar', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/abc/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "abc",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20. Historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { messages } = pm.response.json();\r\n\r\npm.test('200, sin proyecto', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(messages[0].conversationId).to.eql('0a000000-0000-4000-8000-000000000002');\r\n  pm.expect(messages[0]).to.not.have.property('projectId');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "21. Hacia adelante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: lo que vino después', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes?despues=0b000000-0000-4000-8000-000000000006",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "0b000000-0000-4000-8000-000000000006"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22. 400: antes y despues juntos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: se pide en un solo sentido', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes?antes=0b000000-0000-4000-8000-000000000006&despues=0b000000-0000-4000-8000-000000000006",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "antes",
+                  "value": "0b000000-0000-4000-8000-000000000006"
+                },
+                {
+                  "key": "despues",
+                  "value": "0b000000-0000-4000-8000-000000000006"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23. 404: cursor de otra conversación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: aquí ese mensaje no existe', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes?despues=0b000000-0000-4000-8000-000000000001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ],
+              "query": [
+                {
+                  "key": "despues",
+                  "value": "0b000000-0000-4000-8000-000000000001"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24. Enviar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const { message } = pm.response.json();\r\npm.environment.set('convMessageId', message.id);\r\n\r\npm.test('201, sin proyecto', () => {\r\n  pm.response.to.have.status(201);\r\n  pm.expect(message).to.not.have.property('projectId');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"Mensaje de la colección\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25. 404: enviar, quien no participa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: no escribe en conversaciones ajenas', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convOutsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"No debería llegar\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "26. 400: mensaje vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('400: sin contenido', () => {\r\n  pm.response.to.have.status(400);\r\n  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"   \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "27. Marca de leído",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: calculada en el servidor', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes/lectura",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes",
+                "lectura"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28. Marcar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('200, sin nada por leer', () => {\r\n  pm.response.to.have.status(200);\r\n  pm.expect(body.unreadCount).to.eql(0);\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"messageId\":\"{{convMessageId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes/lectura",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes",
+                "lectura"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29. 404: marcar con un mensaje de otra conversación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: la fecha sale de un mensaje de esta conversación', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"messageId\":\"0b000000-0000-4000-8000-000000000001\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes/lectura",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes",
+                "lectura"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30. 404: marcar, quien no participa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('404: no participa', () => {\r\n  pm.response.to.have.status(404);\r\n  pm.expect(body.error.code).to.eql('NOT_FOUND');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convOutsiderToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"messageId\":\"0b000000-0000-4000-8000-000000000006\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes/lectura",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes",
+                "lectura"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "31. Baja de la otra persona",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204: baja lógica', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convCoordToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/a1000000-0000-4000-8000-000000000004",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "a1000000-0000-4000-8000-000000000004"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "32. Con la cuenta desactivada se lee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: el historial sigue', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "33. 409: con la cuenta desactivada no se envía",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\r\n\r\npm.test('409: nadie va a contestar', () => {\r\n  pm.response.to.have.status(409);\r\n  pm.expect(body.error.code).to.eql('CONFLICT');\r\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convLauraToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"content\":\"No debería llegar\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/conversaciones/0a000000-0000-4000-8000-000000000002/mensajes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "conversaciones",
+                "0a000000-0000-4000-8000-000000000002",
+                "mensajes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "34. Reactivar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200: deja la cuenta como estaba', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{convCoordToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/a1000000-0000-4000-8000-000000000004/reactivar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "a1000000-0000-4000-8000-000000000004",
+                "reactivar"
               ]
             }
           },

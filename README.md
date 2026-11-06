@@ -59,7 +59,7 @@ agora-platform/
 │   └── src/
 │       ├── config/          # validated environment, Prisma instance
 │       ├── middlewares/     # authenticate, authorize, project access, validate, errors
-│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat, notifications, reports (one folder per domain)
+│       ├── modules/         # auth, users, projects, phases, tasks, progress, documents, chat, conversations, notifications, reports (one folder per domain)
 │       ├── routes/v1.ts     # mounts every module under /api/v1
 │       ├── sockets/         # Socket.io: event contract, handshake, rooms, emitter
 │       ├── storage/         # file storage: one port, Supabase and local disk behind it
@@ -220,6 +220,8 @@ All accounts are active. The `example.com` domain is reserved for documentation,
 | P2 | Movilidad urbana sostenible en el centro histórico de Cartagena | `PLANNING` |
 | P3 | Deserción estudiantil en programas de ingeniería | `COMPLETED` (its chat is read-only) |
 
+There are three private conversations: Laura and Andrés, coordination and Carlos, and Daniel and Sofía. Daniel and Sofía share no project on purpose: theirs shows that an existing conversation stays usable.
+
 Roles work on two independent axes. The **system role** (`COORDINATOR` or `RESEARCHER`) lives on the user. The **project role** (`PRINCIPAL_INVESTIGATOR` or `CO_INVESTIGATOR`) lives on each project membership. A user only sees the projects they belong to; the coordinator is the only exception.
 
 ## REST API
@@ -378,6 +380,28 @@ A new version is a new row linked to the previous one, which stays in place with
 
 Downloads always go through the backend. There are no signed URLs: access is checked on every download, and both storage implementations follow the same path.
 
+**Private conversations** — `/api/v1/conversaciones`
+
+| Method | Route | Who | Body / query | Response |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Any user, their own | — | `200 { conversations }`, latest message first. Conversations with no messages are left out |
+| `POST` | `/` | Any user | `{ userId }` | `201 { conversation }` if it was created, `200` if it already existed |
+| `GET` | `/contactos` | Any user | — | `200 { contacts }`, each `{ id, fullName, systemRole }` |
+| `GET` | `/:conversationId` | Participant | — | `200 { conversation }` |
+| `GET` | `/:conversationId/mensajes` | Participant | `?antes=` or `?despues=`, `?limite=50` (1–100) | `200 { messages, nextCursor }`, as in the project chat |
+| `POST` | `/:conversationId/mensajes` | Participant | `{ content }` (1–2000 characters, trimmed) | `201 { message }`, then emits `chat:mensaje` to both participants |
+| `GET` | `/:conversationId/mensajes/lectura` | Participant | — | `200 { lastReadAt, unreadCount }` |
+| `PUT` | `/:conversationId/mensajes/lectura` | Participant | `{ messageId }` | `200 { lastReadAt, unreadCount }` |
+
+A conversation is `{ id, otherUser: { id, fullName, isActive }, lastMessage, unreadCount }`, and `lastMessage` is `{ id, content, createdAt, senderId }` or `null`. A message is `{ id, conversationId, content, createdAt, sender }`, without `projectId`.
+
+- **Who can start one:** a research account, with coordination and with anyone it shares a project with. Coordination, with anyone. Deactivated accounts cannot be contacted. `/contactos` returns exactly that set. Any other `userId` returns `404`, not `403`, so the response does not confirm that the account exists.
+- **That rule only decides who can start.** An existing conversation stays usable if the two people stop sharing a project.
+- **One conversation per pair.** Opening it twice, or from both sides at once, returns the same one.
+- **The conversation in the route is never trusted.** Whoever is not a participant gets `404`, including coordination. A project chat's id also returns `404` here.
+- **If the other account is deactivated,** the history can be read, but sending returns `409`.
+- **There is no presence and no closed state** in a private conversation, and messages create no notification.
+
 **Notifications** — `/api/v1/notificaciones`
 
 | Method | Route | Who | Query | Response |
@@ -485,7 +509,7 @@ There are no client → server events: all changes go through REST.
 
 | Event | Emitted to | Payload | When |
 | --- | --- | --- | --- |
-| `chat:mensaje` | `proyecto:{id}` | `{ id, projectId, content, createdAt, sender: { id, fullName } }` | After a message sent with `POST /proyectos/:projectId/mensajes` is saved |
+| `chat:mensaje` | `proyecto:{id}`, or `usuario:{id}` of both participants | `{ id, conversationId, projectId?, content, createdAt, sender: { id, fullName } }` | After a message is saved. `projectId` is only there in a project chat |
 | `usuario:conectado` | The person's project rooms | `{ userId, projectId }` | The person's **first** socket connects |
 | `usuario:desconectado` | The person's project rooms | `{ userId, projectId }` | The person's **last** socket disconnects |
 | `presencia:inicial` | The socket that just connected, or every socket of a person added to a project | `[{ projectId, userIds }]` | Right after joining the rooms |

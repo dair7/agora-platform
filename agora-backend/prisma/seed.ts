@@ -107,6 +107,8 @@ const ids = {
     lauraAndres: '0a000000-0000-4000-8000-000000000002',
     movilidad: '0a000000-0000-4000-8000-000000000003',
     desercion: '0a000000-0000-4000-8000-000000000004',
+    coordinacionCarlos: '0a000000-0000-4000-8000-000000000005',
+    danielSofia: '0a000000-0000-4000-8000-000000000006',
   },
   messages: {
     proyecto1: '0b000000-0000-4000-8000-000000000001',
@@ -116,6 +118,9 @@ const ids = {
     proyecto5: '0b000000-0000-4000-8000-000000000005',
     privado1: '0b000000-0000-4000-8000-000000000006',
     privado2: '0b000000-0000-4000-8000-000000000007',
+    privado3: '0b000000-0000-4000-8000-000000000008',
+    privado4: '0b000000-0000-4000-8000-000000000009',
+    privado5: '0b000000-0000-4000-8000-00000000000a',
   },
   notifications: {
     tareaAsignada: '0c000000-0000-4000-8000-000000000001',
@@ -743,16 +748,21 @@ async function seedConversations() {
     });
   }
 
-  // Chat privado: projectId nulo y exactamente dos participantes.
-  await prisma.conversation.upsert({
-    where: { id: ids.conversations.lauraAndres },
-    create: {
-      id: ids.conversations.lauraAndres,
-      type: ConversationType.PRIVATE,
-      projectId: null,
-    },
-    update: { type: ConversationType.PRIVATE, projectId: null },
-  });
+  // Chats privados: projectId nulo y exactamente dos participantes. Daniel y Sofía no
+  // comparten proyecto: su conversación enseña que una que ya existe sigue usándose.
+  const privateConversations = [
+    ids.conversations.lauraAndres,
+    ids.conversations.coordinacionCarlos,
+    ids.conversations.danielSofia,
+  ];
+
+  for (const id of privateConversations) {
+    await prisma.conversation.upsert({
+      where: { id },
+      create: { id, type: ConversationType.PRIVATE, projectId: null },
+      update: { type: ConversationType.PRIVATE, projectId: null },
+    });
+  }
 
   const participants = [
     {
@@ -784,6 +794,26 @@ async function seedConversations() {
       conversationId: ids.conversations.lauraAndres,
       userId: ids.users.andres,
       lastReadAt: null,
+    },
+    {
+      conversationId: ids.conversations.coordinacionCarlos,
+      userId: ids.users.coordinator,
+      lastReadAt: at('2026-09-08T14:00:00.000Z'),
+    },
+    {
+      conversationId: ids.conversations.coordinacionCarlos,
+      userId: ids.users.carlos,
+      lastReadAt: null,
+    },
+    {
+      conversationId: ids.conversations.danielSofia,
+      userId: ids.users.daniel,
+      lastReadAt: at('2026-08-20T15:30:00.000Z'),
+    },
+    {
+      conversationId: ids.conversations.danielSofia,
+      userId: ids.users.sofia,
+      lastReadAt: at('2026-08-20T15:30:00.000Z'),
     },
   ];
 
@@ -854,6 +884,27 @@ async function seedConversations() {
       content: 'Sí, con el operador de siempre. Salimos a las 6:00 a. m. desde el muelle.',
       createdAt: at('2026-09-05T15:34:00.000Z'),
     },
+    {
+      id: ids.messages.privado3,
+      conversationId: ids.conversations.coordinacionCarlos,
+      senderId: ids.users.coordinator,
+      content: 'Carlos, ¿cuándo arranca la movilidad? El comité pregunta por el cronograma.',
+      createdAt: at('2026-09-08T14:00:00.000Z'),
+    },
+    {
+      id: ids.messages.privado4,
+      conversationId: ids.conversations.danielSofia,
+      senderId: ids.users.sofia,
+      content: 'Daniel, ¿me pasas el formato de consentimiento que usaron el semestre pasado?',
+      createdAt: at('2026-08-20T15:00:00.000Z'),
+    },
+    {
+      id: ids.messages.privado5,
+      conversationId: ids.conversations.danielSofia,
+      senderId: ids.users.daniel,
+      content: 'Claro, te lo dejo por aquí hoy mismo.',
+      createdAt: at('2026-08-20T15:30:00.000Z'),
+    },
   ];
 
   for (const message of messages) {
@@ -865,7 +916,7 @@ async function seedConversations() {
   }
 
   return {
-    conversations: projectConversations.length + 1,
+    conversations: projectConversations.length + privateConversations.length,
     participants: participants.length,
     messages: messages.length,
   };
