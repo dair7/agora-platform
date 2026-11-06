@@ -5,8 +5,9 @@ type Spacing =
 
 /**
  * Todo el contenedor, o un token de espaciado para lo que tiene tamaño fijo (un
- * avatar). No hay fracciones: `w-1/2` y compañía no generan CSS con el tema
- * vaciado, y el sistema no tiene un token de ancho parcial.
+ * avatar). Sin fracciones, por convención: `w-1/2` sí genera CSS, porque Tailwind la
+ * calcula sin pasar por el tema, pero no sale de ningún token, y el sistema no tiene
+ * uno de ancho parcial.
  */
 export type SkeletonWidth = 'full' | Spacing;
 

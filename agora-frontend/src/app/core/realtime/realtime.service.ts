@@ -20,8 +20,8 @@ const NO_PRESENCE: Presence = new Map();
 const RETRY_DELAY_MS = 5000;
 
 /**
- * Socket.io cuelga del origen, sin el `/api/v1` de la API. Sin `apiUrl`
- * (producción, hasta la fase 14), el de la propia página.
+ * Socket.io cuelga del origen, sin el `/api/v1` de la API. Sin `apiUrl`, que solo pasa
+ * con un `ng build` a secas, el de la propia página.
  */
 const socketUrl = (): string =>
   environment.apiUrl ? new URL(environment.apiUrl).origin : window.location.origin;

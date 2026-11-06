@@ -6,7 +6,7 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const EXAMPLE = 'https://agora-backend.onrender.com/api/v1';
+const EXAMPLE = 'https://your-backend.example.com/api/v1';
 const API_PATH = '/api/v1';
 
 const fail = (problem) => {
