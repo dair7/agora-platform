@@ -24,7 +24,7 @@ let nextId = 0;
   template: `
     <dialog
       #dialog
-      class="m-auto w-full max-w-ancho-formulario border-0 bg-superficie-00 text-tinta rounded-radio-md p-espacio-5 shadow-sombra-flotante"
+      class="m-auto border-0 bg-superficie-00 text-tinta rounded-radio-md p-espacio-5 shadow-sombra-flotante"
       [attr.aria-labelledby]="titleId"
       (cancel)="onCancel($event)"
       (close)="onClose()"
@@ -46,6 +46,14 @@ let nextId = 0;
         </button>
       </div>
     </dialog>
+  `,
+  // El ancho del formulario, sin pasarse del de la pantalla menos su margen: con
+  // `w-full max-w-ancho-formulario`, a 360px el diálogo tocaba los dos bordes.
+  styles: `
+    dialog {
+      width: min(var(--ancho-formulario), 100% - 2 * var(--espacio-4));
+      max-width: none;
+    }
   `,
 })
 export class Dialog {
