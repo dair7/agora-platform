@@ -1,4 +1,4 @@
-import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { io, type Socket } from 'socket.io-client';
@@ -42,6 +42,8 @@ export class RealtimeService {
   readonly #status = signal<RealtimeStatus>('disconnected');
   readonly #presence = signal<Presence>(NO_PRESENCE);
   readonly #unread = signal<ReadonlyMap<string, number>>(new Map());
+  /** Por conversación privada, o `null` mientras el servidor no haya dicho nada. */
+  readonly #conversationUnread = signal<ReadonlyMap<string, number> | null>(null);
   readonly #chatMessages = new Subject<ChatMessage>();
   readonly #connected = new Subject<void>();
   readonly #disconnected = new Subject<void>();
@@ -121,6 +123,45 @@ export class RealtimeService {
     this.#unread.set(new Map(this.#unread()).set(projectId, count));
   }
 
+  /** Sin leer en todas las conversaciones privadas: la cifra de las barras. */
+  readonly conversationUnreadTotal = computed(() =>
+    [...(this.#conversationUnread()?.values() ?? [])].reduce((sum, count) => sum + count, 0),
+  );
+
+  /** Lo que dijo el servidor de todas: reemplaza lo que hubiera. */
+  setConversationsUnread(conversations: readonly { id: string; unreadCount: number }[]): void {
+    this.#conversationUnread.set(new Map(conversations.map((c) => [c.id, c.unreadCount])));
+  }
+
+  setConversationUnread(conversationId: string, count: number): void {
+    this.#conversationUnread.set(
+      new Map(this.#conversationUnread() ?? []).set(conversationId, count),
+    );
+  }
+
+  /**
+   * Un mensaje de proyecto suma sobre la cifra de ese proyecto, si se conoce. Uno privado
+   * no tiene proyecto: suma sobre la de su conversación. Si es de una que el servidor aún no
+   * contó, porque es nueva, sale de cero: lo que hace falta saber es que ya hubo respuesta.
+   */
+  #countUnread({ projectId, conversationId }: ChatMessage): void {
+    if (projectId) {
+      const known = this.#unread().get(projectId);
+
+      if (known !== undefined) {
+        this.setUnread(projectId, known + 1);
+      }
+
+      return;
+    }
+
+    const conversations = this.#conversationUnread();
+
+    if (conversations) {
+      this.setConversationUnread(conversationId, (conversations.get(conversationId) ?? 0) + 1);
+    }
+  }
+
   #connect(): void {
     if (this.#socket || !this.#session.accessToken) {
       return;
@@ -159,15 +200,12 @@ export class RealtimeService {
     socket.on('connect_error', (error) => void this.#onConnectError(socket, error));
 
     socket.on('chat:mensaje', (message) => {
-      const mine = message.sender.id === this.#session.user()?.id;
-      const known = this.#unread().get(message.projectId);
-
       // El socket solo suma sobre lo que ya hay: nunca es la fuente de la cifra, porque
       // una pestaña recién abierta no sabe nada de lo anterior. El propio no cuenta: el
       // evento también llega a las otras pestañas de quien lo escribió. Lo que llega al
       // chat abierto también suma, y la marca de lectura lo baja si de verdad se leyó.
-      if (!mine && known !== undefined) {
-        this.setUnread(message.projectId, known + 1);
+      if (message.sender.id !== this.#session.user()?.id) {
+        this.#countUnread(message);
       }
 
       this.#chatMessages.next(message);
@@ -202,6 +240,7 @@ export class RealtimeService {
     this.#presence.set(NO_PRESENCE);
     // Aquí sí: esto es el fin de la sesión, y quien entre después es otra persona.
     this.#unread.set(new Map());
+    this.#conversationUnread.set(null);
     this.#status.set('disconnected');
   }
 

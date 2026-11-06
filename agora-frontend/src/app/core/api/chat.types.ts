@@ -1,4 +1,5 @@
-// Tipos del contrato de /api/v1/proyectos/:projectId/mensajes (`modules/chat`).
+// Tipos del contrato de los mensajes: los de un proyecto (`modules/chat`) y los privados
+// (`modules/conversations`).
 
 /**
  * Un mensaje, con la misma forma venga de donde venga: la respuesta REST y el
@@ -6,7 +7,9 @@
  */
 export interface ChatMessage {
   id: string;
-  projectId: string;
+  conversationId: string;
+  /** Solo en el chat de un proyecto: un mensaje privado no lo tiene. */
+  projectId?: string;
   content: string;
   createdAt: string;
   sender: { id: string; fullName: string };
