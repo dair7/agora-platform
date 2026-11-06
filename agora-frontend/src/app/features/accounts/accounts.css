@@ -1,0 +1,30 @@
+/* Cuentas.
+
+   Como en login.css y project-list.css, este archivo es la lista de lo que no es token:
+   cada regla lleva un valor marcado con «sin token». Lo que sí es token va en la
+   plantilla como utilidad. */
+
+/* El buscador crece con la fila hasta un máximo; en pantalla estrecha ocupa todo el ancho. */
+.cuentas-busqueda {
+  flex: 1 1 auto;
+  max-width: 320px; /* sin token */
+}
+
+/* La columna del contenido cede y la de las acciones no: sin esto, un correo largo no deja
+   encoger la columna y empuja las acciones fuera de su sitio. `min-w-0` no genera CSS con
+   este tema. Mismo problema y misma solución que `.tarea-contenido`. */
+.cuenta-contenido {
+  min-width: 0; /* sin token: mecánica de flexbox */
+}
+
+/* La casilla del interruptor toma el color del sistema en vez del azul del navegador. */
+.cuentas-interruptor {
+  accent-color: var(--veril);
+}
+
+/* La lista recibe el foco cuando una baja se llevó la fila que lo tenía. Es un foco
+   programático que solo coloca a quien navega con teclado: no hay nada que anunciar con
+   un anillo alrededor de toda la lista. */
+.cuentas-lista:focus {
+  outline: none; /* sin token: no es un valor, es quitar el contorno */
+}

@@ -126,6 +126,14 @@ export const routes: Routes = [
         canMatch: [roleGuard('COORDINATOR')],
         loadComponent: () => import('./features/reports/reports').then((m) => m.Reports),
       },
+      // Solo la coordinación: a los demás la ruta no les coincide y cae en el comodín, y el
+      // backend lo rechaza igual con un 403 en cada llamada.
+      {
+        path: 'cuentas',
+        title: 'Cuentas · Ágora',
+        canMatch: [roleGuard('COORDINATOR')],
+        loadComponent: () => import('./features/accounts/accounts').then((m) => m.Accounts),
+      },
     ],
   },
   // Hasta que exista la pantalla de "no encontrado".

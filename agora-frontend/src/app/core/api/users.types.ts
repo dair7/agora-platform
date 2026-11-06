@@ -21,4 +21,6 @@ export interface ListUsersQuery {
   rol?: SystemRole;
   /** Compara contra nombre y correo sin distinguir mayúsculas. Hasta 200 caracteres. */
   buscar?: string;
+  /** Sin esto, solo cuentas activas: la coordinación no puede reactivar a quien no ve. */
+  incluirInactivas?: boolean;
 }

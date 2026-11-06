@@ -82,6 +82,7 @@ agora-frontend/
 | `core/navigation/`        | `restoreScrollOnceLoaded()`: gives the scroll position back when going back, once the data has arrived                          |
 | `core/realtime/`          | `RealtimeService`, the Socket.io connection, and the event contract it listens to                                               |
 | `core/session/`           | `SessionService`, the HTTP interceptor, the guards and `expireSession()`                                                        |
+| `features/accounts/`      | `/cuentas`: the account list, the dialogs, `generate-password.ts` and `generated-password.ts`, which shows a password once      |
 | `features/auth/`          | Sign-in and the session-expired screen                                                                                          |
 | `features/chat/`          | What both chats share: the thread, the composer, the message and the timeline                                                   |
 | `features/conversations/` | The private chats: the list and one conversation                                                                                |
@@ -94,25 +95,26 @@ agora-frontend/
 
 ## Screens
 
-Fifteen routes, all declared in `app.routes.ts`. Everything except the first two is a child of the shell, behind `authGuard`.
+Sixteen routes, all declared in `app.routes.ts`. Everything except the first two is a child of the shell, behind `authGuard`.
 
-| Route                         | Who                    | What it does                                                                                                                                                          |
-| ----------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/entrar`                     | Without a session      | Sign-in. There is no public registration. «Recordarme» and «¿Olvidaste tu contraseña?» are placeholders from the mockup: the backend has neither, and they do nothing |
-| `/sesion-expirada`            | Without a session      | Explains that the session ended, and offers to sign in again                                                                                                          |
-| `/inicio`                     | Everyone               | Where you land. Research accounts see their pending tasks across all their open projects, overdue first. Coordination sees the global figures                         |
-| `/reportes`                   | Coordination           | Global figures, projects by status, and each project with the most overdue first                                                                                      |
-| `/proyectos`                  | Everyone               | The list, with status filter, search and pagination, all kept in the URL. Each person sees only their projects; coordination sees all of them                         |
-| `/proyectos/nuevo`            | Coordination           | Create a project and name its principal investigator                                                                                                                  |
-| `/proyectos/:id`              | Members, coordination  | Summary and members. The principal investigator also closes the project, adds and removes members, and hands over the role                                            |
-| `/proyectos/:id/editar`       | Principal investigator | Edit the project. Anyone else is sent to the detail                                                                                                                   |
-| `/proyectos/:id/cronograma`   | Members, coordination  | Phases, in order. The principal investigator manages and reorders them                                                                                                |
-| `/proyectos/:id/tareas`       | Members, coordination  | Tasks and dependencies. The principal investigator manages them; whoever is assigned a task can change its status                                                     |
-| `/proyectos/:id/avances`      | Members, coordination  | Progress entries. Any member adds them; only the author edits                                                                                                         |
-| `/proyectos/:id/documentos`   | Members, coordination  | Upload, download and versions                                                                                                                                         |
-| `/proyectos/:id/conversacion` | Members                | The project chat, with history, unread count and presence. Coordination is sent to the detail                                                                         |
-| `/conversaciones`             | Everyone               | Your private chats, most recent first, and who you can start one with                                                                                                 |
-| `/conversaciones/:id`         | Participants           | One private chat. There is no presence, and with a deactivated account it can be read but not written to. Anyone else gets the not-found screen                       |
+| Route                         | Who                    | What it does                                                                                                                                                                                                                                |
+| ----------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/entrar`                     | Without a session      | Sign-in. There is no public registration and no self-service recovery: a line of text says to ask the coordination to reset the password.                                                                                                   |
+| `/sesion-expirada`            | Without a session      | Explains that the session ended, and offers to sign in again                                                                                                                                                                                |
+| `/inicio`                     | Everyone               | Where you land. Research accounts see their pending tasks across all their open projects, overdue first. Coordination sees the global figures                                                                                               |
+| `/cuentas`                    | Coordination           | Create, rename, reset the password of, deactivate and reactivate accounts, with search by name or email, a role filter, and «Mostrar desactivadas», all kept in the URL. Nobody types a password: the client generates it and shows it once |
+| `/reportes`                   | Coordination           | Global figures, projects by status, and each project with the most overdue first                                                                                                                                                            |
+| `/proyectos`                  | Everyone               | The list, with status filter, search and pagination, all kept in the URL. Each person sees only their projects; coordination sees all of them                                                                                               |
+| `/proyectos/nuevo`            | Coordination           | Create a project and name its principal investigator                                                                                                                                                                                        |
+| `/proyectos/:id`              | Members, coordination  | Summary and members. The principal investigator also closes the project, adds and removes members, and hands over the role                                                                                                                  |
+| `/proyectos/:id/editar`       | Principal investigator | Edit the project. Anyone else is sent to the detail                                                                                                                                                                                         |
+| `/proyectos/:id/cronograma`   | Members, coordination  | Phases, in order. The principal investigator manages and reorders them                                                                                                                                                                      |
+| `/proyectos/:id/tareas`       | Members, coordination  | Tasks and dependencies. The principal investigator manages them; whoever is assigned a task can change its status                                                                                                                           |
+| `/proyectos/:id/avances`      | Members, coordination  | Progress entries. Any member adds them; only the author edits                                                                                                                                                                               |
+| `/proyectos/:id/documentos`   | Members, coordination  | Upload, download and versions                                                                                                                                                                                                               |
+| `/proyectos/:id/conversacion` | Members                | The project chat, with history, unread count and presence. Coordination is sent to the detail                                                                                                                                               |
+| `/conversaciones`             | Everyone               | Your private chats, most recent first, and who you can start one with                                                                                                                                                                       |
+| `/conversaciones/:id`         | Participants           | One private chat. There is no presence, and with a deactivated account it can be read but not written to. Anyone else gets the not-found screen                                                                                             |
 
 Two pieces have no route: the **notification inbox** and the **account menu**, both in the shell. Below `md` the inbox takes the whole screen, and it is still the same panel.
 
@@ -141,13 +143,15 @@ Two tokens. The **access token** lives only in memory, in `SessionService`. The 
 
 Set up the backend as described in the root README, load the seed with `pnpm --filter agora-backend seed`, and start both servers. The accounts and their passwords are in _Seed accounts_ in the root README. Running the seed again restores what it created.
 
-| Sign in as                   | What to check                                                                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `coordinacion@example.com`   | Lands on the global figures. Sees P1, P2 and P3, and has «Crear proyecto». Inside a project there is no Conversación tab and no management button |
-| `laura.mendoza@example.com`  | Lands on the pending tasks of that account. Sees only P1, and manages it: edit, close, members, phases, tasks                                     |
-| `carlos.beltran@example.com` | Sees P2 and P3. P3 is closed: read-only, and its chat composer is disabled                                                                        |
-| `andres.pardo@example.com`   | Co-investigator in P1. Can change the status of an assigned task, and nothing else on it                                                          |
-| `daniel.osorio@example.com`  | Sees only P2. Pasting the address of P1 shows the not-found screen                                                                                |
+| Sign in as                   | What to check                                                                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `coordinacion@example.com`   | Lands on the global figures. Sees P1, P2 and P3, and has «Crear proyecto» and «Cuentas». Inside a project there is no Conversación tab and no management button |
+| `laura.mendoza@example.com`  | Lands on the pending tasks of that account. Sees only P1, and manages it: edit, close, members, phases, tasks                                                   |
+| `carlos.beltran@example.com` | Sees P2 and P3. P3 is closed: read-only, and its chat composer is disabled                                                                                      |
+| `andres.pardo@example.com`   | Co-investigator in P1. Can change the status of an assigned task, and nothing else on it                                                                        |
+| `daniel.osorio@example.com`  | Sees only P2. Pasting the address of P1 shows the not-found screen                                                                                              |
+
+**Accounts, end to end.** As `coordinacion@example.com` open `/cuentas`, press «Nueva cuenta» and fill in a name and an email. The dialog changes to «Cuenta creada» and shows the password once: copy it, close the dialog, and sign in with it in a new tab (not a duplicated one: a duplicate copies the refresh token). Then use «Restablecer contraseña» on that account and the old password stops working, and its open session loses the live connection. «Desactivar» takes it out of the list; «Mostrar desactivadas» brings it back with «Reactivar». Deactivating `laura.mendoza@example.com` is refused, because she leads an open project: the dialog says to ask her to hand the role over or close the project first. Your own row says «Tú» and has no actions.
 
 **Real time needs two people at once.** Each tab keeps its own session, so open a new tab and sign in with another account, such as Laura and Andrés in the conversation of P1. Messages, presence and task changes arrive without reloading.
 
@@ -242,7 +246,7 @@ The breakpoints are Tailwind's defaults, kept on purpose: the design system does
 
 **Icons come from Lucide, never drawn by hand.** `app-icon` holds the paths, copied from `lucide-static` with no new dependency; the ISC notice is in `public/LICENSE-lucide.txt`, and the MIT one too for the icons Lucide inherited from Feather (`log-out` is one: check that list before adding an icon). An icon is decorative, so whoever uses it provides the name, with visible text or `sr-only`.
 
-**`md` is the responsive breakpoint.** Below it there is a bottom bar instead of the top bar, the inbox takes the whole screen, and row actions go under the text. `max-md:` applies below it. Check every screen at 360px: none may scroll sideways.
+**`md` is the responsive breakpoint.** Below it there is a bottom bar instead of the top bar, the inbox takes the whole screen, and row actions go under the text. `max-md:` applies below it. Check every screen at 360px: none may scroll sideways. Between `md` and `lg` the coordination has five destinations on the top bar, so the links use `max-lg:px-espacio-1!` instead of `espacio-2`: with the wider padding, the name of the account overlapped «Cerrar sesión» at exactly 768px (measured). Even so, at 768px the bar is 113px tall with the name of the seed coordinator, because the name wraps onto three lines; it goes back to 75px from about 860px.
 
 The bar is chosen with `matchMedia` in `shell.ts`, not with CSS, so that the bottom bar can come after the content in the DOM and only one inbox exists at a time. In CSS files, write the same breakpoint as `@media (width < 48rem)`.
 
@@ -303,6 +307,7 @@ Font families, sizes and weights have no utilities. They come only from the text
 
 Each of these has already cost time, and none of them announces itself.
 
+- **A generated password lives in one component and nowhere else.** `app-generated-password` receives it as an input; the screen keeps it in a signal that `app-dialog`'s `closed` output clears, so it disappears whether the dialog is closed with the button or with Escape. It never goes to `localStorage`, to the URL, or to the console, and the tests check each of those. Copying leaves it on the system clipboard, which the client cannot clear: clearing it on close would break the normal use, copy, close, paste.
 - **`viewChild` does not work on ES private fields.** `readonly #box = viewChild(…)` passes `tsc` and fails only in the Angular compiler, with `NG1053`: use TypeScript's `private`, and run `build`.
 - **`field-sizing: content` makes the browser ignore `rows`.** An empty textarea collapses, so `FieldTextarea` reads the `rows` attribute and sets it back as a `min-height`.
 - **Never use `type="number"` for money.** Chromium drops the second thousands separator and still reports the value as valid: «48.500.000» became `48.5`. The budget is a text input with `inputmode="numeric"` and a digits-only check.

@@ -119,22 +119,11 @@
           }
         </div>
 
-        <!-- Inertes hasta que exista el backend: ver el TODO en login.ts. -->
-        <div class="entrada-opciones flex flex-wrap items-center justify-between gap-espacio-3">
-          <label
-            class="entrada-recordar entrada-texto flex cursor-pointer items-center"
-            for="login-remember"
-          >
-            <input id="login-remember" type="checkbox" class="entrada-casilla" />
-            Recordarme
-          </label>
-          <a
-            [routerLink]="[]"
-            fragment="recuperar"
-            class="entrada-enlace entrada-texto entrada-olvido flex items-center"
-            >¿Olvidaste tu contraseña?</a
-          >
-        </div>
+        <!-- No hay recuperación por cuenta propia: la contraseña la restablece la coordinación
+             (fase 15). Un texto y no un enlace: no hay a dónde llevar. -->
+        <p class="entrada-texto text-tinta-media">
+          Si olvidaste tu contraseña, pide a la coordinación que la restablezca.
+        </p>
 
         @if (notice(); as message) {
           <div class="entrada-alerta flex items-start text-arrecife" role="alert">

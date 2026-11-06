@@ -15,6 +15,12 @@ const BCRYPT_ROUNDS = 10;
 // esto, responder al instante delata qué correos están registrados y cuáles no.
 const DUMMY_PASSWORD_HASH = hashSync('cuenta-inexistente', BCRYPT_ROUNDS);
 
+/**
+ * El único sitio donde una contraseña se convierte en hash: el registro y el
+ * restablecimiento de la coordinación pasan por aquí, para que no puedan divergir.
+ */
+export const hashPassword = (password: string): Promise<string> => hash(password, BCRYPT_ROUNDS);
+
 export interface PublicUser {
   id: string;
   email: string;
@@ -70,7 +76,7 @@ export const register = async (input: RegisterInput): Promise<PublicUser> => {
 
   const user = await repository.createUser({
     email: input.email,
-    passwordHash: await hash(input.password, BCRYPT_ROUNDS),
+    passwordHash: await hashPassword(input.password),
     fullName: input.fullName,
     // El rol no viene del cliente: la coordinación crea siempre investigadores.
     // Las cuentas de coordinador salen del seed; una no puede crear otra.

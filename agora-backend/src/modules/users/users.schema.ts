@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SystemRole } from '@prisma/client';
+import { passwordSchema } from '../auth/auth.schema.js';
 
 export const userIdParamsSchema = z.object({
   userId: z.uuid('El identificador del usuario no es válido'),
@@ -44,6 +45,15 @@ export const updateUserSchema = z.strictObject(
   'De una cuenta solo se puede cambiar el nombre: el cuerpo debe ser { fullName }',
 );
 
+// Las mismas reglas que el registro, y solo la contraseña: lo demás responde 400 en
+// vez de desaparecer en silencio. El mensaje de una clave de más nombra la clave, nunca
+// su valor.
+export const resetPasswordSchema = z.strictObject(
+  { password: passwordSchema },
+  'El cuerpo debe ser { password }',
+);
+
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type UserIdParams = z.infer<typeof userIdParamsSchema>;

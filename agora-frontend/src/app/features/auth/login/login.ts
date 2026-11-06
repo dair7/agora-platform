@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { apiErrorCode, apiFieldErrors } from '../../../core/api/api-error';
 import { SessionService } from '../../../core/session/session.service';
 
@@ -78,14 +78,9 @@ const STATUS: Record<SampleStatus, { label: string; pill: string; bar: string }>
   },
 };
 
-// TODO(backend): «Recordarme» y «¿Olvidaste tu contraseña?» están en la pantalla
-// porque los trae la maqueta, pero son inertes: la casilla no está enlazada a
-// nada y el enlace solo pone #recuperar en la dirección. No hay recuperación de
-// contraseña en el backend, y «recordarme» exigiría otra duración del refresh
-// token. Se conectan cuando el backend los tenga; no inventarlos aquí.
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

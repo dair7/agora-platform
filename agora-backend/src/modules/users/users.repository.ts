@@ -91,3 +91,19 @@ export const deactivateUser = async (id: string): Promise<void> => {
 
 export const reactivateUser = (id: string): Promise<UserSummary> =>
   prisma.user.update({ where: { id }, data: { isActive: true }, select: userSummarySelect });
+
+/**
+ * El hash nuevo y la revocación van en la misma transacción: una contraseña
+ * restablecida cuyas sesiones siguen vivas no cierra nada, que es justo para lo
+ * que se restablece. Recibe el hash, nunca la contraseña: el texto en claro no
+ * baja de la capa de servicio.
+ */
+export const resetPassword = async (id: string, passwordHash: string): Promise<void> => {
+  await prisma.$transaction([
+    prisma.user.update({ where: { id }, data: { passwordHash } }),
+    prisma.refreshToken.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+};

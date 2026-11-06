@@ -50,6 +50,10 @@ describe('guards de sesión y rol', () => {
       expect(await visit('/reportes')).toBe('/entrar');
     });
 
+    it('lleva a iniciar sesión desde cuentas', async () => {
+      expect(await visit('/cuentas')).toBe('/entrar');
+    });
+
     it('lleva a iniciar sesión desde una dirección que no existe', async () => {
       expect(await visit('/no-existe')).toBe('/entrar');
     });
@@ -76,6 +80,11 @@ describe('guards de sesión y rol', () => {
       expect(await visit('/reportes')).toBe('/inicio');
     });
 
+    // Sin un «no tienes permiso»: confirmaría que la pantalla existe.
+    it('no entra a cuentas: la ruta no le existe y acaba en su inicio', async () => {
+      expect(await visit('/cuentas')).toBe('/inicio');
+    });
+
     it('no vuelve a iniciar sesión', async () => {
       expect(await visit('/entrar')).toBe('/inicio');
     });
@@ -91,6 +100,10 @@ describe('guards de sesión y rol', () => {
     it('entra a inicio y a reportes', async () => {
       expect(await visit('/inicio')).toBe('/inicio');
       expect(await visit('/reportes')).toBe('/reportes');
+    });
+
+    it('entra a cuentas', async () => {
+      expect(await visit('/cuentas')).toBe('/cuentas');
     });
   });
 

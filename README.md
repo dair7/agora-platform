@@ -265,10 +265,13 @@ Reusing a refresh token that was already revoked revokes **every** session of th
 | `PATCH` | `/:userId` | Coordinator | `{ fullName }` | `200 { user }` |
 | `DELETE` | `/:userId` | Coordinator | — | `204`. Logical deactivation; revokes every refresh token of the account. |
 | `POST` | `/:userId/reactivar` | Coordinator | — | `200 { user }` |
+| `POST` | `/:userId/restablecer-contrasena` | Coordinator | `{ password }` | `204`, no body. Rewrites the password hash and revokes every refresh token of the account. |
 
 Only active accounts unless `incluirInactivas=true`, ordered by `fullName`. `buscar` matches name or email, case-insensitive; an empty `buscar` is ignored rather than rejected. There is no pagination: the system holds dozens of accounts, not thousands. A researcher gets `403`, since only the coordinator appoints principal investigators; principal investigators invite members by email.
 
 `PATCH` changes the name and nothing else: the role, the email and `isActive` return `400`. Deactivating is logical, since accounts with authorship cannot be deleted. It closes the open sockets of the account, and `/auth/refrescar` and `/auth/iniciar-sesion` stop working for it; an access token that was already issued lives on for up to 15 minutes. Deactivating returns `409` for your own account, for an account that is already inactive, and for someone who leads a project that is neither `COMPLETED` nor `CANCELLED`: those projects have to be closed first. `POST /reactivar` returns `409` if the account is already active; the person signs in again.
+
+`POST /restablecer-contrasena` is how a forgotten password is recovered: there is no self-service change or recovery, so the coordinator sets a new one and hands it over. `password` follows the sign-up rules (8 to 72 characters) and the body is exactly `{ password }`; any other key returns `400`. It returns `404` for an unknown account and `409` for the caller's own account. The hash is rewritten and the refresh tokens are revoked in one transaction, and the open sockets of the account are closed once it is saved; an access token already issued lives on for up to 15 minutes, as with deactivation. It also works on a deactivated account, so it can be set before reactivating, and it does not reactivate it. The password is never logged, echoed in an error or returned.
 
 **Projects** — `/api/v1/proyectos`
 
